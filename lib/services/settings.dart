@@ -10,7 +10,7 @@ class AppSettings extends ChangeNotifier {
   static Future<AppSettings> load() async => AppSettings._(await SharedPreferences.getInstance());
 
   TimeOfDay get morningTime => TimeOfDay(
-    hour: _prefs.getInt('morningHour') ?? 7,
+    hour: _prefs.getInt('morningHour') ?? 9,
     minute: _prefs.getInt('morningMinute') ?? 0,
   );
 
@@ -24,6 +24,18 @@ class AppSettings extends ChangeNotifier {
 
   /// Dates (yyyy-mm-dd + slot) on which the user pressed "আমি পড়েছি".
   Set<String> get readMarks => (_prefs.getStringList('readMarks') ?? []).toSet();
+
+  /// Saved (favourite) item ids, newest first.
+  List<String> get favorites => _prefs.getStringList('favorites') ?? [];
+
+  bool isFavorite(String id) => favorites.contains(id);
+
+  Future<void> toggleFavorite(String id) async {
+    final list = favorites;
+    list.contains(id) ? list.remove(id) : list.insert(0, id);
+    await _prefs.setStringList('favorites', list);
+    notifyListeners();
+  }
 
   Future<void> setMorningTime(TimeOfDay t) async {
     await _prefs.setInt('morningHour', t.hour);

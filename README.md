@@ -1,7 +1,13 @@
 # Ayah Reminder
 
-A calm Android app that shows one Quran ayah every morning and one hadith every night,
-in Arabic and Bangla, with a full-screen reminder.
+A calm Android app that shows one Quran ayah every morning (default 9:00 AM) and one hadith
+every night (default 9:00 PM, Bangladesh time), in Arabic and Bangla, with a full-screen reminder.
+
+Features: splash screen, home with today's ayah and hadith, colourful category grid,
+full-screen reading with a 12-second countdown, share any ayah or hadith as an image,
+favourites, dark mode that follows the phone, and Bangla labels throughout.
+The logo, Islamic geometric pattern and icon are drawn in code (no image assets);
+icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font License.
 
 ## What's inside
 

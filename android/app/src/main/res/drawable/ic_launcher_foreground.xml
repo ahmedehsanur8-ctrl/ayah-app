@@ -1,20 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Open book with a crescent moon above it -->
+<!-- App logo: gold eight-pointed star with a crescent (drawn by hand, no image assets). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- crescent -->
     <path
-        android:fillColor="#E9C766"
-        android:pathData="M56,26a12,12 0,1 0,10 18.5a9.5,9.5 0,1 1,-10 -18.5z" />
-    <!-- left page -->
+        android:strokeColor="#E0C27A"
+        android:strokeWidth="2.6"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M54.00,25.00 L62.49,33.50 L74.51,33.49 L74.50,45.51 L83.00,54.00 L74.50,62.49 L74.51,74.51 L62.49,74.50 L54.00,83.00 L45.51,74.50 L33.49,74.51 L33.50,62.49 L25.00,54.00 L33.50,45.51 L33.49,33.49 L45.51,33.50 Z" />
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M52,56 C45,51 36,50 30,51 L30,78 C36,77 45,78 52,83 Z" />
-    <!-- right page -->
+        android:fillColor="#1A7552"
+        android:pathData="M54.00,32.50 L60.29,38.80 L69.20,38.80 L69.20,47.71 L75.50,54.00 L69.20,60.29 L69.20,69.20 L60.29,69.20 L54.00,75.50 L47.71,69.20 L38.80,69.20 L38.80,60.29 L32.50,54.00 L38.80,47.71 L38.80,38.80 L47.71,38.80 Z" />
+    <!-- crescent: gold disc with an offset disc of the background colour on top -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M56,56 C63,51 72,50 78,51 L78,78 C72,77 63,78 56,83 Z" />
+        android:fillColor="#E0C27A"
+        android:pathData="M54,42.5 a11.5,11.5 0 1,0 0.01,0 Z" />
+    <path
+        android:fillColor="#1A7552"
+        android:pathData="M59,39.8 a9.6,9.6 0 1,0 0.01,0 Z" />
+    <path
+        android:fillColor="#E0C27A"
+        android:pathData="M60.50,49.70 L61.04,51.21 L62.48,50.52 L61.79,51.96 L63.30,52.50 L61.79,53.04 L62.48,54.48 L61.04,53.79 L60.50,55.30 L59.96,53.79 L58.52,54.48 L59.21,53.04 L57.70,52.50 L59.21,51.96 L58.52,50.52 L59.96,51.21 Z" />
 </vector>

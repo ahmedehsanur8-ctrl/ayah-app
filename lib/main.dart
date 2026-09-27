@@ -4,6 +4,7 @@ import 'app_state.dart';
 import 'screens/home_shell.dart';
 import 'screens/reading_screen.dart';
 import 'screens/setup_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/reminders.dart';
 import 'theme.dart';
 
@@ -45,12 +46,17 @@ class AyahReminderApp extends StatelessWidget {
       title: 'Ayah Reminder',
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
-      theme: buildTheme(),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
+      themeMode: ThemeMode.system,
       home: launchItem != null
+          // Opened from a reminder: go straight to the reading screen.
           ? ReadingScreen(item: launchItem, payload: launch, fromReminder: true)
-          : state.settings.setupDone
-          ? const HomeShell()
-          : const SetupScreen(firstTime: true),
+          : SplashScreen(
+              next: state.settings.setupDone
+                  ? const HomeShell()
+                  : const SetupScreen(firstTime: true),
+            ),
     );
   }
 }

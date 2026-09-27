@@ -45,8 +45,13 @@ class Reminders {
 
   static late tz.Location dhaka;
 
-  static AndroidFlutterLocalNotificationsPlugin? get android =>
-      plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+  static AndroidFlutterLocalNotificationsPlugin? get android {
+    try {
+      return plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    } catch (_) {
+      return null; // Plugin not available (e.g. in tests).
+    }
+  }
 
   static Future<void> init(void Function(ReminderPayload) onOpen) async {
     tzdata.initializeTimeZones();

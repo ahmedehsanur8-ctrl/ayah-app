@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../models/content.dart';
 import '../theme.dart';
+import '../widgets/pattern.dart';
 
 class CreditsScreen extends StatelessWidget {
   const CreditsScreen({super.key});
@@ -16,9 +17,17 @@ class CreditsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
+          const Center(child: AppLogo(size: 84)),
+          const SizedBox(height: 12),
+          Text(
+            'আয়াত রিমাইন্ডার',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 16),
+          Text(
             'এই অ্যাপের সব আয়াত ও হাদিস নিচের উৎসগুলো থেকে হুবহু নেওয়া হয়েছে। কোনো লেখা পরিবর্তন করা হয়নি।',
-            style: TextStyle(height: 1.6),
+            style: TextStyle(height: 1.6, color: context.palette.text),
           ),
           const SizedBox(height: 16),
           _Source(
@@ -53,9 +62,16 @@ class CreditsScreen extends StatelessWidget {
           const _Source(
             icon: Icons.font_download_outlined,
             name: 'ফন্ট',
-            what: 'Amiri Quran (আরবি) ও Noto Sans Bengali (বাংলা)',
+            what: 'Amiri Quran (আরবি), Noto Sans Bengali ও Hind Siliguri (বাংলা)',
+            details: 'SIL Open Font License 1.1 — The Amiri Project Authors, The Noto Project Authors, Indian Type Foundry.',
+          ),
+          const _Source(
+            icon: Icons.auto_awesome_rounded,
+            name: 'নকশা',
+            what: 'লোগো, জ্যামিতিক নকশা ও আইকন',
             details:
-                'SIL Open Font License 1.1 — The Amiri Project Authors, The Noto Project Authors.',
+                'লোগো ও ইসলামি জ্যামিতিক নকশা অ্যাপের কোডেই আঁকা। '
+                'আইকন: Material Icons (Apache License 2.0)।',
           ),
         ],
       ),
@@ -90,14 +106,23 @@ class _Source extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(icon, color: AppColors.green),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: context.palette.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: context.palette.primary),
+                  ),
                   const SizedBox(width: 10),
                   Text(
                     name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.deepGreen,
+                      color: context.palette.text,
+                      fontFamily: headingFont,
                     ),
                   ),
                 ],
@@ -105,7 +130,7 @@ class _Source extends StatelessWidget {
               const SizedBox(height: 8),
               Text(what, style: const TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: 4),
-              SelectableText(details, style: const TextStyle(color: AppColors.muted, height: 1.5)),
+              SelectableText(details, style: TextStyle(color: context.palette.muted, height: 1.5)),
               if (extra.trim().isNotEmpty)
                 ExpansionTile(
                   tilePadding: EdgeInsets.zero,

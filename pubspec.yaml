@@ -37,7 +37,7 @@ dependencies:
   flutter_local_notifications: ^22.3.1
   timezone: ^0.11.1
   shared_preferences: ^2.5.5
-
+  share_plus: ^13.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -67,4 +67,10 @@ flutter:
       fonts:
         - asset: assets/fonts/NotoSansBengali-Regular.ttf
         - asset: assets/fonts/NotoSansBengali-Bold.ttf
+          weight: 700
+    - family: HindSiliguri
+      fonts:
+        - asset: assets/fonts/HindSiliguri-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/HindSiliguri-Bold.ttf
           weight: 700
