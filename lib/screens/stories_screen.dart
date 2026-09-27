@@ -213,7 +213,18 @@ class _StoryScreenState extends State<StoryScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          BanglaText('সূত্র: ${s.source}', size: 13.5, color: p.muted),
+          if (s.source.isNotEmpty) BanglaText('সূত্র: ${s.source}', size: 13.5, color: p.muted),
+          if (s.note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                border: Border.all(color: p.border),
+                borderRadius: BorderRadius.circular(radiusM),
+              ),
+              child: BanglaText(s.note, size: 13.5, color: p.muted),
+            ),
+          ],
           if (s.isDraft) ...[
             const SizedBox(height: 12),
             Container(

@@ -12,6 +12,7 @@ class Story {
     required this.lesson,
     required this.source,
     required this.status,
+    this.note = '',
     this.hasAudio = false,
   });
 
@@ -21,6 +22,9 @@ class Story {
   final String body;
   final String lesson;
   final String source;
+
+  /// Optional note for the reader (e.g. about sources), shown after the story.
+  final String note;
 
   /// "draft - needs scholar review" until a scholar has checked it.
   final String status;
@@ -36,8 +40,14 @@ class Story {
   String get spokenText => '$companion। $title।\n\n$body\n\nশিক্ষা: $lesson';
 
   /// Text used when the story is shared.
-  String get shareText =>
-      '$companion — $title\n\n$body\n\nশিক্ষা: $lesson\n\nসূত্র: $source\n\n— আয়াত রিমাইন্ডার';
+  String get shareText => [
+    '$companion — $title',
+    body,
+    'শিক্ষা: $lesson',
+    if (source.isNotEmpty) 'সূত্র: $source',
+    if (note.isNotEmpty) note,
+    '— আয়াত রিমাইন্ডার',
+  ].join('\n\n');
 
   static Story fromJson(Map<String, dynamic> j, {bool hasAudio = false}) => Story(
     id: j['id'],
@@ -47,6 +57,7 @@ class Story {
     lesson: j['lesson'],
     source: j['source'],
     status: j['status'] ?? '',
+    note: j['note'] ?? '',
     hasAudio: hasAudio,
   );
 

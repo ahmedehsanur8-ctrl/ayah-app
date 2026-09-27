@@ -65,6 +65,47 @@ def story_text(s):
     return f"{s['companion']}। {s['title']}।\n\n{s['body']}\n\nশিক্ষা: {s['lesson']}"
 
 
+MAX_CHARS_PER_REQUEST = 2500  # eleven_v3 accepts a few thousand characters per request
+
+
+def chunks(text, limit=MAX_CHARS_PER_REQUEST):
+    """Splits long text at paragraph (then sentence) breaks into request-sized parts."""
+    parts, cur = [], ""
+    pieces = []
+    for para in text.split("\n\n"):
+        if len(para) <= limit:
+            pieces.append(para)
+        else:  # a very long paragraph: split at sentence ends
+            sent, buf = para.replace("। ", "।\n").split("\n"), ""
+            for x in sent:
+                if len(buf) + len(x) + 1 > limit and buf:
+                    pieces.append(buf)
+                    buf = ""
+                buf = f"{buf} {x}".strip()
+            if buf:
+                pieces.append(buf)
+    for p in pieces:
+        if len(cur) + len(p) + 2 > limit and cur:
+            parts.append(cur)
+            cur = ""
+        cur = f"{cur}\n\n{p}" if cur else p
+    if cur:
+        parts.append(cur)
+    return parts
+
+
+def join_mp3s(files, target: Path):
+    """Concatenates MP3 parts and re-encodes to mono 64 kbps."""
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as lst:
+        for f in files:
+            lst.write(f"file '{f}'\n")
+    subprocess.run(
+        ["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst.name,
+         "-ac", "1", "-b:a", "64k", "-ar", "44100", str(target)],
+        check=True,
+    )
+
+
 def to_mono_64k(mp3: bytes, target: Path):
     """Re-encode to mono 64 kbps so the bundled files keep the app small."""
     with tempfile.NamedTemporaryFile(suffix=".mp3") as src:
@@ -116,13 +157,19 @@ def main():
         if len(text) > remaining:
             skipped_for_credits.append(s["id"])
             break  # keep the story order; the rest wait for next month
-        audio = api(
-            f"/text-to-speech/{VOICE_ID}?output_format=mp3_44100_128",
-            {"text": text, "model_id": MODEL_ID},
-            raw=True,
-        )
         target = AUDIO_DIR / f"{s['id']}.mp3"
-        to_mono_64k(audio, target)
+        with tempfile.TemporaryDirectory() as tmp:
+            files = []
+            for i, part in enumerate(chunks(text)):
+                audio = api(
+                    f"/text-to-speech/{VOICE_ID}?output_format=mp3_44100_128",
+                    {"text": part, "model_id": MODEL_ID},
+                    raw=True,
+                )
+                f = Path(tmp) / f"part{i:02d}.mp3"
+                f.write_bytes(audio)
+                files.append(str(f))
+            join_mp3s(files, target)
         made.append(s["id"])
         print(f"created {target.name} ({len(text)} characters, {target.stat().st_size} bytes)")
 
