@@ -202,6 +202,9 @@ def quranenc_translation_info():
                 f"{QURANENC_API}/translations/list?language=bn",
                 f"{QURANENC_API}/translations/list/bn?localization=bn",
                 f"{QURANENC_API}/translations/list/bengali",
+                f"{QURANENC_API}/translations/list/ben",
+                f"{QURANENC_API}/translations/list/bn?localization=en",
+                f"{QURANENC_API}/translations/list?localization=bn",
                 f"{QURANENC_API}/translations/list"):
         try:
             tr = fetch_json(url)
@@ -213,7 +216,9 @@ def quranenc_translation_info():
             if t.get("key") == QURANENC_KEY:
                 return t
         keys = [t.get("key") for t in items]
-        seen.append(f"{url}: {len(keys)} keys, bengali: {[k for k in keys if 'beng' in str(k)]}")
+        langs = sorted({str(t.get("language_iso_code")) for t in items})
+        seen.append(f"{url}: {len(keys)} keys, bengali: {[k for k in keys if 'beng' in str(k)]}, "
+                    f"languages: {langs}, top-level: {list(tr)[:5] if isinstance(tr, dict) else ''}")
     # Fallback: the translation's page on QuranEnc shows its version number.
     for lang in ("en", "bn", "ar"):
         url = f"https://quranenc.com/{lang}/browse/{QURANENC_KEY}"
@@ -229,8 +234,6 @@ def quranenc_translation_info():
                     "title": re.sub(r"\s+", " ", t.group(1)) if t else "",
                     "versionSource": url}
         seen.append(f"{url}: no version found (page length {len(html)})")
-        (DATA_DIR / f"quranenc_page_{lang}.html").parent.mkdir(parents=True, exist_ok=True)
-        (DATA_DIR / f"quranenc_page_{lang}.html").write_text(html, encoding="utf-8")
     raise RuntimeError(f"{QURANENC_KEY} not found in the QuranEnc translation list. "
                        + " | ".join(seen))
 
