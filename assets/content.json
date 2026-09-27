@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generatedAt": "2026-09-27T15:06:10+00:00",
+  "generatedAt": "2026-09-27T15:07:09+00:00",
   "sources": {
    "tanzil": {
     "name": "Tanzil Quran Text",
@@ -74,7 +74,7 @@
    }
   ],
   "problems": [
-   "QuranEnc translation info: bengali_zakaria not found in the QuranEnc translation list. https://quranenc.com/api/v1/translations/list/bn: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list?language=bn: 75 keys, bengali: [] | https://quranenc.com/api/v1/translations/list/bn?localization=bn: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list/bengali: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list: 75 keys, bengali: []"
+   "QuranEnc translation info: bengali_zakaria not found in the QuranEnc translation list. https://quranenc.com/api/v1/translations/list/bn: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list?language=bn: 75 keys, bengali: [] | https://quranenc.com/api/v1/translations/list/bn?localization=bn: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list/bengali: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list: 75 keys, bengali: [] | https://quranenc.com/en/browse/bengali_zakaria: no version found (page length 449415) | https://quranenc.com/bn/browse/bengali_zakaria: no version found (page length 449260) | https://quranenc.com/ar/browse/bengali_zakaria: no version found (page length 447787)"
   ]
  },
  "ayahCategories": [
