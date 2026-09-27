@@ -41,8 +41,7 @@ android {
                 storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
-                // Sign with every scheme so all Android versions accept the APK.
-                enableV1Signing = true
+                // Android 7.0+ (this app's minimum) uses the v2/v3 signatures.
                 enableV2Signing = true
                 enableV3Signing = true
             }
