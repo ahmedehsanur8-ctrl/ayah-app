@@ -51,4 +51,33 @@ void main() {
     expect(toBanglaDigits('39:53'), '৩৯:৫৩');
     expect(toArabicDigits(12), '١٢');
   });
+
+  test('basmala in front of verse 1 is put on its own line, text unchanged', () {
+    final d = ContentData.fromJson({
+      'meta': {
+        'sources': {
+          'tanzil': {'basmala': 'B M'},
+        },
+      },
+      'ayahCategories': [
+        {'id': 'A1', 'name': 'x'},
+      ],
+      'items': [
+        {
+          'id': 'a',
+          'type': 'ayah',
+          'categoryId': 'A1',
+          'category': 'x',
+          'reference': '94:1',
+          'arabicVerses': [
+            {'n': 1, 'text': 'B M first'},
+          ],
+          'banglaVerses': [
+            {'n': 1, 'text': 'bn'},
+          ],
+        },
+      ],
+    });
+    expect(d.items.single.arabic, 'B M\nfirst');
+  });
 }

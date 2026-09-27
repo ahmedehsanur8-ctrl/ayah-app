@@ -73,15 +73,19 @@ class ContentItem {
 
   bool get isAyah => type == ItemType.ayah;
 
-  static ContentItem fromJson(Map<String, dynamic> j) {
+  static ContentItem fromJson(Map<String, dynamic> j, {String basmala = ''}) {
     final type = j['type'] == 'hadith' ? ItemType.hadith : ItemType.ayah;
     if (type == ItemType.ayah) {
       final ar = (j['arabicVerses'] as List).cast<Map<String, dynamic>>();
       final bn = (j['banglaVerses'] as List).cast<Map<String, dynamic>>();
       final multi = ar.length > 1;
-      final arabic = ar
+      var arabic = ar
           .map((v) => multi ? '${v['text']} (${toArabicDigits(v['n'])})' : '${v['text']}')
           .join(' ');
+      // Tanzil puts the basmala in front of verse 1; show it on its own line.
+      if (basmala.isNotEmpty && ar.first['n'] == 1 && arabic.startsWith('$basmala ')) {
+        arabic = '$basmala\n${arabic.substring(basmala.length + 1)}';
+      }
       final bangla = bn
           .map((v) => multi ? '(${toBanglaDigits(v['n'])}) ${v['text']}' : '${v['text']}')
           .join('\n');
@@ -153,9 +157,13 @@ class ContentData {
 
   String get quranEncTitle => (meta['sources']?['quranenc']?['title'] ?? '').toString();
 
+  /// Date the content was downloaded (yyyy-mm-dd).
+  String get downloadedOn => (meta['generatedAt'] ?? '').toString().split('T').first;
+
   String get tanzilLicense => (meta['sources']?['tanzil']?['licenseHeader'] ?? '').toString();
 
   static ContentData fromJson(Map<String, dynamic> j) {
+    final basmala = (j['meta']?['sources']?['tanzil']?['basmala'] ?? '').toString();
     List<Category> cats(String key) => ((j[key] ?? []) as List)
         .map((c) => Category(id: c['id'], name: c['name'], nameEn: c['nameEn'] ?? ''))
         .toList();
@@ -163,7 +171,7 @@ class ContentData {
       ayahCategories: cats('ayahCategories'),
       hadithThemes: cats('hadithThemes'),
       items: ((j['items'] ?? []) as List)
-          .map((e) => ContentItem.fromJson(e as Map<String, dynamic>))
+          .map((e) => ContentItem.fromJson(e as Map<String, dynamic>, basmala: basmala))
           .toList(),
       meta: (j['meta'] ?? <String, dynamic>{}) as Map<String, dynamic>,
     );

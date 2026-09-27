@@ -304,7 +304,10 @@ def build_ayahs(ayah_cats, problems):
             })
     return items, {
         "tanzil": {"name": "Tanzil Quran Text", "type": "Uthmani",
-                   "url": "https://tanzil.net", "licenseHeader": tanzil_header},
+                   "url": "https://tanzil.net", "licenseHeader": tanzil_header,
+                   # Tanzil text files start verse 1 of each surah (except 1 and 9)
+                   # with this basmala; the app shows it on its own line.
+                   "basmala": tanzil.get((1, 1), "")},
         "quranenc": {"name": "QuranEnc.com", "url": "https://quranenc.com",
                      "key": info.get("key"), "title": info.get("title", ""),
                      "version": info.get("version", ""),

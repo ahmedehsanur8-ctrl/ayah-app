@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
+import '../models/content.dart';
 import '../theme.dart';
 
 class CreditsScreen extends StatelessWidget {
@@ -35,7 +36,11 @@ class CreditsScreen extends StatelessWidget {
             what: 'আয়াতের বাংলা অনুবাদ ও টীকা — ড. আবু বকর মুহাম্মাদ যাকারিয়া',
             details: [
               if (data.quranEncTitle.isNotEmpty) data.quranEncTitle,
-              'সংস্করণ (Version): ${version.isEmpty ? 'জানা যায়নি' : version}',
+              version.isEmpty
+                  ? 'সংস্করণ (Version): QuranEnc-এর API এই অনুবাদের সংস্করণ নম্বর দেয় না'
+                  : 'সংস্করণ (Version): $version',
+              'ডাউনলোডের তারিখ: ${toBanglaDigits(data.downloadedOn)}',
+              'Key: bengali_zakaria',
               'https://quranenc.com',
             ].join('\n'),
           ),
