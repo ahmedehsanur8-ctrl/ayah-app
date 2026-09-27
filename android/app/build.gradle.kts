@@ -1,3 +1,8 @@
+// Release signing key. It is NOT stored in this repository: the GitHub build
+// decodes it from the ANDROID_KEYSTORE_BASE64 secret and passes these
+// environment variables. See docs/SIGNING.md.
+val releaseKeystore: String? = System.getenv("ANDROID_KEYSTORE_PATH")
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -29,10 +34,29 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+                // Android 7.0+ (this app's minimum) uses the v2/v3 signatures.
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Signed with the debug key so the APK can be installed for testing.
-            signingConfig = signingConfigs.getByName("debug")
+            // Uses the permanent release key when it is provided (GitHub build);
+            // local test builds without the key fall back to the debug key.
+            signingConfig = if (releaseKeystore != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
