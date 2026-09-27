@@ -41,7 +41,8 @@ android {
                 storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
-                // Android 7.0+ (this app's minimum) uses the v2/v3 signatures.
+                // v1 is added afterwards by the build workflow (apksigner), since Gradle
+                // skips it for minSdk 24+ and some phone installers still need it.
                 enableV2Signing = true
                 enableV3Signing = true
             }
