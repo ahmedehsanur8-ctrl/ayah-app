@@ -8,6 +8,7 @@ Sources (text is copied exactly as the sources return it, never edited):
 
 Usage:
   python3 tools/fetch_content.py index   # list every Bangla hadith on HadeethEnc
+  python3 tools/fetch_content.py details # full text of ids in tools/hadith_candidates.txt
   python3 tools/fetch_content.py build   # write assets/content.json
 
 The list of ayahs and hadiths comes from ayah-app-content-list.md.
@@ -130,9 +131,29 @@ def cmd_index():
         sample = fetch_json(f"{HADEETHENC_API}/hadeeths/one/?language=bn&id={rows[0]['id']}")
         (DATA_DIR / "hadeethenc_sample.json").write_text(
             json.dumps(sample, ensure_ascii=False, indent=1), encoding="utf-8")
-    tr = fetch_json(f"{QURANENC_API}/translations/list/bn")
+    try:
+        tr = quranenc_translation_info()
+    except Exception as e:  # noqa: BLE001
+        tr = {"error": str(e)}
     (DATA_DIR / "quranenc_bn_translations.json").write_text(
         json.dumps(tr, ensure_ascii=False, indent=1), encoding="utf-8")
+    cmd_details()
+
+
+def cmd_details():
+    """Saves full text of the hadiths listed in tools/hadith_candidates.txt,
+    so a person can check which one matches a reference."""
+    ids_file = ROOT / "tools" / "hadith_candidates.txt"
+    if not ids_file.exists():
+        return
+    ids = re.findall(r"\d+", ids_file.read_text())
+    out = []
+    for i in ids:
+        h = fetch_json(f"{HADEETHENC_API}/hadeeths/one/?language=bn&id={i}")
+        out.append({k: h.get(k) for k in ("id", "attribution", "attribution_ar", "grade",
+                                          "hadeeth_ar", "hadeeth")})
+    (DATA_DIR / "hadeethenc_candidates.json").write_text(
+        json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 # ---------------------------------------------------------------- build
@@ -174,10 +195,16 @@ def load_surah_names():
 
 
 def quranenc_translation_info():
-    tr = fetch_json(f"{QURANENC_API}/translations/list/bn")
-    for t in tr.get("translations", []):
-        if "zakaria" in t.get("key", "").lower():
-            return t
+    for url in (f"{QURANENC_API}/translations/list/bn",
+                f"{QURANENC_API}/translations/list/bengali",
+                f"{QURANENC_API}/translations/list"):
+        try:
+            tr = fetch_json(url)
+        except Exception:  # noqa: BLE001
+            continue
+        for t in tr.get("translations", []):
+            if "zakaria" in t.get("key", "").lower():
+                return t
     raise RuntimeError("Abu Bakr Zakaria translation not found on QuranEnc")
 
 
@@ -317,4 +344,4 @@ def cmd_build():
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "build"
-    {"index": cmd_index, "build": cmd_build}[cmd]()
+    {"index": cmd_index, "details": cmd_details, "build": cmd_build}[cmd]()
