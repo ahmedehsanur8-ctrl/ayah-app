@@ -1,3 +1,23 @@
 {
- "translations": []
+ "key": "lingala_zakaria",
+ "direction": "ltr",
+ "language_iso_code": "ln",
+ "version": "1.0.2",
+ "last_update": 1751452809,
+ "title": "Lingala Translation - Mohammed Balangogo",
+ "description": "Translated by Zakaria Muhammad Balangogo",
+ "file": "lingala_zakaria",
+ "database_url": "https://quranenc.com/downloads/sqlite/lingala_zakaria.zip",
+ "database_uncompressed_url": "https://quranenc.com/downloads/sqlite/lingala_zakaria.sqlite",
+ "pdf_url": null,
+ "pdf_size": null,
+ "pdf_cover": null,
+ "pdf_pure_url": null,
+ "pdf_pure_size": null,
+ "pdf_pure_cover": null,
+ "pdf_mobile_url": null,
+ "pdf_mobile_size": null,
+ "pdf_mobile_cover": null,
+ "epub_url": "https://quranenc.com/downloads/epub/lingala_zakaria.epub",
+ "epub_size": 951257
 }
