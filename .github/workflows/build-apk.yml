@@ -78,6 +78,26 @@ jobs:
           --build-name=1.0.${{ github.run_number }}
           --build-number=${{ github.run_number }}
 
+      # Gradle skips the old v1 (JAR) signature because the app needs Android 7.0+,
+      # but some phone installers (for example Oppo/Realme/OnePlus) still refuse an
+      # APK without it ("APK contains no signature files"). Re-sign with all three.
+      - name: Sign with v1 + v2 + v3
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          "${BT}zipalign" -P 16 -f 4 "$APK" "$RUNNER_TEMP/aligned.apk"
+          "${BT}apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" \
+            --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD \
+            --min-sdk-version 21 \
+            --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
+            --out "$APK" "$RUNNER_TEMP/aligned.apk"
+          rm -f "$RUNNER_TEMP/aligned.apk"
+
       - name: Remove signing key from the runner
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"
@@ -86,10 +106,13 @@ jobs:
         run: |
           APK=build/app/outputs/flutter-apk/app-release.apk
           APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
-          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee apksigner.txt
-          # The app needs Android 7.0+, which checks the v2/v3 signature
-          # (the old v1 JAR signature is skipped by the build tools).
+          # --min-sdk-version 21 makes apksigner check the v1 signature too
+          # (for Android 7+ alone it would skip it).
+          "$APKSIGNER" verify --verbose --print-certs --min-sdk-version 21 "$APK" | tee apksigner.txt
+          unzip -l "$APK" | grep -E "META-INF/.*\.(RSA|SF)$"
+          # All three schemes are required: v1 for strict phone installers, v2/v3 for Android 7+.
           grep -q "^Verifies" apksigner.txt
+          grep -q "Verified using v1 scheme (JAR signing): true" apksigner.txt
           grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" apksigner.txt
           grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" apksigner.txt
           EXPECTED="$(tr -d '[:space:]' < android/release-signing-sha256.txt)"

@@ -148,13 +148,16 @@ def main():
     todo = [s for s in stories if f"{s['id']}.mp3" not in existing]
 
     made, skipped_for_credits = [], []
+    rate = 1.0  # credits per character
     limit_count = 1 if mode == "sample" else len(todo)
     for s in todo:
         if len(made) >= limit_count:
             break
         text = story_text(s)
         remaining, *_ = remaining_credits()
-        if len(text) > remaining:
+        # Start by assuming 1 credit per character; after the first story use the
+        # measured cost (plus 10% margin), so we never start a story we can't finish.
+        if len(text) * rate > remaining:
             skipped_for_credits.append(s["id"])
             break  # keep the story order; the rest wait for next month
         target = AUDIO_DIR / f"{s['id']}.mp3"
@@ -171,6 +174,11 @@ def main():
                 files.append(str(f))
             join_mp3s(files, target)
         made.append(s["id"])
+        after, *_ = remaining_credits()
+        spent = remaining - after
+        if spent > 0:
+            rate = spent / len(text) * 1.1
+        print(f"{s['id']}: {spent} credits for {len(text)} characters")
         print(f"created {target.name} ({len(text)} characters, {target.stat().st_size} bytes)")
 
     remaining, used, limit, _ = remaining_credits()
