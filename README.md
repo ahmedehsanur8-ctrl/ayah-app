@@ -9,9 +9,9 @@ favourites, dark mode that follows the phone, and Bangla labels throughout.
 
 Audio: every ayah has a play button that streams the Arabic recitation (human reciters only)
 from EveryAyah.com and caches it; the Bangla meaning and hadiths are read with the phone's
-built-in Bangla text-to-speech. The "সাহাবিদের গল্প" section has 29 Sahaba stories
-(drafts that need scholar review); recorded MP3s are bundled in `assets/story_audio/`,
-and stories without one use the phone's Bangla voice.
+built-in Bangla text-to-speech. The "সাহাবিদের জীবনী" (Life of the Sahaba) section has the owner's
+life stories of the Sahaba (drafts that need scholar review); recorded MP3s are bundled in
+`assets/story_audio/`, and stories without one use the phone's Bangla voice.
 The logo, Islamic geometric pattern and icon are drawn in code (no image assets);
 icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font License.
 
@@ -26,7 +26,8 @@ icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font Lice
 | `lib/` | The Flutter app |
 | `.github/workflows/build-apk.yml` | Builds the APK on every push (Release on `main`) |
 | `.github/workflows/fetch-content.yml` | Re-downloads the content when the list changes |
-| `assets/stories.json` | The 29 Sahaba stories (draft, need scholar review) |
+| `assets/stories.json` | The Sahaba life stories shown in the app (draft, need scholar review) |
+| `tools/story_drafts_unused.json` | Earlier AI-written drafts, not shown in the app |
 | `.github/workflows/story-audio.yml` | Run by hand: creates story MP3s with ElevenLabs within the free credits and commits them to `assets/story_audio/` |
 
 ## Content sources

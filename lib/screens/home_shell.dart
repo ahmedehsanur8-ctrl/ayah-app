@@ -6,7 +6,7 @@ import 'home_screen.dart';
 import 'settings_screen.dart';
 import 'stories_screen.dart';
 
-/// Bottom navigation: হোম, বিষয়সমূহ, গল্প, প্রিয়, সেটিংস.
+/// Bottom navigation: হোম, বিষয়সমূহ, জীবনী, প্রিয়, সেটিংস.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -51,7 +51,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(
             icon: Icon(Icons.auto_stories_outlined),
             selectedIcon: Icon(Icons.auto_stories_rounded),
-            label: 'গল্প',
+            label: 'জীবনী',
           ),
           NavigationDestination(
             icon: Icon(Icons.favorite_border_rounded),

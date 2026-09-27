@@ -90,13 +90,22 @@ void main() {
         await t.binding.setSurfaceSize(const Size(360, 740));
         await t.pumpWidget(app(const StoriesScreen(), b));
         await t.pumpAndSettle();
-        expect(find.text('সাহাবিদের গল্প'), findsOneWidget);
+        expect(find.text('সাহাবিদের জীবনী'), findsOneWidget);
         for (final s in AppState.instance.stories) {
           await t.pumpWidget(app(StoryScreen(key: UniqueKey(), story: s), b));
           await t.pump(const Duration(milliseconds: 300));
         }
         expect(find.text('শুনুন'), findsOneWidget);
-        await t.scrollUntilVisible(find.textContaining('needs scholar review'), 300);
+        // The stories are long: jump to the end of the page (the list grows as it builds).
+        for (
+          var i = 0;
+          i < 20 && find.textContaining('needs scholar review').evaluate().isEmpty;
+          i++
+        ) {
+          final pos = t.state<ScrollableState>(find.byType(Scrollable)).position;
+          pos.jumpTo(pos.maxScrollExtent);
+          await t.pump();
+        }
         expect(find.textContaining('needs scholar review'), findsOneWidget);
       });
 

@@ -10,7 +10,7 @@ import '../widgets/audio_button.dart';
 import '../widgets/item_view.dart';
 import '../widgets/pattern.dart';
 
-/// "সাহাবিদের গল্প": a card for each story.
+/// "সাহাবিদের জীবনী" (Life of the Sahaba): a card for each life story.
 class StoriesScreen extends StatelessWidget {
   const StoriesScreen({super.key});
 
@@ -18,7 +18,7 @@ class StoriesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final stories = AppState.instance.stories;
     return Scaffold(
-      appBar: AppBar(title: const Text('সাহাবিদের গল্প')),
+      appBar: AppBar(title: const Text('সাহাবিদের জীবনী')),
       body: ListView.separated(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         itemCount: stories.length + 1,
@@ -38,7 +38,7 @@ class _Intro extends StatelessWidget {
     final p = context.palette;
     return Text(
       'রাসূলুল্লাহ (সা.)-এর সাহাবিদের জীবনের সত্য ঘটনা—সহীহ হাদিস ও সীরাত গ্রন্থ থেকে সহজ ভাষায়। '
-      'গল্পগুলো এখনো খসড়া; একজন আলেম যাচাই করে দেখবেন।',
+      'লেখাগুলো এখনো খসড়া; একজন আলেম যাচাই করে দেখবেন।',
       style: TextStyle(color: p.muted, height: 1.6, fontSize: 13.5),
     );
   }
@@ -189,7 +189,7 @@ class _StoryScreenState extends State<StoryScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            s.hasAudio ? 'কণ্ঠ: ElevenLabs' : 'এই গল্পটি এখন ফোনের বাংলা কণ্ঠে শোনা যাবে।',
+            s.hasAudio ? 'কণ্ঠ: ElevenLabs' : 'এই জীবনীটি এখন ফোনের বাংলা কণ্ঠে শোনা যাবে।',
             style: TextStyle(color: p.muted, fontSize: 12),
           ),
           const SizedBox(height: 18),
@@ -213,7 +213,18 @@ class _StoryScreenState extends State<StoryScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          BanglaText('সূত্র: ${s.source}', size: 13.5, color: p.muted),
+          if (s.source.isNotEmpty) BanglaText('সূত্র: ${s.source}', size: 13.5, color: p.muted),
+          if (s.note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                border: Border.all(color: p.border),
+                borderRadius: BorderRadius.circular(radiusM),
+              ),
+              child: BanglaText(s.note, size: 13.5, color: p.muted),
+            ),
+          ],
           if (s.isDraft) ...[
             const SizedBox(height: 12),
             Container(
