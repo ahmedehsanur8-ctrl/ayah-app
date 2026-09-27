@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
+import '../services/bangla_tts.dart';
 import '../services/reminders.dart';
 import '../services/rotation.dart';
+import '../services/settings.dart';
 import '../theme.dart';
+import '../widgets/audio_button.dart';
 import 'credits_screen.dart';
 import 'setup_screen.dart';
 
@@ -110,6 +113,35 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const _Header('অডিও'),
+            _Group(
+              children: [
+                _Row(
+                  icon: Icons.record_voice_over_rounded,
+                  title: 'ক্বারী (আরবি তিলাওয়াত)',
+                  subtitle: Reciter.byId(settings.reciterId).name,
+                  onTap: () => _pickReciter(context),
+                ),
+                _Row(
+                  icon: Icons.graphic_eq_rounded,
+                  title: 'কী শুনবেন',
+                  subtitle: settings.readBanglaAfterArabic ? 'আরবি + বাংলা অর্থ' : 'শুধু আরবি',
+                  onTap: () => _pickAudioMode(context),
+                ),
+                _Row(
+                  icon: Icons.translate_rounded,
+                  title: 'বাংলা কণ্ঠ পরীক্ষা করুন',
+                  subtitle: 'ফোনের বাংলা কণ্ঠে একটি বাক্য শুনুন',
+                  onTap: () async {
+                    if (await BanglaTts.init()) {
+                      await BanglaTts.speak('আসসালামু আলাইকুম। বাংলা কণ্ঠ ঠিকমতো কাজ করছে।');
+                    } else if (context.mounted) {
+                      showNoBanglaVoiceDialog(context);
+                    }
+                  },
+                ),
+              ],
+            ),
             const _Header('লেখার আকার'),
             _Group(
               children: [
@@ -171,6 +203,66 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _pickReciter(BuildContext context) async {
+  final settings = AppState.instance.settings;
+  final picked = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: RadioGroup<String>(
+        groupValue: settings.reciterId,
+        onChanged: (v) => Navigator.pop(context, v),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'ক্বারী বেছে নিন',
+                style: TextStyle(fontFamily: headingFont, fontSize: 18),
+              ),
+            ),
+            for (final r in Reciter.all) RadioListTile<String>(value: r.id, title: Text(r.name)),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (picked != null) await settings.setReciter(picked);
+}
+
+Future<void> _pickAudioMode(BuildContext context) async {
+  final settings = AppState.instance.settings;
+  final picked = await showModalBottomSheet<bool>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: RadioGroup<bool>(
+        groupValue: settings.readBanglaAfterArabic,
+        onChanged: (v) => Navigator.pop(context, v),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text('কী শুনবেন', style: TextStyle(fontFamily: headingFont, fontSize: 18)),
+            ),
+            RadioListTile<bool>(value: false, title: Text('শুধু আরবি')),
+            RadioListTile<bool>(
+              value: true,
+              title: Text('আরবি + বাংলা অর্থ'),
+              subtitle: Text('আরবি তিলাওয়াতের পর ফোনের বাংলা কণ্ঠে অর্থ শোনাবে'),
+            ),
+            SizedBox(height: 8),
+          ],
+        ),
+      ),
+    ),
+  );
+  if (picked != null) await settings.setReadBanglaAfterArabic(picked);
 }
 
 class _Header extends StatelessWidget {

@@ -45,7 +45,15 @@ class ContentItem {
     required this.note,
     required this.placeholder,
     this.subtitle = '',
+    this.surah = 0,
+    this.ayahStart = 0,
+    this.ayahEnd = 0,
   });
+
+  /// Surah and verse numbers (ayahs only; 0 for hadiths).
+  final int surah;
+  final int ayahStart;
+  final int ayahEnd;
 
   final String id;
   final ItemType type;
@@ -105,6 +113,9 @@ class ContentItem {
         bangla: bangla,
         note: (j['note'] ?? '') as String,
         placeholder: j['placeholder'] == true,
+        surah: (j['surah'] ?? 0) as int,
+        ayahStart: (j['ayahStart'] ?? 0) as int,
+        ayahEnd: (j['ayahEnd'] ?? 0) as int,
       );
     }
     final ref = j['reference'] as String;

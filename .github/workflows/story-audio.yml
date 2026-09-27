@@ -1,0 +1,50 @@
+# Creates Sahaba story MP3s with ElevenLabs and commits them to
+# assets/story_audio/ (mono, 64 kbps), so the next app build includes them.
+# Run it by hand: Actions > Story audio > Run workflow.
+#   check    - only confirm the voice works and show the credits left
+#   sample   - create ONE story MP3 to listen to
+#   generate - create as many stories as this month's free credits allow
+# Existing MP3s are never regenerated and the credit limit is never exceeded.
+name: Story audio
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "What to do"
+        type: choice
+        options: [check, sample, generate]
+        default: check
+
+permissions:
+  contents: write
+
+concurrency:
+  group: story-audio
+  cancel-in-progress: false
+
+jobs:
+  audio:
+    runs-on: ubuntu-latest
+    env:
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+
+      - name: Run ElevenLabs
+        run: python3 tools/story_audio.py "${{ inputs.mode }}"
+
+      - name: Commit new story MP3s
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/story_audio
+          if git diff --cached --quiet; then
+            echo "No new MP3s."
+          else
+            git commit -m "Add story audio ($(git diff --cached --name-only | wc -l) new)"
+            git push
+          fi

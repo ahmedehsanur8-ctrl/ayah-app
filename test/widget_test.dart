@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ayah_reminder/models/content.dart';
+import 'package:ayah_reminder/models/story.dart';
+import 'package:ayah_reminder/services/audio.dart';
+import 'package:ayah_reminder/services/bangla_tts.dart';
 import 'package:ayah_reminder/services/rotation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -79,5 +82,37 @@ void main() {
       ],
     });
     expect(d.items.single.arabic, 'B M\nfirst');
+  });
+
+  test('29 Sahaba stories, 150-250 words, with source, lesson and draft mark', () {
+    final stories = Story.listFromJson(File('assets/stories.json').readAsStringSync(), {});
+    expect(stories.length, 29);
+    expect(stories.map((s) => s.id).toSet().length, 29);
+    for (final s in stories) {
+      final words = s.body.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+      expect(words, inInclusiveRange(150, 250), reason: s.id);
+      expect(s.source, isNotEmpty, reason: s.id);
+      expect(s.lesson, isNotEmpty, reason: s.id);
+      expect(s.status, 'draft - needs scholar review', reason: s.id);
+    }
+  });
+
+  test('story audio is picked up from bundled assets', () {
+    final stories = Story.listFromJson(File('assets/stories.json').readAsStringSync(), {
+      'assets/story_audio/s01.mp3',
+    });
+    expect(stories.first.hasAudio, isTrue);
+    expect(stories[1].hasAudio, isFalse);
+  });
+
+  test('EveryAyah URL for a verse', () {
+    expect(
+      AudioController.ayahUrl('Alafasy_128kbps', 39, 53).toString(),
+      'https://everyayah.com/data/Alafasy_128kbps/039053.mp3',
+    );
+  });
+
+  test('footnote markers are not read aloud', () {
+    expect(BanglaTts.clean('দয়ালু [১]। আর---আল্লাহ'), 'দয়ালু । আর, আল্লাহ');
   });
 }

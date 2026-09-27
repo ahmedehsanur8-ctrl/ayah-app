@@ -23,6 +23,7 @@ class MainActivity : FlutterActivity() {
                     "openAutostartSettings" -> result.success(openAutostartSettings())
                     "canUseFullScreenIntent" -> result.success(canUseFullScreenIntent())
                     "manufacturer" -> result.success(Build.MANUFACTURER ?: "")
+                    "openTtsSettings" -> result.success(openTtsSettings())
                     else -> result.notImplemented()
                 }
             }
@@ -44,6 +45,12 @@ class MainActivity : FlutterActivity() {
         if (Build.VERSION.SDK_INT < 34) return true
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         return nm.canUseFullScreenIntent()
+    }
+
+    /** Opens the phone's text-to-speech settings (to install the Bangla voice). */
+    private fun openTtsSettings(): Boolean {
+        if (tryStart(Intent("com.android.settings.TTS_SETTINGS"))) return true
+        return tryStart(Intent(Settings.ACTION_SETTINGS))
     }
 
     /** Opens the phone maker's "autostart" page. Returns false if only app info could be opened. */

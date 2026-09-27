@@ -15,6 +15,9 @@ class SystemSettings {
   static Future<bool> openAutostartSettings() async =>
       await _call<bool>('openAutostartSettings') ?? false;
 
+  /// Opens the phone's text-to-speech settings.
+  static Future<void> openTtsSettings() => _call<bool>('openTtsSettings');
+
   static Future<bool> canUseFullScreenIntent() async =>
       await _call<bool>('canUseFullScreenIntent') ?? true;
 
