@@ -214,6 +214,23 @@ def quranenc_translation_info():
                 return t
         keys = [t.get("key") for t in items]
         seen.append(f"{url}: {len(keys)} keys, bengali: {[k for k in keys if 'beng' in str(k)]}")
+    # Fallback: the translation's page on QuranEnc shows its version number.
+    for lang in ("en", "bn", "ar"):
+        url = f"https://quranenc.com/{lang}/browse/{QURANENC_KEY}"
+        try:
+            html = fetch(url, tries=2)
+        except Exception as e:  # noqa: BLE001
+            seen.append(f"{url}: {e}")
+            continue
+        m = re.search(r"(?:Version|الإصدار|সংস্করণ)[^0-9]{0,80}?(\d+(?:\.\d+){1,3})", html)
+        t = re.search(r"<title>\s*(.*?)\s*</title>", html, re.S)
+        if m:
+            return {"key": QURANENC_KEY, "version": m.group(1),
+                    "title": re.sub(r"\s+", " ", t.group(1)) if t else "",
+                    "versionSource": url}
+        seen.append(f"{url}: no version found (page length {len(html)})")
+        (DATA_DIR / f"quranenc_page_{lang}.html").parent.mkdir(parents=True, exist_ok=True)
+        (DATA_DIR / f"quranenc_page_{lang}.html").write_text(html, encoding="utf-8")
     raise RuntimeError(f"{QURANENC_KEY} not found in the QuranEnc translation list. "
                        + " | ".join(seen))
 
