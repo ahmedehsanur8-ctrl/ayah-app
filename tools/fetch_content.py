@@ -197,16 +197,25 @@ def load_surah_names():
 
 def quranenc_translation_info():
     """Info (incl. version) of the Bangla Abu Bakr Zakaria translation."""
+    seen = []
     for url in (f"{QURANENC_API}/translations/list/bn",
+                f"{QURANENC_API}/translations/list?language=bn",
+                f"{QURANENC_API}/translations/list/bn?localization=bn",
+                f"{QURANENC_API}/translations/list/bengali",
                 f"{QURANENC_API}/translations/list"):
         try:
             tr = fetch_json(url)
-        except Exception:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
+            seen.append(f"{url}: {e}")
             continue
-        for t in tr.get("translations", []):
+        items = tr.get("translations", []) if isinstance(tr, dict) else tr
+        for t in items:
             if t.get("key") == QURANENC_KEY:
                 return t
-    raise RuntimeError(f"{QURANENC_KEY} not found in the QuranEnc translation list")
+        keys = [t.get("key") for t in items]
+        seen.append(f"{url}: {len(keys)} keys, bengali: {[k for k in keys if 'beng' in str(k)]}")
+    raise RuntimeError(f"{QURANENC_KEY} not found in the QuranEnc translation list. "
+                       + " | ".join(seen))
 
 
 def build_ayahs(ayah_cats, problems):
