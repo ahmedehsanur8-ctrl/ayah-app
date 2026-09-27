@@ -1,6 +1,9 @@
-# Builds the release APK.
+# Builds the release APK, signed with the permanent release key.
 # - Push to main: the APK is attached to a new GitHub Release (Releases page).
 # - Push to any other branch: the APK is saved as a downloadable build artifact.
+# The key comes from GitHub Secrets (see docs/SIGNING.md). The build fails if
+# the key is missing or the APK is not signed with it, so an unsigned or
+# wrongly signed APK is never published.
 name: Build APK
 
 on:
@@ -39,13 +42,56 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Set up signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::The GitHub secret ANDROID_${name} is missing. Add it under Settings > Secrets and variables > Actions (see docs/SIGNING.md)."
+              exit 1
+            fi
+          done
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
       - name: Build release APK
-        run: flutter build apk --release
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        # The run number becomes the version, so each build is a newer update.
+        run: >
+          flutter build apk --release
+          --build-name=1.0.${{ github.run_number }}
+          --build-number=${{ github.run_number }}
+
+      - name: Remove signing key from the runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
+
+      - name: Verify the APK signature
+        run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee apksigner.txt
+          grep -q "Verified using v1 scheme (JAR signing): true" apksigner.txt
+          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" apksigner.txt
+          EXPECTED="$(tr -d '[:space:]' < android/release-signing-sha256.txt)"
+          ACTUAL="$(grep -m1 'certificate SHA-256 digest:' apksigner.txt | awk '{print $NF}')"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::APK is signed with $ACTUAL, expected the release key $EXPECTED"
+            exit 1
+          fi
+          echo "APK is signed with the permanent release key."
 
       - name: Rename APK
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/AyahReminder-${{ github.run_number }}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/AyahReminder-1.0.${{ github.run_number }}.apk"
 
       - name: Upload APK as build artifact
         uses: actions/upload-artifact@v4
@@ -60,6 +106,6 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Ayah Reminder 1.0.${{ github.run_number }}
           body: |
-            Download **AyahReminder-${{ github.run_number }}.apk** below and open it on your Android phone.
-            This test build is signed with the default debug key.
+            Download **AyahReminder-1.0.${{ github.run_number }}.apk** below and open it on your Android phone.
+            Signed with the permanent Ayah Reminder release key, so later versions install over this one.
           files: dist/*.apk
