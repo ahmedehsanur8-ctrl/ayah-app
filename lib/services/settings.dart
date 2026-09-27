@@ -25,6 +25,22 @@ class AppSettings extends ChangeNotifier {
   /// Dates (yyyy-mm-dd + slot) on which the user pressed "আমি পড়েছি".
   Set<String> get readMarks => (_prefs.getStringList('readMarks') ?? []).toSet();
 
+  /// EveryAyah.com reciter folder (see [Reciter.all]).
+  String get reciterId => _prefs.getString('reciter') ?? Reciter.all.first.id;
+
+  /// true = after the Arabic recitation, read the Bangla meaning aloud.
+  bool get readBanglaAfterArabic => _prefs.getBool('readBangla') ?? true;
+
+  Future<void> setReciter(String id) async {
+    await _prefs.setString('reciter', id);
+    notifyListeners();
+  }
+
+  Future<void> setReadBanglaAfterArabic(bool v) async {
+    await _prefs.setBool('readBangla', v);
+    notifyListeners();
+  }
+
   /// Saved (favourite) item ids, newest first.
   List<String> get favorites => _prefs.getStringList('favorites') ?? [];
 
@@ -79,4 +95,23 @@ class AppSettings extends ChangeNotifier {
     );
     notifyListeners();
   }
+}
+
+/// A Quran reciter whose per-ayah MP3s are on EveryAyah.com.
+class Reciter {
+  const Reciter(this.id, this.name);
+
+  /// Folder name on everyayah.com/data/.
+  final String id;
+
+  /// Bangla display name.
+  final String name;
+
+  static const all = [
+    Reciter('Alafasy_128kbps', 'মিশারি রাশিদ আলাফাসি'),
+    Reciter('Abdul_Basit_Murattal_192kbps', 'আব্দুল বাসিত আব্দুস সামাদ'),
+    Reciter('Husary_128kbps', 'মাহমুদ খলিল আল-হুসারি'),
+  ];
+
+  static Reciter byId(String id) => all.firstWhere((r) => r.id == id, orElse: () => all.first);
 }

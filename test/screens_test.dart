@@ -5,6 +5,7 @@ import 'package:ayah_reminder/screens/home_shell.dart';
 import 'package:ayah_reminder/screens/reading_screen.dart';
 import 'package:ayah_reminder/screens/setup_screen.dart';
 import 'package:ayah_reminder/screens/splash_screen.dart';
+import 'package:ayah_reminder/screens/stories_screen.dart';
 import 'package:ayah_reminder/services/reminders.dart';
 import 'package:ayah_reminder/theme.dart';
 
@@ -80,6 +81,23 @@ void main() {
         await t.pumpAndSettle();
         expect(find.text('সকাল ৯:০০'), findsOneWidget);
         expect(find.text('রাত ৯:০০'), findsOneWidget);
+        await t.scrollUntilVisible(find.text('ক্বারী (আরবি তিলাওয়াত)'), 200);
+        expect(find.text('মিশারি রাশিদ আলাফাসি'), findsOneWidget);
+        expect(find.text('আরবি + বাংলা অর্থ'), findsOneWidget);
+      });
+
+      testWidgets('stories list and a story page', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        await t.pumpWidget(app(const StoriesScreen(), b));
+        await t.pumpAndSettle();
+        expect(find.text('সাহাবিদের গল্প'), findsOneWidget);
+        for (final s in AppState.instance.stories) {
+          await t.pumpWidget(app(StoryScreen(key: UniqueKey(), story: s), b));
+          await t.pump(const Duration(milliseconds: 300));
+        }
+        expect(find.text('শুনুন'), findsOneWidget);
+        await t.scrollUntilVisible(find.textContaining('needs scholar review'), 300);
+        expect(find.textContaining('needs scholar review'), findsOneWidget);
       });
 
       testWidgets('category page', (t) async {

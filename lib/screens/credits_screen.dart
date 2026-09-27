@@ -26,7 +26,7 @@ class CreditsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'এই অ্যাপের সব আয়াত ও হাদিস নিচের উৎসগুলো থেকে হুবহু নেওয়া হয়েছে। কোনো লেখা পরিবর্তন করা হয়নি।',
+            'এই অ্যাপের সব আয়াত ও হাদিস নিচের উৎসগুলো থেকে হুবহু নেওয়া হয়েছে। কোনো লেখা পরিবর্তন করা হয়নি। অ্যাপটি সম্পূর্ণ বিনামূল্যে, কোনো বিজ্ঞাপন নেই।',
             style: TextStyle(height: 1.6, color: context.palette.text),
           ),
           const SizedBox(height: 16),
@@ -58,6 +58,28 @@ class CreditsScreen extends StatelessWidget {
             name: 'HadeethEnc.com',
             what: 'হাদিসের আরবি, বাংলা অনুবাদ ও সংক্ষিপ্ত ব্যাখ্যা',
             details: 'Encyclopedia of Translated Prophetic Hadiths. https://hadeethenc.com',
+          ),
+          const _Source(
+            icon: Icons.headphones_rounded,
+            name: 'EveryAyah.com',
+            what: 'আরবি তিলাওয়াতের অডিও (আয়াত অনুযায়ী MP3)',
+            details:
+                'ক্বারী: মিশারি রাশিদ আলাফাসি, আব্দুল বাসিত আব্দুস সামাদ, মাহমুদ খলিল আল-হুসারি। '
+                'শুধু মানুষের কণ্ঠের তিলাওয়াত। https://everyayah.com',
+          ),
+          const _Source(
+            icon: Icons.record_voice_over_rounded,
+            name: 'ElevenLabs',
+            what: 'সাহাবিদের গল্পের কণ্ঠ — Story voice by ElevenLabs',
+            details:
+                'যে গল্পের অডিও এখনো তৈরি হয়নি, সেটি ফোনের বাংলা কণ্ঠে (Text-to-speech) পড়া হয়। '
+                'আরবি তিলাওয়াত কখনো কৃত্রিম কণ্ঠে নয়। https://elevenlabs.io',
+          ),
+          const _Source(
+            icon: Icons.menu_book_outlined,
+            name: 'সাহাবিদের গল্প',
+            what: 'সহীহ হাদিস ও সীরাত গ্রন্থের ভিত্তিতে সহজ বাংলায় লেখা',
+            details: 'প্রতিটি গল্পের শেষে সূত্র দেওয়া আছে। গল্পগুলো এখনো খসড়া; একজন আলেমের যাচাই প্রয়োজন।',
           ),
           const _Source(
             icon: Icons.font_download_outlined,

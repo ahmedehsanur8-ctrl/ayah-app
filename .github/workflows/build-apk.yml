@@ -42,6 +42,15 @@ jobs:
       - name: Run tests
         run: flutter test
 
+      - name: Check EveryAyah.com recitation URLs
+        continue-on-error: true
+        run: |
+          for r in Alafasy_128kbps Abdul_Basit_Murattal_192kbps Husary_128kbps; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -I "https://everyayah.com/data/$r/039053.mp3")
+            echo "$r: HTTP $code"
+            [ "$code" = "200" ] || echo "::warning::EveryAyah reciter $r returned HTTP $code"
+          done
+
       - name: Set up signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

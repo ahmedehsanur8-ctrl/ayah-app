@@ -290,25 +290,31 @@ class _AyahHeroCard extends StatelessWidget {
                         children: [
                           const Icon(Icons.wb_sunny_rounded, color: Brand.lightGold, size: 20),
                           const SizedBox(width: 8),
-                          Text(
-                            isToday ? 'আজকের আয়াত' : 'আয়াত',
-                            style: const TextStyle(
-                              fontFamily: headingFont,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 19,
-                              color: Colors.white,
+                          Expanded(
+                            child: Text(
+                              isToday ? 'আজকের আয়াত' : 'আয়াত',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: headingFont,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 19,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          if (read) const _ReadBadge(onDark: true),
-                          const Spacer(),
+                          ItemAudioButton(item, color: Brand.lightGold),
                           FavoriteButton(item, color: Colors.white70),
                           ShareButton(item, color: Colors.white70),
                         ],
                       ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: CategoryChip(item, onDark: true),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          CategoryChip(item, onDark: true),
+                          if (read) const _ReadBadge(onDark: true),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       Padding(
@@ -399,8 +405,10 @@ class _HadithCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Flexible(child: CategoryChip(item)),
-                      const Spacer(),
+                      Expanded(
+                        child: Align(alignment: Alignment.centerLeft, child: CategoryChip(item)),
+                      ),
+                      ItemAudioButton(item),
                       FavoriteButton(item),
                       ShareButton(item),
                     ],

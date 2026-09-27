@@ -289,6 +289,7 @@ class ItemListCard extends StatelessWidget {
                             weight: FontWeight.w700,
                           ),
                   ),
+                  ItemAudioButton(item),
                   FavoriteButton(item),
                   ShareButton(item),
                 ],

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../models/content.dart';
 import '../theme.dart';
+import '../services/audio.dart';
+import 'audio_button.dart';
 import 'category_style.dart';
 import 'pattern.dart';
 import 'share_card.dart';
@@ -215,6 +217,23 @@ class FavoriteButton extends StatelessWidget {
       },
     );
   }
+}
+
+/// Play / stop the Arabic recitation (ayah) or the Bangla voice (hadith).
+class ItemAudioButton extends StatelessWidget {
+  const ItemAudioButton(this.item, {super.key, this.color, this.label});
+
+  final ContentItem item;
+  final Color? color;
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) => AudioButton(
+    id: item.id,
+    color: color,
+    label: label,
+    onToggle: () => AudioController.instance.toggleItem(item),
+  );
 }
 
 /// Button that opens the share-as-image sheet.

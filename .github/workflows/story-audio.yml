@@ -1,5 +1,6 @@
-# Creates Sahaba story MP3s with ElevenLabs and stores them in the
-# "story-audio" GitHub Release. Run it by hand: Actions > Story audio > Run workflow.
+# Creates Sahaba story MP3s with ElevenLabs and commits them to
+# assets/story_audio/ (mono, 64 kbps), so the next app build includes them.
+# Run it by hand: Actions > Story audio > Run workflow.
 #   check    - only confirm the voice works and show the credits left
 #   sample   - create ONE story MP3 to listen to
 #   generate - create as many stories as this month's free credits allow
@@ -14,10 +15,6 @@ on:
         type: choice
         options: [check, sample, generate]
         default: check
-  # TEMPORARY (remove before merging): lets the first voice check + sample run
-  # from the feature branch when the commit message contains [story-audio-sample].
-  push:
-    branches: [claude/zen-bohr-1yy51z]
 
 permissions:
   contents: write
@@ -28,46 +25,26 @@ concurrency:
 
 jobs:
   audio:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[story-audio-sample]')
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ github.token }}
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: List story MP3s that already exist
-        run: |
-          gh release view story-audio --json assets -q '.assets[].name' > existing.txt 2>/dev/null || true
-          echo "Existing: $(wc -l < existing.txt) file(s)"
-          echo "EXISTING_FILE=$PWD/existing.txt" >> "$GITHUB_ENV"
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
 
       - name: Run ElevenLabs
-        run: python3 tools/story_audio.py "${{ inputs.mode || 'sample' }}" out
+        run: python3 tools/story_audio.py "${{ inputs.mode }}"
 
-      - name: Save new MP3s to the story-audio release
-        if: (inputs.mode || 'sample') != 'check'
+      - name: Commit new story MP3s
         run: |
-          shopt -s nullglob
-          files=(out/*.mp3)
-          if [ ${#files[@]} -eq 0 ]; then echo "Nothing new."; exit 0; fi
-          gh release view story-audio >/dev/null 2>&1 || gh release create story-audio \
-            --title "Sahaba story audio" --latest=false \
-            --notes "MP3s of the Sahaba stories. Story voice by ElevenLabs."
-          # No --clobber: an existing file is never replaced.
-          gh release upload story-audio "${files[@]}"
-
-      - name: Share the sample on the audio-sample branch
-        if: (inputs.mode || 'sample') == 'sample'
-        run: |
-          shopt -s nullglob
-          files=(out/*.mp3)
-          [ ${#files[@]} -eq 0 ] && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          mkdir /tmp/sample && cp "${files[@]}" /tmp/sample/
-          git checkout --orphan audio-sample
-          git rm -rq --cached . && git clean -fdq -e existing.txt
-          cp /tmp/sample/*.mp3 .
-          git add *.mp3 && git commit -qm "Sample story audio"
-          git push -f origin audio-sample
+          git add assets/story_audio
+          if git diff --cached --quiet; then
+            echo "No new MP3s."
+          else
+            git commit -m "Add story audio ($(git diff --cached --name-only | wc -l) new)"
+            git push
+          fi

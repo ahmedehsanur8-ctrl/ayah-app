@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
+import '../services/audio.dart';
 import '../services/reminders.dart';
 import '../theme.dart';
 import '../widgets/item_view.dart';
@@ -44,6 +45,10 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
 
   @override
   void dispose() {
+    // Stop this item's audio when the page closes.
+    if (AudioController.instance.currentId == widget.item.id) {
+      AudioController.instance.stop();
+    }
     _countdown.dispose();
     _enter.dispose();
     super.dispose();
@@ -132,7 +137,14 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Center(child: CategoryChip(widget.item)),
-                                const SizedBox(height: 26),
+                                const SizedBox(height: 14),
+                                Center(
+                                  child: ItemAudioButton(
+                                    widget.item,
+                                    label: widget.item.isAyah ? 'তিলাওয়াত শুনুন' : 'হাদিস শুনুন',
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
                                 ItemBody(widget.item),
                               ],
                             ),

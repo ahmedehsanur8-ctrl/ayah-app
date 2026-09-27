@@ -60,6 +60,8 @@ flutter:
 
   assets:
     - assets/content.json
+    - assets/stories.json
+    - assets/story_audio/
 
   fonts:
     - family: AmiriQuran
