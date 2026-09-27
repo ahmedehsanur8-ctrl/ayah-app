@@ -29,7 +29,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Only needed when choosing hadiths, so it runs on manual starts only.
       - name: List Bangla hadiths on HadeethEnc
+        if: github.event_name == 'workflow_dispatch'
         run: python3 tools/fetch_content.py index
 
       - name: Download content

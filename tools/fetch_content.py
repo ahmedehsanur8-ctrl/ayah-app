@@ -37,6 +37,7 @@ TANZIL_TEXT_URL = (
 )
 TANZIL_META_URL = "https://tanzil.net/res/text/metadata/quran-data.js"
 QURANENC_API = "https://quranenc.com/api/v1"
+QURANENC_KEY = "bengali_zakaria"  # Abu Bakr Zakaria, Bangla
 HADEETHENC_API = "https://hadeethenc.com/api/v1"
 UA = "AyahReminderContentFetcher/1.0 (+https://github.com/ahmedehsanur8-ctrl/ayah-app)"
 
@@ -195,17 +196,17 @@ def load_surah_names():
 
 
 def quranenc_translation_info():
+    """Info (incl. version) of the Bangla Abu Bakr Zakaria translation."""
     for url in (f"{QURANENC_API}/translations/list/bn",
-                f"{QURANENC_API}/translations/list/bengali",
                 f"{QURANENC_API}/translations/list"):
         try:
             tr = fetch_json(url)
         except Exception:  # noqa: BLE001
             continue
         for t in tr.get("translations", []):
-            if "zakaria" in t.get("key", "").lower():
+            if t.get("key") == QURANENC_KEY:
                 return t
-    raise RuntimeError("Abu Bakr Zakaria translation not found on QuranEnc")
+    raise RuntimeError(f"{QURANENC_KEY} not found in the QuranEnc translation list")
 
 
 def build_ayahs(ayah_cats, problems):
@@ -223,7 +224,9 @@ def build_ayahs(ayah_cats, problems):
         info = quranenc_translation_info()
     except Exception as e:  # noqa: BLE001
         problems.append(f"QuranEnc translation info: {e}")
-        info = {"key": "bengali_zakaria"}
+        info = {"key": QURANENC_KEY}
+    if info.get("key") != QURANENC_KEY:
+        raise RuntimeError(f"wrong QuranEnc translation: {info.get('key')}")
 
     needed = sorted({s for c in ayah_cats for s, _, _ in c["refs"]})
     qe = {}
