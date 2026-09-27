@@ -93,6 +93,7 @@ jobs:
           "${BT}apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" \
             --ks-key-alias "$ANDROID_KEY_ALIAS" \
             --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD \
+            --min-sdk-version 21 \
             --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
             --out "$APK" "$RUNNER_TEMP/aligned.apk"
           rm -f "$RUNNER_TEMP/aligned.apk"
@@ -105,7 +106,10 @@ jobs:
         run: |
           APK=build/app/outputs/flutter-apk/app-release.apk
           APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
-          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee apksigner.txt
+          # --min-sdk-version 21 makes apksigner check the v1 signature too
+          # (for Android 7+ alone it would skip it).
+          "$APKSIGNER" verify --verbose --print-certs --min-sdk-version 21 "$APK" | tee apksigner.txt
+          unzip -l "$APK" | grep -E "META-INF/.*\.(RSA|SF)$"
           # All three schemes are required: v1 for strict phone installers, v2/v3 for Android 7+.
           grep -q "^Verifies" apksigner.txt
           grep -q "Verified using v1 scheme (JAR signing): true" apksigner.txt
