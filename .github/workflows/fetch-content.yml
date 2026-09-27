@@ -1,0 +1,48 @@
+# Downloads the ayahs and hadiths from Tanzil, QuranEnc and HadeethEnc and
+# commits assets/content.json. Run it by hand from the Actions tab, or it runs
+# automatically when the content list or the downloader changes.
+name: Fetch content
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ayah-app-content-list.md
+      - tools/fetch_content.py
+      - tools/hadith_map.json
+      - .github/workflows/fetch-content.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fetch-content-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: List Bangla hadiths on HadeethEnc
+        run: python3 tools/fetch_content.py index
+
+      - name: Download content
+        run: python3 tools/fetch_content.py build
+
+      - name: Commit content
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/content.json tools/data
+          if git diff --cached --quiet; then
+            echo "Content unchanged."
+          else
+            git commit -m "Update downloaded content"
+            git push
+          fi
