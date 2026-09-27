@@ -1,6 +1,6 @@
 {
  "meta": {
-  "generatedAt": "2026-09-27T15:07:09+00:00",
+  "generatedAt": "2026-09-27T15:08:32+00:00",
   "sources": {
    "tanzil": {
     "name": "Tanzil Quran Text",
@@ -74,7 +74,7 @@
    }
   ],
   "problems": [
-   "QuranEnc translation info: bengali_zakaria not found in the QuranEnc translation list. https://quranenc.com/api/v1/translations/list/bn: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list?language=bn: 75 keys, bengali: [] | https://quranenc.com/api/v1/translations/list/bn?localization=bn: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list/bengali: 0 keys, bengali: [] | https://quranenc.com/api/v1/translations/list: 75 keys, bengali: [] | https://quranenc.com/en/browse/bengali_zakaria: no version found (page length 449415) | https://quranenc.com/bn/browse/bengali_zakaria: no version found (page length 449260) | https://quranenc.com/ar/browse/bengali_zakaria: no version found (page length 447787)"
+   "QuranEnc translation info: bengali_zakaria not found in the QuranEnc translation list. https://quranenc.com/api/v1/translations/list/bn: 0 keys, bengali: [], languages: [], top-level: ['translations'] | https://quranenc.com/api/v1/translations/list?language=bn: 75 keys, bengali: [], languages: ['aa', 'ak', 'am', 'as', 'az', 'bs', 'ceb', 'de', 'en', 'es', 'fa', 'ff', 'fr', 'gu', 'ha', 'hi', 'hr', 'id', 'ja', 'km', 'kn', 'ku', 'ky', 'ln', 'lt', 'mdh', 'mk', 'ml', 'mos', 'nl', 'nqo', 'om', 'pa', 'ps', 'pt', 'rn', 'ro', 'rw', 'si', 'so', 'sq', 'sr', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'tl', 'tr', 'ug', 'ur', 'uz', 'vi', 'yo', 'zh'], top-level: ['translations'] | https://quranenc.com/api/v1/translations/list/bn?localization=bn: 0 keys, bengali: [], languages: [], top-level: ['translations'] | https://quranenc.com/api/v1/translations/list/bengali: 0 keys, bengali: [], languages: [], top-level: ['translations'] | https://quranenc.com/api/v1/translations/list/ben: 0 keys, bengali: [], languages: [], top-level: ['translations'] | https://quranenc.com/api/v1/translations/list/bn?localization=en: 0 keys, bengali: [], languages: [], top-level: ['translations'] | https://quranenc.com/api/v1/translations/list?localization=bn: 75 keys, bengali: [], languages: ['aa', 'ak', 'am', 'as', 'az', 'bs', 'ceb', 'de', 'en', 'es', 'fa', 'ff', 'fr', 'gu', 'ha', 'hi', 'hr', 'id', 'ja', 'km', 'kn', 'ku', 'ky', 'ln', 'lt', 'mdh', 'mk', 'ml', 'mos', 'nl', 'nqo', 'om', 'pa', 'ps', 'pt', 'rn', 'ro', 'rw', 'si', 'so', 'sq', 'sr', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'tl', 'tr', 'ug', 'ur', 'uz', 'vi', 'yo', 'zh'], top-level: ['translations'] | https://quranenc.com/api/v1/translations/list: 75 keys, bengali: [], languages: ['aa', 'ak', 'am', 'as', 'az', 'bs', 'ceb', 'de', 'en', 'es', 'fa', 'ff', 'fr', 'gu', 'ha', 'hi', 'hr', 'id', 'ja', 'km', 'kn', 'ku', 'ky', 'ln', 'lt', 'mdh', 'mk', 'ml', 'mos', 'nl', 'nqo', 'om', 'pa', 'ps', 'pt', 'rn', 'ro', 'rw', 'si', 'so', 'sq', 'sr', 'sv', 'sw', 'ta', 'te', 'tg', 'th', 'tl', 'tr', 'ug', 'ur', 'uz', 'vi', 'yo', 'zh'], top-level: ['translations'] | https://quranenc.com/en/browse/bengali_zakaria: no version found (page length 449415) | https://quranenc.com/bn/browse/bengali_zakaria: no version found (page length 449260) | https://quranenc.com/ar/browse/bengali_zakaria: no version found (page length 447787)"
   ]
  },
  "ayahCategories": [
