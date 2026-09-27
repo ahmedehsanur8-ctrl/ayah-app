@@ -70,16 +70,16 @@ class CreditsScreen extends StatelessWidget {
           const _Source(
             icon: Icons.record_voice_over_rounded,
             name: 'ElevenLabs',
-            what: 'সাহাবিদের গল্পের কণ্ঠ — Story voice by ElevenLabs',
+            what: 'সাহাবিদের জীবনীর কণ্ঠ — Story voice by ElevenLabs',
             details:
-                'যে গল্পের অডিও এখনো তৈরি হয়নি, সেটি ফোনের বাংলা কণ্ঠে (Text-to-speech) পড়া হয়। '
+                'যে জীবনীর অডিও এখনো তৈরি হয়নি, সেটি ফোনের বাংলা কণ্ঠে (Text-to-speech) পড়া হয়। '
                 'আরবি তিলাওয়াত কখনো কৃত্রিম কণ্ঠে নয়। https://elevenlabs.io',
           ),
           const _Source(
             icon: Icons.menu_book_outlined,
-            name: 'সাহাবিদের গল্প',
+            name: 'সাহাবিদের জীবনী',
             what: 'সহীহ হাদিস ও সীরাত গ্রন্থের ভিত্তিতে সহজ বাংলায় লেখা',
-            details: 'প্রতিটি গল্পের শেষে সূত্র দেওয়া আছে। গল্পগুলো এখনো খসড়া; একজন আলেমের যাচাই প্রয়োজন।',
+            details: 'প্রতিটি জীবনীর শেষে সূত্র ও নোট দেওয়া আছে। লেখাগুলো এখনো খসড়া; একজন আলেমের যাচাই প্রয়োজন।',
           ),
           const _Source(
             icon: Icons.font_download_outlined,
