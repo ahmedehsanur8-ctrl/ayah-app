@@ -3,9 +3,19 @@
 A calm Android app that shows one Quran ayah every morning (default 9:00 AM) and one hadith
 every night (default 9:00 PM, Bangladesh time), in Arabic and Bangla, with a full-screen reminder.
 
-Features: splash screen, home with today's ayah and hadith, colourful category grid,
-full-screen reading with a 12-second countdown, share any ayah or hadith as an image,
-favourites, dark mode that follows the phone, and Bangla labels throughout.
+Tabs: **আজ** (greeting, next prayer, today's ayah and hadith), **মন** (16 moods, each with
+ayahs, full surahs and hadiths, from `mood-content.md`), **বিষয়** (topics with search; ayahs
+and hadiths together), **জীবনী** (Sahaba life stories) and **আরও** (prayer times, Qibla,
+favourites, settings, about). One reader with a player (speed, repeat, play all), share as an
+image, favourites, light/dark mode, and Bangla labels throughout. Reminders open a full-screen
+reading page with a 12-second countdown.
+
+Prayer times are calculated on the phone with the [adhan](https://pub.dev/packages/adhan)
+library (default: University of Islamic Sciences, Karachi; Asr Hanafi), from the phone's
+approximate location or a city picked by hand. The azan notification uses a CC BY-SA 4.0
+recording from Wikimedia Commons (`res/raw/azan.mp3`, details in `assets/azan_license.json`).
+The Qibla compass uses the phone's rotation sensor. The location never leaves the phone
+(see `docs/PRIVACY.md` and `docs/DATA_SAFETY.md`).
 
 Audio: every ayah has a play button that streams the Arabic recitation (human reciters only)
 from EveryAyah.com and caches it; the Bangla meaning and hadiths are read with the phone's
@@ -20,6 +30,7 @@ icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font Lice
 | Path | What it is |
 | --- | --- |
 | `ayah-app-content-list.md` | The list of ayahs and hadiths, grouped by category |
+| `mood-content.md` | The 16 moods: ayahs, full surahs and hadiths (hadiths marked (H) need a scholar to check the grade) |
 | `assets/content.json` | All the downloaded text; the app works offline from this file |
 | `tools/fetch_content.py` | Downloads the text from Tanzil.net, QuranEnc.com and HadeethEnc.com |
 | `tools/hadith_map.json` | Which HadeethEnc hadith matches each reference (`null` = not on HadeethEnc, skipped) |
@@ -28,6 +39,7 @@ icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font Lice
 | `.github/workflows/fetch-content.yml` | Re-downloads the content when the list changes |
 | `assets/stories.json` | The Sahaba life stories shown in the app (draft, need scholar review) |
 | `tools/story_drafts_unused.json` | Earlier AI-written drafts, not shown in the app |
+| `tools/azan_audio.py`, `.github/workflows/azan-audio.yml` | Finds a freely licensed azan on Wikimedia Commons and bundles the one named in `tools/azan_choice.txt` |
 | `.github/workflows/story-audio.yml` | Run by hand: creates story MP3s with ElevenLabs within the free credits and commits them to `assets/story_audio/` |
 
 ## Content sources
@@ -44,6 +56,6 @@ icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font Lice
 
 ## Changing the content
 
-Edit `ayah-app-content-list.md` (or `tools/hadith_map.json`) on GitHub and commit.
+Edit `ayah-app-content-list.md`, `mood-content.md` (or `tools/hadith_map.json`) on GitHub and commit.
 The **Fetch content** workflow downloads the text again and commits a new `assets/content.json`.
 You can also start it by hand from the Actions tab.
