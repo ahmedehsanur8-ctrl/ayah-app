@@ -8,6 +8,7 @@ on:
   push:
     paths:
       - ayah-app-content-list.md
+      - mood-content.md
       - tools/fetch_content.py
       - tools/hadith_map.json
       - .github/workflows/fetch-content.yml
