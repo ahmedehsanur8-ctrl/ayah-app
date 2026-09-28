@@ -18,6 +18,7 @@ import 'favorites_screen.dart';
 import 'home_shell.dart';
 import 'prayer_screen.dart';
 import 'qibla_screen.dart';
+import 'quran_screen.dart';
 import 'reader_screen.dart';
 import 'setup_screen.dart';
 
@@ -67,6 +68,8 @@ class _TodayScreenState extends State<TodayScreen> {
                   ),
                 const SizedBox(height: 14),
                 const _QuickButtons(),
+                const SizedBox(height: 14),
+                const QuranContinueCard(showWhenEmpty: true),
                 if (hadith != null) ...[
                   SectionLabel(
                     _hadithOffset == 0 ? 'আজকের হাদিস' : 'হাদিস',
@@ -499,7 +502,10 @@ class _QuickButtons extends StatelessWidget {
     );
     return Row(
       children: [
-        b(Icons.sentiment_satisfied_outlined, 'মন কেমন?', p.lilac, () => HomeShell.tab.value = 1),
+        b(Icons.sentiment_satisfied_outlined, 'মন কেমন?', p.lilac, () {
+          MoodTopicsScreen.section.value = 0;
+          HomeShell.tab.value = 2;
+        }),
         const SizedBox(width: 10),
         b(Icons.explore_outlined, 'কিবলা', p.sky, () => push(context, const QiblaScreen())),
         const SizedBox(width: 10),

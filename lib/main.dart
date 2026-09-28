@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import 'app_state.dart';
 import 'screens/home_shell.dart';
@@ -8,6 +9,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/location.dart';
 import 'services/prayer.dart';
+import 'services/quran.dart';
 import 'services/reminders.dart';
 import 'theme.dart';
 
@@ -15,7 +17,20 @@ final navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Recitation keeps playing with the screen off, with controls in the notification.
+  try {
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.ayahreminder.audio',
+      androidNotificationChannelName: 'তিলাওয়াত',
+      androidNotificationChannelDescription: 'কুরআন তিলাওয়াত ও অডিও চলার সময়',
+      androidNotificationIcon: 'drawable/ic_notification',
+      androidNotificationOngoing: true,
+    );
+  } catch (e) {
+    debugPrint('background audio: $e');
+  }
   final state = await AppState.load();
+  await Quran.loadMeta();
   await Prayers.loadAzanInfo();
   await Reminders.init(_openFromReminder, onAzan: _openPrayerTimes);
   // Opened by a reminder alarm (native) or an older reminder notification.

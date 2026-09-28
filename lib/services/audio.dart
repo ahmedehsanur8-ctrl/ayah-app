@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
@@ -26,7 +27,22 @@ class AudioController extends ChangeNotifier {
   static const speeds = [0.75, 1.0, 1.25, 1.5];
 
   AudioPlayer? _player;
-  AudioPlayer get _p => _player ??= AudioPlayer();
+  AudioPlayer get _p => _player ??= _newPlayer();
+
+  AudioPlayer _newPlayer() {
+    final p = AudioPlayer();
+    // Paused or resumed from the notification or a headset button.
+    p.playingStream.listen((playing) {
+      if (!playing &&
+          _status == AudioStatus.playing &&
+          p.processingState == ProcessingState.ready) {
+        _set(_currentId, AudioStatus.paused);
+      } else if (playing && _status == AudioStatus.paused) {
+        _set(_currentId, AudioStatus.playing);
+      }
+    });
+    return p;
+  }
 
   String? _currentId;
   AudioStatus _status = AudioStatus.idle;
@@ -90,7 +106,10 @@ class AudioController extends ChangeNotifier {
         for (var a = item.ayahStart; a <= item.ayahEnd; a++)
           // Streams the verse and saves it, so it plays offline next time.
           // ignore: experimental_member_use
-          LockCachingAudioSource(ayahUrl(reciter, item.surah, a)),
+          LockCachingAudioSource(
+            ayahUrl(reciter, item.surah, a),
+            tag: mediaItem('${item.id}-$a', item.title, Reciter.byId(reciter).name),
+          ),
       ];
       verseCount = sources.length;
       phase = AudioPhase.arabic;
@@ -122,7 +141,9 @@ class AudioController extends ChangeNotifier {
           settings.saveStoryProgress(story.id, pos, _p.duration ?? Duration.zero);
         }
       });
-      final ok = await _playSources(session, [AudioSource.asset(story.audioAsset)], start: start);
+      final ok = await _playSources(session, [
+        AudioSource.asset(story.audioAsset, tag: mediaItem(story.id, story.title, story.companion)),
+      ], start: start);
       await sub.cancel();
       if (ok && session == _session && length > Duration.zero) {
         // Played to the end: next time it starts from the beginning.
@@ -156,11 +177,9 @@ class AudioController extends ChangeNotifier {
       await _p.setSpeed(speed);
       if (session != _session) return true;
       _set(_currentId, AudioStatus.playing);
-      final done = _p.playerStateStream.firstWhere(
-        (s) => s.processingState == ProcessingState.completed || session != _session,
-      );
-      unawaited(_p.play());
-      await done;
+      final ended = await playToEnd(session);
+      // Stopped from the notification: end everything.
+      if (!ended && session == _session) await stop();
       await _p.stop();
       return true;
     } catch (e) {
@@ -168,6 +187,56 @@ class AudioController extends ChangeNotifier {
       return false;
     }
   }
+
+  /// Plays the loaded source until it ends, is stopped (also from the
+  /// notification) or [session] is replaced. Returns true when it reached the end.
+  Future<bool> playToEnd(int session) async {
+    var started = false;
+    final done = _p.playerStateStream.firstWhere((s) {
+      if (s.processingState == ProcessingState.ready || s.playing) started = true;
+      return s.processingState == ProcessingState.completed ||
+          session != _session ||
+          (started && s.processingState == ProcessingState.idle);
+    });
+    unawaited(_p.play());
+    final s = await done;
+    return s.processingState == ProcessingState.completed && session == _session;
+  }
+
+  /// The entry shown in the media notification while [title] plays.
+  static MediaItem mediaItem(String id, String title, String artist) =>
+      MediaItem(id: id, title: title, artist: artist, album: 'আয়াত রিমাইন্ডার');
+
+  // ------------------------------------------------ for the Quran player
+
+  /// The one player of the app (background playback allows only one).
+  AudioPlayer get player => _p;
+
+  /// Starts a playback of [id] (stopping anything else); returns its session.
+  Future<int> begin(String id) => _start(id);
+
+  bool alive(int session) => session == _session;
+
+  void setStatus(int session, AudioStatus s) {
+    if (session == _session) _set(_currentId, s);
+  }
+
+  void report(AudioProblem p) => _report(p);
+
+  /// Reads [text] with the Bangla voice without ending the session.
+  Future<bool> speakPart(int session, String text) async {
+    if (session != _session) return false;
+    if (!await BanglaTts.init()) {
+      _report(AudioProblem.noBanglaVoice);
+      return false;
+    }
+    _set(_currentId, AudioStatus.speaking);
+    await BanglaTts.speak(text, stillWanted: () => session == _session);
+    return session == _session;
+  }
+
+  /// Ends [session] normally.
+  void end(int session) => _finish(session);
 
   Future<bool> _speak(int session, String text) async {
     if (session != _session) return false;

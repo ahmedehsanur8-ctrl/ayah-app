@@ -3,9 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// User settings, saved on the phone.
 class AppSettings extends ChangeNotifier {
-  AppSettings._(this._prefs);
+  AppSettings._(this._prefs) : quran = QuranPrefs._(_prefs);
 
   final SharedPreferences _prefs;
+
+  /// Quran reader settings, last read and bookmarks. They have their own
+  /// listeners, so saving the reading position doesn't rebuild the whole app.
+  final QuranPrefs quran;
 
   static Future<AppSettings> load() async => AppSettings._(await SharedPreferences.getInstance());
 
@@ -236,6 +240,98 @@ class AppSettings extends ChangeNotifier {
       'readMarks',
       list.length > 120 ? list.sublist(list.length - 120) : list,
     );
+    notifyListeners();
+  }
+}
+
+/// Settings of the Quran section.
+class QuranPrefs extends ChangeNotifier {
+  QuranPrefs._(this._prefs);
+
+  final SharedPreferences _prefs;
+
+  /// The translations shown (1 or 2), e.g. ['bn_zakaria'].
+  List<String> get translations {
+    final v = _prefs.getStringList('quranTranslations');
+    return v == null || v.isEmpty ? const ['bn_zakaria'] : v;
+  }
+
+  Future<void> setTranslations(List<String> ids) async {
+    await _prefs.setStringList('quranTranslations', ids.take(2).toList());
+    notifyListeners();
+  }
+
+  /// 'both', 'arabic' (Arabic only) or 'bangla' (Bangla only).
+  String get mode => _prefs.getString('quranMode') ?? 'both';
+
+  Future<void> setMode(String v) async {
+    await _prefs.setString('quranMode', v);
+    notifyListeners();
+  }
+
+  bool get showArabic => mode != 'bangla';
+  bool get showBangla => mode != 'arabic';
+
+  double get arabicSize => _prefs.getDouble('quranArabicSize') ?? 28;
+  double get banglaSize => _prefs.getDouble('quranBanglaSize') ?? 17;
+
+  Future<void> setArabicSize(double v) async {
+    await _prefs.setDouble('quranArabicSize', v);
+    notifyListeners();
+  }
+
+  Future<void> setBanglaSize(double v) async {
+    await _prefs.setDouble('quranBanglaSize', v);
+    notifyListeners();
+  }
+
+  /// Read the Bangla meaning aloud after each recited ayah.
+  bool get banglaAfterAyah => _prefs.getBool('quranBanglaAfter') ?? false;
+
+  Future<void> setBanglaAfterAyah(bool v) async {
+    await _prefs.setBool('quranBanglaAfter', v);
+    notifyListeners();
+  }
+
+  /// Scroll along with the recitation.
+  bool get followAudio => _prefs.getBool('quranFollow') ?? true;
+
+  Future<void> setFollowAudio(bool v) async {
+    await _prefs.setBool('quranFollow', v);
+    notifyListeners();
+  }
+
+  // ---------------------------------------------------------- last read
+
+  int get lastSurah => _prefs.getInt('quranLastSurah') ?? 0;
+  int get lastAyah => _prefs.getInt('quranLastAyah') ?? 0;
+  bool get hasLastRead => lastSurah > 0 && lastAyah > 0;
+
+  /// Saved while reading; listeners hear about it only when the surah changes
+  /// or [notify] is set (it is saved often while scrolling).
+  Future<void> setLastRead(int surah, int ayah, {bool notify = false}) async {
+    if (surah == lastSurah && ayah == lastAyah) return;
+    final changed = surah != lastSurah;
+    await _prefs.setInt('quranLastSurah', surah);
+    await _prefs.setInt('quranLastAyah', ayah);
+    if (changed || notify) notifyListeners();
+  }
+
+  /// Tells listeners (the "যেখানে শেষ করেছিলেন" cards) about the latest position.
+  void refresh() => notifyListeners();
+
+  // ---------------------------------------------------------- bookmarks
+
+  /// "surah:ayah", newest first.
+  List<String> get bookmarks => _prefs.getStringList('quranBookmarks') ?? const [];
+
+  bool isBookmarked(int s, int a) => bookmarks.contains('$s:$a');
+
+  Future<void> toggleBookmark(int s, int a) async {
+    final list = [...bookmarks];
+    final key = '$s:$a';
+    if (!list.remove(key)) list.insert(0, key);
+    await _prefs.setStringList('quranBookmarks', list);
     notifyListeners();
   }
 }

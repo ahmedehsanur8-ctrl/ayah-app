@@ -9,6 +9,7 @@ import 'favorites_screen.dart';
 import 'prayer_screen.dart';
 import 'qibla_screen.dart';
 import 'settings_screen.dart';
+import 'quran_downloads_screen.dart';
 import 'setup_screen.dart';
 
 /// আরও: prayer times, Qibla, favourites, settings and about.
@@ -79,6 +80,13 @@ class MoreScreen extends StatelessWidget {
                   subtitle: 'সকাল ও রাতের সময়',
                   onTap: () =>
                       push(context, const SettingsScreen(section: SettingsSection.reminders)),
+                ),
+                NavRow(
+                  icon: Icons.download_for_offline_outlined,
+                  tint: p.mint,
+                  title: 'কুরআন ডাউনলোড',
+                  subtitle: 'ডাউনলোড করা তিলাওয়াত ও অনুবাদ, জায়গা খালি করুন',
+                  onTap: () => push(context, const QuranDownloadsScreen()),
                 ),
                 NavRow(
                   icon: Icons.mic_none_rounded,

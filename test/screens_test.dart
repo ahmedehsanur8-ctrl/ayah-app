@@ -12,6 +12,9 @@ import 'package:ayah_reminder/screens/onboarding_screen.dart';
 import 'package:ayah_reminder/screens/setup_screen.dart';
 import 'package:ayah_reminder/screens/splash_screen.dart';
 import 'package:ayah_reminder/screens/stories_screen.dart';
+import 'package:ayah_reminder/screens/quran_reader_screen.dart';
+import 'package:ayah_reminder/screens/quran_screen.dart';
+import 'package:ayah_reminder/services/quran.dart';
 import 'package:ayah_reminder/services/reminders.dart';
 import 'package:ayah_reminder/theme.dart';
 
@@ -46,6 +49,8 @@ void main() {
     tzdata.initializeTimeZones();
     Reminders.dhaka = tz.getLocation('Asia/Dhaka');
     await AppState.load();
+    await Quran.loadMeta();
+    await Quran.load();
     // Use the real fonts so text is measured like on a phone.
     Future<void> load(String family, List<String> files) async {
       final loader = FontLoader(family);
@@ -79,6 +84,7 @@ void main() {
       testWidgets('the five tabs', (t) async {
         await t.binding.setSurfaceSize(const Size(390, 844));
         HomeShell.tab.value = 0;
+        MoodTopicsScreen.section.value = 0;
         await t.pumpWidget(app(const HomeShell(), b));
         await t.pumpAndSettle();
         expect(find.textContaining('আজকের আয়াত'), findsWidgets);
@@ -90,6 +96,14 @@ void main() {
         await t.pumpAndSettle();
         await t.tap(find.text('পরের').last);
         await t.pump();
+
+        await t.tap(find.text('কুরআন').last);
+        await t.pumpAndSettle();
+        expect(find.text('আল-কুরআন'), findsOneWidget);
+        expect(find.text('আল-ফাতিহা'), findsOneWidget);
+        await t.tap(find.text('পারা'));
+        await t.pumpAndSettle();
+        expect(find.text('পারা ১'), findsOneWidget);
 
         await t.tap(find.text('মন').last);
         await t.pumpAndSettle();
@@ -264,6 +278,57 @@ void main() {
         await t.pump(const Duration(seconds: 3));
         await t.pumpAndSettle();
         expect(find.text('কৃতজ্ঞতা ও উৎস'), findsOneWidget);
+      });
+
+      testWidgets('Quran reader, search and last read', (t) async {
+        await t.binding.setSurfaceSize(const Size(390, 844));
+        final prefs = AppState.instance.settings.quran;
+        for (final r in [...prefs.bookmarks].map(AyahRef.parse).nonNulls) {
+          await prefs.toggleBookmark(r.surah, r.ayah);
+        }
+        await t.pumpWidget(app(const QuranReaderScreen(surah: 2, ayah: 255), b));
+        await t.pumpAndSettle();
+        expect(find.text('সূরা আল-বাকারা'), findsWidgets);
+        expect(find.text('২৫৫'), findsOneWidget);
+        expect(find.text('— ড. আবু বকর মুহাম্মাদ যাকারিয়া'), findsWidgets);
+        expect(prefs.lastSurah, 2);
+        expect(prefs.lastAyah, 255);
+
+        // Bookmark it; it shows in the bookmark list.
+        final tile255 = find.byWidgetPredicate((w) => w is AyahTile && w.ayah == 255);
+        await t.tap(find.descendant(of: tile255, matching: find.byTooltip('বুকমার্ক করুন')));
+        await t.pumpAndSettle();
+        expect(prefs.bookmarks, isNotEmpty);
+
+        // Top of surah 2: header with the basmala; surah 9 has none.
+        await t.pumpWidget(app(QuranReaderScreen(key: UniqueKey(), surah: 2), b));
+        await t.pumpAndSettle();
+        expect(find.text(Quran.basmala), findsOneWidget);
+        await t.pumpWidget(app(QuranReaderScreen(key: UniqueKey(), surah: 9), b));
+        await t.pumpAndSettle();
+        expect(find.text(Quran.basmala), findsNothing);
+        expect(find.text('১'), findsWidgets);
+
+        // Quran tab: continue card and search by reference and by word.
+        await t.pumpWidget(app(const QuranScreen(), b));
+        await t.pumpAndSettle();
+        expect(find.text('যেখানে শেষ করেছিলেন'), findsOneWidget);
+        await t.enterText(find.byType(TextField), '২:২৫৫');
+        await t.pump(const Duration(milliseconds: 400));
+        await t.pumpAndSettle();
+        expect(find.textContaining('২:২৫৫ খুলুন'), findsOneWidget);
+        await t.enterText(find.byType(TextField), 'বাকারা');
+        await t.pump(const Duration(milliseconds: 400));
+        await t.pumpAndSettle();
+        expect(find.text('আল-বাকারা'), findsWidgets);
+
+        // Settings sheet opens.
+        await t.pumpWidget(app(const QuranReaderScreen(surah: 1), b));
+        await t.pumpAndSettle();
+        await t.tap(find.byTooltip('পড়ার সেটিংস'));
+        await t.pumpAndSettle();
+        expect(find.text('শুধু আরবি'), findsOneWidget);
+        expect(find.text('রোয়াদ অনুবাদ কেন্দ্র'), findsOneWidget);
       });
 
       testWidgets('onboarding: one page per permission, then the summary', (t) async {
