@@ -178,6 +178,9 @@ def quranenc_info(key):
                 f"{QURANENC_API}/translations/list?language=bn",
                 f"{QURANENC_API}/translations/list/ben",
                 f"{QURANENC_API}/translations/list/bengali",
+                f"{QURANENC_API}/translations/list?page=2",
+                f"{QURANENC_API}/translations/list?limit=1000",
+                f"{QURANENC_API}/translations/list?per_page=1000",
                 f"{QURANENC_API}/translations/list"):
         try:
             data = json.loads(fetch(url, tries=3))
@@ -217,6 +220,9 @@ def load_quranenc(key, surahs):
     out = {}
     for s in surahs:
         res = json.loads(fetch(f"{QURANENC_API}/translation/sura/{key}/{s['n']}"))
+        if s["n"] == 1:
+            say(f"  {key} sura response keys: {list(res)}; "
+                f"{ {k: v for k, v in res.items() if k != 'result'} }")
         for v in res["result"]:
             if v.get("sura") is None:
                 continue
