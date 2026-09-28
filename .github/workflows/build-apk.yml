@@ -115,8 +115,10 @@ jobs:
           v123 "$ARM" "dist-test/C-arm64-v1v2v3-$V.apk"
           for f in dist-test/*.apk; do
             echo "=== $f ($(du -h "$f" | cut -f1))"
-            "${BT}apksigner" verify --verbose --print-certs --min-sdk-version 21 "$f" \
-              | grep -E "^Verifies|DOES NOT|scheme \((JAR|APK Signature Scheme v[23])\)|certificate SHA-256"
+            case "$f" in *v1v2v3*) MIN="--min-sdk-version 21" ;; *) MIN="" ;; esac
+            "${BT}apksigner" verify --verbose --print-certs $MIN "$f" > "$RUNNER_TEMP/v.txt" 2>&1 || true
+            grep -E "^Verifies|DOES NOT|ERROR|scheme \((JAR|APK Signature Scheme v[23])\)|certificate SHA-256" "$RUNNER_TEMP/v.txt" || true
+            grep -q "^Verifies" "$RUNNER_TEMP/v.txt"
           done
 
       - name: Remove signing key from the runner
