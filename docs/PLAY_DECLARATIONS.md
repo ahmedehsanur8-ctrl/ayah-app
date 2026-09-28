@@ -43,7 +43,9 @@ App content → **Foreground service permissions** → tick **Media playback**.
 > plays a short gentle alarm sound (a few seconds, repeated for at most one minute) with the day's
 > ayah. A notification with a stop button ("থামান") is shown the whole time; pressing a volume key
 > also stops it. The playback must start at the exact time and continue while the screen is locked
-> or the app is closed, so it cannot be deferred.
+> or the app is closed, so it cannot be deferred. When the user presses play on a surah in the
+> Quran section, the recitation (per-ayah audio) keeps playing with the screen off through a
+> media-playback foreground service with play/pause controls in the notification.
 
 - **User impact if deferred / interrupted:** "The azan or reminder would not play at the prayer or
   reminder time, or would stop in the middle."

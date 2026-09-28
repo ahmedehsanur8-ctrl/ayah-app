@@ -27,11 +27,13 @@ Answers for the Data safety form in Play Console, based on what the app does.
 | `VIBRATE`, `WAKE_LOCK` | Notification vibration; gentle vibration when facing the Qibla. |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Lets the user allow reminders on phones that stop background alarms. |
 | `INTERNET` | Arabic recitation audio from EveryAyah.com. |
-| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Plays the full azan at the prayer times the user turned on, and the short reminder sound (see below). |
+| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Plays the full azan at the prayer times the user turned on, the short reminder sound, and Quran recitation the user started (keeps playing with the screen off, with media controls) (see below). |
 
 ## Foreground service declaration (Play Console → App content → Foreground service permissions)
 
-- **Type:** `mediaPlayback` (`AzanService` and `ReminderService`).
+- **Type:** `mediaPlayback` (`AzanService`, `ReminderService`, and `AudioService` from audio_service).
+- **AudioService:** Quran recitation / story audio the user started with the play button keeps
+  playing with the screen off; the notification has play/pause controls.
 - **ReminderService:** at the reminder time the user chose, plays a short gentle sound
   (a few seconds, repeated for at most one minute) on the alarm stream with a notification
   with "পড়ুন" and "১০ মিনিট পরে" buttons, then stops. The sound can be changed or turned off
