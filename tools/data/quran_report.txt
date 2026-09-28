@@ -1,10 +1,14 @@
 arabic.txt.gz: 266779 bytes
   https://quranenc.com/api/v1/translations/list/bn: bengali_zakaria not in 0 entries; bengali keys: []
   https://quranenc.com/api/v1/translations/list: bengali_zakaria not in 75 entries; bengali keys: []
+  https://quranenc.com/en/browse/bengali_zakaria: ... Bengali Translation - Abu Bakr Zakaria - Encyclopedia of the Noble Quran Home Index of Translations Audio Developers' Services - API About Contact Us Language Browse Old Version Home Index of Translations Developers' Services About Language PWA App Android iOS .browse-section-header { z-index: 20; } .browse-section-header .dropdown-menu { z-index: 1080; } sup { color:...
+  https://quranenc.com/bn/browse/bengali_zakaria: ... বাংলা ভাষায় অনুবাদ- ড. আবূ বকর মুহাম্মাদ যাকারিয়া - কুরআন কারীম বিশ্বকোষ প্রথম পাতা অনুবাদসমূহের সূচী Audio ডেভেলপারদের সেবাসমূহ - API প্রকল্প সম্পর্কে আমাদের সাথে যোগাযোগ করুন ভাষা Browse Old Version প্রথম পাতা অনুবাদসমূহের সূচী ডেভেলপারদের সেবাসমূহ প্রকল্প সম্পর্কে ভাষা PWA App Android iOS .browse-section-header { z-index: 20; } .browse-section-header .dropdown-menu { z-index: 1080; } sup...
 bn_zakaria: 6236 verses, 3608 with footnotes, 2431873 bytes gz, version ''
   2:255 = আল্লাহ্‌ [১], তিনি ছাড়া কোনো সত্য ইলাহ নেই [২]। তিনি চিরঞ্জীব, সর্বসত্তার ধারক [৩]। তাঁকে তন্দ্রাও স্পর্শ করতে পারে না, নিদ্রাও নয় [৪]। আসমানসমূহে যা রয়েছে ও যম
   https://quranenc.com/api/v1/translations/list/bn: bengali_rwwad not in 0 entries; bengali keys: []
   https://quranenc.com/api/v1/translations/list: bengali_rwwad not in 75 entries; bengali keys: []
+  https://quranenc.com/en/browse/bengali_rwwad: ... Bengali Translation - Rowwad Translation Center - Encyclopedia of the Noble Quran Home Index of Translations Audio Developers' Services - API About Contact Us Language Browse Old Version Home Index of Translations Developers' Services About Language PWA App Android iOS .browse-section-header { z-index: 20; } .browse-section-header .dropdown-menu { z-index: 1080; } sup { color:...
+  https://quranenc.com/bn/browse/bengali_rwwad: ... বাংলা ভাষায় অনুবাদ - রুওয়াদ অনুবাদ - কুরআন কারীম বিশ্বকোষ প্রথম পাতা অনুবাদসমূহের সূচী Audio ডেভেলপারদের সেবাসমূহ - API প্রকল্প সম্পর্কে আমাদের সাথে যোগাযোগ করুন ভাষা Browse Old Version প্রথম পাতা অনুবাদসমূহের সূচী ডেভেলপারদের সেবাসমূহ প্রকল্প সম্পর্কে ভাষা PWA App Android iOS .browse-section-header { z-index: 20; } .browse-section-header .dropdown-menu { z-index: 1080; } sup...
 bn_rwwad: 6236 verses, 1640 with footnotes, 510281 bytes gz, version ''
   2:255 = আল্লাহ, তিনি ছাড়া কোনো সত্য ইলাহ নেই। তিনি চিরঞ্জীব, সর্বসত্তার রক্ষণাবেক্ষণকারী, ধারক(৭৬)। তাঁকে তন্দ্রাও স্পর্শ করতে পারে না, নিদ্রাও না। আসমানসমূহে যা রয়েছে 
 bn.bengali: https://tanzil.net/trans/?transID=bn.bengali&type=txt-2 (numbered lines)
