@@ -1,0 +1,20 @@
+arabic.txt.gz: 266779 bytes
+  https://quranenc.com/api/v1/translations/list/bn: bengali_zakaria not in 0 entries; bengali keys: []
+  https://quranenc.com/api/v1/translations/list: bengali_zakaria not in 75 entries; bengali keys: []
+bn_zakaria: 6236 verses, 3608 with footnotes, 2431873 bytes gz, version ''
+  2:255 = আল্লাহ্‌ [১], তিনি ছাড়া কোনো সত্য ইলাহ নেই [২]। তিনি চিরঞ্জীব, সর্বসত্তার ধারক [৩]। তাঁকে তন্দ্রাও স্পর্শ করতে পারে না, নিদ্রাও নয় [৪]। আসমানসমূহে যা রয়েছে ও যম
+  https://quranenc.com/api/v1/translations/list/bn: bengali_rwwad not in 0 entries; bengali keys: []
+  https://quranenc.com/api/v1/translations/list: bengali_rwwad not in 75 entries; bengali keys: []
+bn_rwwad: 6236 verses, 1640 with footnotes, 510281 bytes gz, version ''
+  2:255 = আল্লাহ, তিনি ছাড়া কোনো সত্য ইলাহ নেই। তিনি চিরঞ্জীব, সর্বসত্তার রক্ষণাবেক্ষণকারী, ধারক(৭৬)। তাঁকে তন্দ্রাও স্পর্শ করতে পারে না, নিদ্রাও না। আসমানসমূহে যা রয়েছে 
+bn.bengali: https://tanzil.net/trans/?transID=bn.bengali&type=txt-2 (numbered lines)
+bn_muhiuddin: 6236 verses, 0 with footnotes, 355821 bytes gz, version ''
+  2:255 = আল্লাহ ছাড়া অন্য কোন উপাস্য নেই, তিনি জীবিত, সবকিছুর ধারক। তাঁকে তন্দ্রাও স্পর্শ করতে পারে না এবং নিদ্রাও নয়। আসমান ও যমীনে যা কিছু রয়েছে, সবই তাঁর। কে আছ এমন,
+bn.hoque: https://tanzil.net/trans/?transID=bn.hoque&type=txt-2 (numbered lines)
+bn_hoque: 6236 verses, 0 with footnotes, 375632 bytes gz, version ''
+  2:255 = আল্লাহ্ -- তিনি ছাড়া অন্য উপাস্য নেই, -- চিরজীবন্ত, সদা-বিদ্যমান, তন্দ্রা তাঁকে অভিভূত করতে পারে না, নিদ্রাও নয়। তাঁরই হচ্ছে যা-কিছু আছে মহাকাশমন্ডলে এবং যা-কিছ
+1:1 بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ
+2:1 بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ الٓمٓ
+2:255 ٱللَّهُ لَآ إِلَـٰهَ إِلَّا هُوَ ٱلْحَىُّ ٱلْقَيُّومُ ۚ لَا تَأْخُذُهُۥ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُۥ مَا فِى ٱلسَّمَـٰوَٰتِ وَمَا فِى ٱلْأَرْضِ ۗ مَن ذَا ٱلَّذِى يَشْفَعُ عِندَهُۥٓ إِلَّا بِإِذْنِهِۦ ۚ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ ۖ وَلَا يُحِيطُونَ بِشَىْءٍ مِّنْ عِلْمِهِۦٓ إِلَّا بِمَا شَآءَ ۚ وَسِعَ كُرْسِيُّهُ ٱلسَّمَـٰوَٰتِ وَٱلْأَرْضَ ۖ وَلَا يَـُٔودُهُۥ حِفْظُهُمَا ۚ وَهُوَ ٱلْعَلِىُّ ٱلْعَظِيمُ
+9:1 بَرَآءَةٌ مِّنَ ٱللَّهِ وَرَسُولِهِۦٓ إِلَى ٱلَّذِينَ عَـٰهَدتُّم مِّنَ ٱلْمُشْرِكِينَ
+114:6 مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ
