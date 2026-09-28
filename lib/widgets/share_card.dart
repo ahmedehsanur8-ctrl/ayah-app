@@ -11,9 +11,12 @@ import 'pattern.dart';
 /// A picture-ready card: Arabic, Bangla, reference and the app name.
 /// It always uses the same colours, whatever the phone's theme.
 class ShareCard extends StatelessWidget {
-  const ShareCard(this.item, {super.key});
+  const ShareCard(this.item, {super.key, this.heading});
 
   final ContentItem item;
+
+  /// Top-left label; "আজকের আয়াত" / "আজকের হাদিস" by default.
+  final String? heading;
 
   static const width = 360.0;
 
@@ -53,7 +56,7 @@ class ShareCard extends StatelessWidget {
                     const AppLogo(size: 30),
                     const SizedBox(width: 8),
                     Text(
-                      item.isAyah ? 'আজকের আয়াত' : 'আজকের হাদিস',
+                      heading ?? (item.isAyah ? 'আজকের আয়াত' : 'আজকের হাদিস'),
                       style: const TextStyle(
                         fontFamily: headingFont,
                         fontWeight: FontWeight.w700,
@@ -162,19 +165,20 @@ class _GoldStar extends CustomPainter {
 }
 
 /// Shows a preview of the image card with a share button.
-Future<void> showShareSheet(BuildContext context, ContentItem item) {
+Future<void> showShareSheet(BuildContext context, ContentItem item, {String? heading}) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (_) => _ShareSheet(item),
+    builder: (_) => _ShareSheet(item, heading),
   );
 }
 
 class _ShareSheet extends StatefulWidget {
-  const _ShareSheet(this.item);
+  const _ShareSheet(this.item, this.heading);
 
   final ContentItem item;
+  final String? heading;
 
   @override
   State<_ShareSheet> createState() => _ShareSheetState();
@@ -231,7 +235,10 @@ class _ShareSheetState extends State<_ShareSheet> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(radiusM),
                 child: FittedBox(
-                  child: RepaintBoundary(key: _key, child: ShareCard(widget.item)),
+                  child: RepaintBoundary(
+                    key: _key,
+                    child: ShareCard(widget.item, heading: widget.heading),
+                  ),
                 ),
               ),
             ),

@@ -21,12 +21,19 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+// AudioServiceActivity (a FlutterActivity) lets recitation keep playing with the
+// screen off, with media controls in the notification.
+class MainActivity : AudioServiceActivity() {
+    companion object {
+        /** Dart has asked for the launch payload once (the engine is running). */
+        private var dartStarted = false
+    }
+
     private var permissionResult: MethodChannel.Result? = null
     private var reminderChannel: MethodChannel? = null
 
@@ -84,11 +91,20 @@ class MainActivity : FlutterActivity() {
                     result.success(true)
                 }
                 "launchPayload" -> {
+                    dartStarted = true
                     result.success(pendingReminderPayload)
                     pendingReminderPayload = null
                 }
                 else -> result.notImplemented()
             }
+        }
+        // The Flutter engine is cached (AudioServiceActivity), so after the
+        // screen was closed a reminder opens a new activity on an engine that is
+        // already running and won't ask for the launch payload again.
+        val waiting = pendingReminderPayload
+        if (dartStarted && waiting != null) {
+            pendingReminderPayload = null
+            Handler(Looper.getMainLooper()).post { reminders.invokeMethod("open", waiting) }
         }
         // Full azan at prayer times (Azan.kt).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/azan")

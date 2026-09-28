@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../models/content.dart';
 import '../services/prayer.dart';
+import '../services/quran.dart';
 import '../theme.dart';
 import '../widgets/pattern.dart';
 
@@ -36,10 +37,34 @@ class CreditsScreen extends StatelessWidget {
             name: 'Tanzil.net',
             what: 'কুরআনের আরবি লেখা (উসমানি লিপি)',
             details:
-                'Tanzil Quran Text (Uthmani) — Copyright © Tanzil Project. '
-                'License: Creative Commons Attribution 3.0. https://tanzil.net',
-            extra: data.tanzilLicense,
+                'Tanzil Quran Text (Uthmani${Quran.arabicInfo['version'] != null && '${Quran.arabicInfo['version']}'.isNotEmpty ? ', Version ${Quran.arabicInfo['version']}' : ''}) — Copyright © Tanzil Project. '
+                'License: Creative Commons Attribution 3.0. https://tanzil.net\n'
+                'পূর্ণ কুরআন (৬২৩৬ আয়াত) অ্যাপের ভেতরেই রাখা, হুবহু। '
+                'ডাউনলোডের তারিখ: ${toBanglaDigits(Quran.downloadedOn)}',
+            extra: data.tanzilLicense.isNotEmpty
+                ? data.tanzilLicense
+                : '${Quran.arabicInfo['licenseHeader'] ?? ''}',
           ),
+          for (final t in Quran.translations)
+            _Source(
+              icon: Icons.translate,
+              name: t.name,
+              what: t.bundled
+                  ? 'পূর্ণ কুরআনের বাংলা অনুবাদ ও টীকা (অ্যাপের সাথেই আছে)'
+                  : 'পূর্ণ কুরআনের বাংলা অনুবাদ (বেছে নিলে ডাউনলোড হয়)',
+              details: [
+                '${t.nameEn} — ${t.publisher}',
+                if (t.title.isNotEmpty) t.title,
+                if (t.version.isNotEmpty) 'সংস্করণ: ${t.version}',
+                if (t.lastUpdate.isNotEmpty) 'সর্বশেষ হালনাগাদ (উৎসে): ${t.lastUpdate}',
+                if (t.nonCommercial)
+                  'শর্ত: Tanzil-এর অনুবাদ শুধু অবাণিজ্যিক ব্যবহারের জন্য। '
+                      'এই অ্যাপ বিনামূল্যে ও বিজ্ঞাপনমুক্ত।',
+                'লেখা হুবহু, কোনো পরিবর্তন করা হয়নি।',
+                t.url,
+              ].join('\n'),
+              extra: t.licenseHeader,
+            ),
           _Source(
             icon: Icons.translate,
             name: 'QuranEnc.com',
@@ -60,7 +85,7 @@ class CreditsScreen extends StatelessWidget {
           const _Source(
             icon: Icons.headphones_rounded,
             name: 'EveryAyah.com',
-            what: 'আরবি তিলাওয়াতের অডিও (আয়াত অনুযায়ী MP3)',
+            what: 'আরবি তিলাওয়াতের অডিও (আয়াত অনুযায়ী MP3; কুরআন অংশে ডাউনলোড করে রাখা যায়)',
             details:
                 'ক্বারী: মিশারি রাশিদ আলাফাসি, আব্দুল বাসিত আব্দুস সামাদ, মাহমুদ খলিল আল-হুসারি। '
                 'শুধু মানুষের কণ্ঠের তিলাওয়াত। https://everyayah.com',

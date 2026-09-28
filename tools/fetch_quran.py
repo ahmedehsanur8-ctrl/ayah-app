@@ -174,6 +174,10 @@ def load_tanzil_translation(key):
 def quranenc_info(key):
     """The QuranEnc list entry (title, version, last_update) for [key]."""
     for url in (f"{QURANENC_API}/translations/list/bn",
+                f"{QURANENC_API}/translations/list/bn?localization=en",
+                f"{QURANENC_API}/translations/list?language=bn",
+                f"{QURANENC_API}/translations/list/ben",
+                f"{QURANENC_API}/translations/list/bengali",
                 f"{QURANENC_API}/translations/list"):
         try:
             data = json.loads(fetch(url, tries=3))
@@ -184,8 +188,8 @@ def quranenc_info(key):
         for t in items:
             if isinstance(t, dict) and t.get("key") == key:
                 return t
-        say(f"  {url}: {key} not in {len(items)} entries; bengali keys: "
-            f"{[t.get('key') for t in items if 'beng' in str(t.get('key'))]}")
+        say(f"  {url}: {key} not in {len(items)} entries; languages: "
+            f"{sorted({str(t.get('language_iso_code')) for t in items if isinstance(t, dict)})[:80]}")
     # The translation's own page shows the version ("Version: 1.0.x") and title.
     for lang in ("en", "bn"):
         url = f"https://quranenc.com/{lang}/browse/{key}"
@@ -199,7 +203,9 @@ def quranenc_info(key):
         if i < 0:
             i = text.find("সংস্করণ")
         say(f"  {url}: ...{text[max(0, i - 200):i + 200] if i >= 0 else text[:300]}...")
-        m = re.search(r"(?:[Vv]ersion|সংস্করণ|الإصدار)\D{0,40}?(\d+(?:\.\d+){1,3})", text)
+        for near in re.finditer(r"(?:[Vv]ersion|সংস্করণ|إصدار|الإصدار)", text):
+            say(f"    near: {text[near.start():near.start() + 80]}")
+        m = re.search(r"(?:[Vv]ersion|সংস্করণ|إصدار|الإصدار)\D{0,60}?(\d+(?:\.\d+){1,3})", text)
         t = re.search(r"<title>\s*(.*?)\s*</title>", html, re.S)
         if m:
             return {"key": key, "version": m.group(1),

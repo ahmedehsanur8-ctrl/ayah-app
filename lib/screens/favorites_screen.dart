@@ -4,9 +4,10 @@ import '../app_state.dart';
 import '../theme.dart';
 import '../widgets/pattern.dart';
 import '../widgets/ui.dart';
+import 'quran_bookmarks_screen.dart';
 import 'reader_screen.dart';
 
-/// Ayahs and hadiths the user saved with the heart button.
+/// Quran bookmarks, and the ayahs and hadiths saved with the heart button.
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
@@ -17,67 +18,75 @@ class FavoritesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('প্রিয়')),
       body: ListenableBuilder(
-        listenable: state.settings,
+        listenable: Listenable.merge([state.settings, state.settings.quran]),
         builder: (context, _) {
           final items = state.settings.favorites.map(state.data.byId).nonNulls.toList();
-          if (items.isEmpty) return const _Empty();
+          final bookmarks = state.settings.quran.bookmarks.isNotEmpty;
+          if (items.isEmpty && !bookmarks) return const _Empty();
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             children: [
-              AppCard(
-                padding: EdgeInsets.zero,
-                child: Column(
-                  children: [
-                    for (var i = 0; i < items.length; i++) ...[
-                      if (i > 0) Divider(height: 1, color: p.border),
-                      InkWell(
-                        onTap: () =>
-                            push(context, ReaderScreen(items: items, index: i, title: 'প্রিয়')),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 64),
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${items[i].isAyah ? 'আয়াত' : 'হাদিস'} · ${items[i].title}',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: p.primary,
-                                          fontWeight: FontWeight.w700,
+              if (bookmarks) ...[const SectionLabel('কুরআন বুকমার্ক'), const QuranBookmarkList()],
+              if (items.isNotEmpty && bookmarks) const SectionLabel('প্রিয় আয়াত ও হাদিস'),
+              if (items.isNotEmpty)
+                AppCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < items.length; i++) ...[
+                        if (i > 0) Divider(height: 1, color: p.border),
+                        InkWell(
+                          onTap: () =>
+                              push(context, ReaderScreen(items: items, index: i, title: 'প্রিয়')),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 64),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${items[i].isAyah ? 'আয়াত' : 'হাদিস'} · ${items[i].title}',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: p.primary,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        items[i].banglaPlain,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(fontSize: 14, color: p.text, height: 1.5),
-                                      ),
-                                    ],
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          items[i].banglaPlain,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: p.text,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                IconButton(
-                                  tooltip: 'প্রিয় থেকে সরান',
-                                  onPressed: () => state.settings.toggleFavorite(items[i].id),
-                                  icon: const Icon(
-                                    Icons.favorite_rounded,
-                                    color: Color(0xFFD6455F),
+                                  IconButton(
+                                    tooltip: 'প্রিয় থেকে সরান',
+                                    onPressed: () => state.settings.toggleFavorite(items[i].id),
+                                    icon: const Icon(
+                                      Icons.favorite_rounded,
+                                      color: Color(0xFFD6455F),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
             ],
           );
         },
@@ -124,7 +133,7 @@ class _Empty extends StatelessWidget {
             Text('এখনো কিছু রাখা হয়নি', style: titleStyle(p, size: 20)),
             const SizedBox(height: 8),
             Text(
-              'যে আয়াত বা হাদিস মনে ধরে, তার পাশের হৃদয় চিহ্নে চাপ দিন। সেটি এখানে জমা থাকবে।',
+              'যে আয়াত বা হাদিস মনে ধরে, তার পাশের হৃদয় চিহ্নে চাপ দিন; কুরআনের আয়াতে বুকমার্ক চিহ্নে। সেটি এখানে জমা থাকবে।',
               textAlign: TextAlign.center,
               style: TextStyle(color: p.muted, height: 1.6),
             ),
