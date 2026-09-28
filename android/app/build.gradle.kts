@@ -41,7 +41,8 @@ android {
                 storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
                 keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
-                // Android 7.0+ (this app's minimum) uses the v2/v3 signatures.
+                // The build workflow re-signs with apksigner to add v1 as well
+                // (Gradle skips v1 for minSdk 24+; Oppo/ColorOS needs it).
                 enableV2Signing = true
                 enableV3Signing = true
             }

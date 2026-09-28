@@ -83,6 +83,24 @@ jobs:
           --build-name=1.0.${{ github.run_number }}
           --build-number=${{ github.run_number }}
 
+      # Oppo/ColorOS (Find X9 Ultra, Android 16) rejected Gradle-signed APKs with
+      # "APK contains no signature files" but installs this layout (test-38 "A"):
+      # re-signed by apksigner with v1 + v2 + v3, straight from the Gradle output.
+      # Gradle skips v1 for minSdk 24+, and --min-sdk-version 21 makes apksigner add it.
+      - name: Sign with v1 + v2 + v3
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          "${BT}apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" --ks-key-alias "$ANDROID_KEY_ALIAS" \
+            --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD \
+            --min-sdk-version 21 --v1-signing-enabled true --v2-signing-enabled true \
+            --v3-signing-enabled true --out "$RUNNER_TEMP/signed.apk" "$APK"
+          mv "$RUNNER_TEMP/signed.apk" "$APK"
+
       # Test variants for phones whose installer rejects the normal APK.
       #   A: universal APK (all CPU types), signed v1 + v2 + v3
       #   B: arm64-v8a only (smaller), signed like the normal release (v2 + v3)
@@ -129,10 +147,10 @@ jobs:
         run: |
           APK=build/app/outputs/flutter-apk/app-release.apk
           APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
-          "$APKSIGNER" verify --verbose --print-certs "$APK" | tee apksigner.txt
-          # The app needs Android 7.0+, which checks the v2/v3 signature
-          # (the old v1 JAR signature is skipped by the build tools).
+          # --min-sdk-version 21 makes apksigner check the v1 signature too.
+          "$APKSIGNER" verify --verbose --print-certs --min-sdk-version 21 "$APK" | tee apksigner.txt
           grep -q "^Verifies" apksigner.txt
+          grep -q "Verified using v1 scheme (JAR signing): true" apksigner.txt
           grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" apksigner.txt
           grep -q "Verified using v3 scheme (APK Signature Scheme v3): true" apksigner.txt
           EXPECTED="$(tr -d '[:space:]' < android/release-signing-sha256.txt)"
