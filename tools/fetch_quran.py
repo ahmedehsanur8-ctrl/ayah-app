@@ -186,6 +186,24 @@ def quranenc_info(key):
                 return t
         say(f"  {url}: {key} not in {len(items)} entries; bengali keys: "
             f"{[t.get('key') for t in items if 'beng' in str(t.get('key'))]}")
+    # The translation's own page shows the version ("Version: 1.0.x") and title.
+    for lang in ("en", "bn"):
+        url = f"https://quranenc.com/{lang}/browse/{key}"
+        try:
+            html = fetch(url, tries=2)
+        except Exception as e:  # noqa: BLE001
+            say(f"  {url}: {e}")
+            continue
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
+        i = text.lower().find("version")
+        if i < 0:
+            i = text.find("সংস্করণ")
+        say(f"  {url}: ...{text[max(0, i - 200):i + 200] if i >= 0 else text[:300]}...")
+        m = re.search(r"(?:[Vv]ersion|সংস্করণ|الإصدار)\D{0,40}?(\d+(?:\.\d+){1,3})", text)
+        t = re.search(r"<title>\s*(.*?)\s*</title>", html, re.S)
+        if m:
+            return {"key": key, "version": m.group(1),
+                    "title": re.sub(r"\s+", " ", t.group(1)) if t else ""}
     return {"key": key}
 
 
