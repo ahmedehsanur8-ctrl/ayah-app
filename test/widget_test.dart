@@ -13,6 +13,8 @@ import 'package:ayah_reminder/services/settings.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:ayah_reminder/services/permissions.dart';
+
 void main() {
   final data = ContentData.fromJson(
     jsonDecode(File('assets/content.json').readAsStringSync()) as Map<String, dynamic>,
@@ -53,6 +55,23 @@ void main() {
       seen.add(rotation.morning(d)!.id);
     }
     expect(seen.length, data.items.where((i) => i.isAyah).length);
+  });
+
+  test('phone brands get their own setup steps', () {
+    expect(PhoneBrand.of('OPPO'), PhoneBrand.colorOs);
+    expect(PhoneBrand.of('realme'), PhoneBrand.colorOs);
+    expect(PhoneBrand.of('OnePlus'), PhoneBrand.colorOs);
+    expect(PhoneBrand.of('Xiaomi'), PhoneBrand.miui);
+    expect(PhoneBrand.of('POCO'), PhoneBrand.miui);
+    expect(PhoneBrand.of('vivo'), PhoneBrand.vivo);
+    expect(PhoneBrand.of('samsung'), PhoneBrand.samsung);
+    expect(PhoneBrand.of('Google'), isNull);
+    expect(PhoneBrand.colorOs.steps.map((s) => s.id), [
+      'autostart',
+      'popup',
+      'lockscreen',
+      'background',
+    ]);
   });
 
   test('Bangla digits', () {

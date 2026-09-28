@@ -12,7 +12,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
-    <!-- Azan: plays the full azan at prayer time as a foreground media service. -->
+    <!-- Opens the reminder page over other apps while the phone is in use (user can allow it). -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
+    <!-- Azan and alarm-style reminders: play sound at the set time as a foreground media service. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
@@ -51,6 +54,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <!-- Alarm-style reminders: the alarm and the service that shows / sounds it. -->
+        <receiver android:exported="false" android:name=".ReminderAlarmReceiver" />
+        <service
+            android:name=".ReminderService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <!-- Azan: alarm at prayer time, the player service, the full-screen page, and
              setting the next alarm again after a restart or clock change. -->

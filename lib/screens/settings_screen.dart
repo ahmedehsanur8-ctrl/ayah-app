@@ -32,14 +32,26 @@ class SettingsScreen extends StatelessWidget {
     await Reminders.reschedule(s.settings, s.data);
   }
 
-  /// Sends a test reminder now.
+  /// Rings a test reminder in one minute (lock the phone and wait).
   static void sendTestReminder(BuildContext context) {
     final s = AppState.instance;
     final item = s.rotation.morning(Rotation.dayNumber(Reminders.nowDhaka()));
-    if (item != null) Reminders.showTest(item);
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('একটি পরীক্ষামূলক রিমাইন্ডার পাঠানো হয়েছে')));
+    if (item != null) Reminders.testIn(item, seconds: 60);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        duration: Duration(seconds: 6),
+        content: Text('১ মিনিট পর একটি পরীক্ষামূলক রিমাইন্ডার আসবে। এখন ফোন লক করে অপেক্ষা করুন।'),
+      ),
+    );
   }
+
+  static const reminderSounds = {
+    'chime': 'মৃদু ঘণ্টাধ্বনি',
+    'bell': 'শান্ত ঘণ্টা',
+    'phone': 'ফোনের নোটিফিকেশন শব্দ',
+    'tilawat': 'আয়াতের তিলাওয়াতের শুরু',
+    'off': 'শব্দ ছাড়া',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -137,10 +149,40 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           NavRow(
+            icon: Icons.music_note_outlined,
+            tint: context.palette.sand,
+            title: 'রিমাইন্ডারের শব্দ',
+            subtitle: '${reminderSounds[settings.reminderSound]} · অ্যালার্মের মতো, সাইলেন্টেও',
+            onTap: () async {
+              final v = await pickOption<String>(
+                context,
+                'রিমাইন্ডারের শব্দ',
+                settings.reminderSound,
+                reminderSounds,
+              );
+              if (v != null) {
+                await settings.setReminderSound(v);
+                await reschedule();
+              }
+            },
+          ),
+          NavRow(
+            icon: Icons.vibration_rounded,
+            tint: context.palette.mint,
+            title: 'কাঁপুনি (ভাইব্রেশন)',
+            trailing: Switch(
+              value: settings.reminderVibrate,
+              onChanged: (v) async {
+                await settings.setReminderVibrate(v);
+                await reschedule();
+              },
+            ),
+          ),
+          NavRow(
             icon: Icons.play_circle_outline_rounded,
             tint: context.palette.rose,
-            title: 'পরীক্ষামূলক রিমাইন্ডার',
-            subtitle: 'রিমাইন্ডার ঠিকমতো আসে কিনা এখনই দেখে নিন',
+            title: '১ মিনিট পর পরীক্ষা করুন',
+            subtitle: 'চাপ দিয়ে ফোন লক করুন — ১ মিনিট পর রিমাইন্ডার আসবে',
             onTap: () => sendTestReminder(context),
           ),
         ],

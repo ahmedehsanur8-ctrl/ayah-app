@@ -21,16 +21,21 @@ Answers for the Data safety form in Play Console, based on what the app does.
 | `ACCESS_COARSE_LOCATION` | Prayer times and Qibla, calculated on the phone. Optional: a city can be picked by hand. |
 | `POST_NOTIFICATIONS` | Morning/night reminders and azan. |
 | `SCHEDULE_EXACT_ALARM` | Reminders and azan at the exact time. |
-| `USE_FULL_SCREEN_INTENT` | The reminder can open the reading screen. |
+| `USE_FULL_SCREEN_INTENT` | The reminder (and optionally the azan) opens full screen like an alarm, also on the lock screen. |
+| `SYSTEM_ALERT_WINDOW` | While the phone is in use, the reminder page can open in front of other apps. |
 | `RECEIVE_BOOT_COMPLETED` | Re-plans reminders and azan after the phone restarts. |
 | `VIBRATE`, `WAKE_LOCK` | Notification vibration; gentle vibration when facing the Qibla. |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Lets the user allow reminders on phones that stop background alarms. |
 | `INTERNET` | Arabic recitation audio from EveryAyah.com. |
-| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Plays the full azan at the prayer times the user turned on (see below). |
+| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Plays the full azan at the prayer times the user turned on, and the short reminder sound (see below). |
 
 ## Foreground service declaration (Play Console → App content → Foreground service permissions)
 
-- **Type:** `mediaPlayback` (`AzanService`).
+- **Type:** `mediaPlayback` (`AzanService` and `ReminderService`).
+- **ReminderService:** at the reminder time the user chose, plays a short gentle sound
+  (a few seconds, repeated for at most one minute) on the alarm stream with a notification
+  with "পড়ুন" and "১০ মিনিট পরে" buttons, then stops. The sound can be changed or turned off
+  in Settings.
 - **What it does:** at each prayer time the user set to "আজান", an exact alarm starts the
   service, which plays the bundled azan recording (about 1–3 minutes) from start to end
   and then stops itself. A notification with a "থামান" (stop) button is shown the whole
@@ -49,3 +54,4 @@ uses location in the background.
 - Ads: **No ads.**
 - Target audience: general (all ages); the app collects no data.
 - Privacy policy: `docs/PRIVACY.md` (needs to be published at a public URL for Play).
+- Exact texts for the permission declarations: `docs/PLAY_DECLARATIONS.md`.

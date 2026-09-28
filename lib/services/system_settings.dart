@@ -21,6 +21,38 @@ class SystemSettings {
   static Future<bool> canUseFullScreenIntent() async =>
       await _call<bool>('canUseFullScreenIntent') ?? true;
 
+  static Future<void> openFullScreenSettings() => _call<bool>('openFullScreenSettings');
+
+  static Future<bool> notificationsEnabled() async =>
+      await _call<bool>('notificationsEnabled') ?? true;
+
+  static Future<void> openNotificationSettings() => _call<bool>('openNotificationSettings');
+
+  static Future<bool> canScheduleExactAlarms() async =>
+      await _call<bool>('canScheduleExactAlarms') ?? true;
+
+  static Future<void> openExactAlarmSettings() => _call<bool>('openExactAlarmSettings');
+
+  /// "Display over other apps".
+  static Future<bool> canDrawOverlays() async => await _call<bool>('canDrawOverlays') ?? true;
+
+  static Future<void> openOverlaySettings() => _call<bool>('openOverlaySettings');
+
+  /// The app's own "App info" page.
+  static Future<void> openAppDetails() => _call<bool>('openAppDetails');
+
+  /// Xiaomi "Other permissions" (lock screen, pop-up windows).
+  static Future<void> openMiuiPermissions() => _call<bool>('openMiuiPermissions');
+
+  /// The list of apps and their battery optimisation.
+  static Future<void> openBatterySettings() => _call<bool>('openBatterySettings');
+
+  /// Samsung Device care → Battery (sleeping apps).
+  static Future<void> openSamsungBattery() => _call<bool>('openSamsungBattery');
+
+  /// e.g. "OPPO", "Xiaomi", "samsung".
+  static Future<String> manufacturer() async => await _call<String>('manufacturer') ?? '';
+
   static Future<T?> _call<T>(String method) async {
     try {
       return await _channel.invokeMethod<T>(method);

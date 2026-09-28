@@ -4,7 +4,7 @@ import 'app_state.dart';
 import 'screens/home_shell.dart';
 import 'screens/prayer_screen.dart';
 import 'screens/reading_screen.dart';
-import 'screens/setup_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/location.dart';
 import 'services/prayer.dart';
@@ -18,7 +18,9 @@ Future<void> main() async {
   final state = await AppState.load();
   await Prayers.loadAzanInfo();
   await Reminders.init(_openFromReminder, onAzan: _openPrayerTimes);
-  final launch = await Reminders.launchPayload();
+  // Opened by a reminder alarm (native) or an older reminder notification.
+  final launch = await Reminders.nativeLaunchPayload() ?? await Reminders.launchPayload();
+  Reminders.listen(_openFromReminder);
   final fromAzan = await Reminders.launchedFromAzan();
   runApp(AyahReminderApp(launch: launch));
   if (fromAzan) WidgetsBinding.instance.addPostFrameCallback((_) => _openPrayerTimes());
@@ -75,9 +77,7 @@ class AyahReminderApp extends StatelessWidget {
           // Opened from a reminder: go straight to the reading screen.
           ? ReadingScreen(item: launchItem, payload: launch, fromReminder: true)
           : SplashScreen(
-              next: state.settings.setupDone
-                  ? const HomeShell()
-                  : const SetupScreen(firstTime: true),
+              next: state.settings.setupDone ? const HomeShell() : const OnboardingScreen(),
             ),
     );
   }

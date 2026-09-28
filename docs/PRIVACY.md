@@ -20,6 +20,7 @@ twice a day, and shows prayer times, azan and the Qibla direction.
 | Approximate location (optional) | Prayer times and Qibla, calculated on the phone | No |
 | Compass sensor | Qibla direction | No |
 | Notifications | Morning/night reminders and azan, created on the phone | No |
+| Alarms, full-screen and "display over other apps" | The reminder opens like an alarm (full screen, gentle sound) at the time you chose; the azan plays at prayer times. These permissions only show the app's own reminder page; they read no data. | No |
 | Internet | Downloading Arabic recitation audio from EveryAyah.com when you press play; the audio is cached on the phone | Only the audio request (no personal data). Like any website, EveryAyah.com's server sees the connection's IP address. |
 | Phone's text-to-speech | Reading the Bangla meaning and hadiths aloud | Handled by the phone's own speech engine |
 | Storage on the phone | Settings, favourites, story listening progress, chosen location | No — deleted when the app is uninstalled |
@@ -41,5 +42,7 @@ If this policy changes, the new version will be published with the app update.
 - নামাজের সময় ও কিবলার দিক হিসাবের জন্য ফোনের আনুমানিক অবস্থান ব্যবহার হয়। হিসাব ফোনেই হয়;
   অবস্থান শুধু ফোনে থাকে, কোথাও পাঠানো হয় না। অনুমতি না দিলে হাতে শহর বেছে নেওয়া যায়।
 - ইন্টারনেট শুধু আরবি তিলাওয়াত (EveryAyah.com) শোনার জন্য; এতে আপনার কোনো তথ্য পাঠানো হয় না।
-- রিমাইন্ডার ও আজানের নোটিফিকেশন ফোনেই তৈরি হয়।
+- রিমাইন্ডার ও আজানের নোটিফিকেশন ফোনেই তৈরি হয়। অ্যালার্ম, ফুল-স্ক্রিন ও "অন্য অ্যাপের উপরে দেখানো"
+  অনুমতি শুধু রিমাইন্ডারের পাতা অ্যালার্মের মতো দেখাতে লাগে; কোনো তথ্য পড়ে না।
+- আরও → সেটিংস থেকে রিমাইন্ডার, আর নামাজের সময় পাতা থেকে আজান যেকোনো সময় বন্ধ করা যায়।
 - সেটিংস, প্রিয় তালিকা ও বেছে নেওয়া অবস্থান শুধু ফোনে থাকে; অ্যাপ মুছলে মুছে যায়।

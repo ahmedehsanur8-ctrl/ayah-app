@@ -8,6 +8,7 @@ import 'package:ayah_reminder/screens/privacy_screen.dart';
 import 'package:ayah_reminder/screens/qibla_screen.dart';
 import 'package:ayah_reminder/screens/reader_screen.dart';
 import 'package:ayah_reminder/screens/reading_screen.dart';
+import 'package:ayah_reminder/screens/onboarding_screen.dart';
 import 'package:ayah_reminder/screens/setup_screen.dart';
 import 'package:ayah_reminder/screens/splash_screen.dart';
 import 'package:ayah_reminder/screens/stories_screen.dart';
@@ -85,6 +86,8 @@ void main() {
         expect(find.text('শুনুন'), findsOneWidget);
         await t.scrollUntilVisible(find.text('আজকের হাদিস'), 300);
         expect(find.text('আজকের হাদিস'), findsOneWidget);
+        await t.drag(find.byType(Scrollable).first, const Offset(0, -250));
+        await t.pumpAndSettle();
         await t.tap(find.text('পরের').last);
         await t.pump();
 
@@ -263,13 +266,70 @@ void main() {
         expect(find.text('কৃতজ্ঞতা ও উৎস'), findsOneWidget);
       });
 
-      testWidgets('setup', (t) async {
+      testWidgets('onboarding: one page per permission, then the summary', (t) async {
         await t.binding.setSurfaceSize(const Size(360, 740));
-        await t.pumpWidget(app(const SetupScreen(firstTime: true), b));
+        await t.pumpWidget(app(const OnboardingScreen(), b));
+        await settleChecks(t);
+        expect(find.text('শুরু করি'), findsOneWidget);
+        await t.tap(find.text('শুরু করি'));
         await t.pumpAndSettle();
-        await t.scrollUntilVisible(find.text('শুরু করুন'), 300);
-        expect(find.text('শুরু করুন'), findsOneWidget);
+        // No plugin in tests: notifications etc. read as granted, battery and
+        // location as missing, and no brand page.
+        expect(find.text('২ / ৮'), findsOneWidget);
+        expect(find.text('নোটিফিকেশন'), findsOneWidget);
+        for (final title in [
+          'ফুল-স্ক্রিন রিমাইন্ডার',
+          'সময়মতো রিমাইন্ডার',
+          'অন্য অ্যাপের উপরে দেখানো',
+        ]) {
+          await t.tap(find.text('পরবর্তী'));
+          await t.pumpAndSettle();
+          expect(find.text(title), findsOneWidget);
+        }
+        await t.tap(find.text('পরবর্তী'));
+        await t.pumpAndSettle();
+        expect(find.text('লোকেশন'), findsOneWidget);
+        // An earlier test may have picked a city already.
+        if (AppState.instance.settings.hasLocation) {
+          await t.tap(find.text('পরবর্তী'));
+        } else {
+          expect(find.text('শহর বেছে নিন'), findsOneWidget);
+          await t.tap(find.text('পরে করব'));
+        }
+        await t.pumpAndSettle();
+        expect(find.text('ব্যাটারি'), findsOneWidget);
+        expect(find.text('অনুমতি দিন'), findsOneWidget);
+        await t.tap(find.text('পরে করব'));
+        await t.pumpAndSettle();
+        expect(find.text('৮ / ৮'), findsOneWidget);
+        expect(find.text('বাকি'), findsWidgets);
+        await t.scrollUntilVisible(
+          find.text('শুরু করুন'),
+          300,
+          scrollable: find.byType(Scrollable).last,
+        );
+        expect(find.text('১ মিনিট পর পরীক্ষা করুন'), findsOneWidget);
+      });
+
+      testWidgets('setup page and home banner', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        await t.pumpWidget(app(const SetupScreen(), b));
+        await settleChecks(t);
+        expect(find.text('রিমাইন্ডার ঠিকমতো কাজ করতে ১টি অনুমতি বাকি।'), findsOneWidget);
+        await t.pumpWidget(app(const SetupBanner(), b));
+        await settleChecks(t);
+        expect(find.text('রিমাইন্ডার ঠিকমতো কাজ করতে ১টি অনুমতি বাকি'), findsOneWidget);
       });
     });
   }
+}
+
+/// The permission checks call the platform channels, which answer outside the
+/// test's fake clock.
+Future<void> settleChecks(WidgetTester t) async {
+  for (var i = 0; i < 100 && find.byType(CircularProgressIndicator).evaluate().isNotEmpty; i++) {
+    await t.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+    await t.pump();
+  }
+  await t.pumpAndSettle();
 }
