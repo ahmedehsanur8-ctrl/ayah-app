@@ -184,7 +184,7 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
             icon: Icons.fullscreen_rounded,
             title: 'পুরো স্ক্রিনে দেখানোর অনুমতি',
             body:
-                'ফোন লক থাকলেও রিমাইন্ডারটি পুরো স্ক্রিনে খুলে যাবে, যেন আয়াত বা হাদিসটি চোখে পড়ে। '
+                'ফোন লক থাকলেও রিমাইন্ডার ও আজানের পাতা পুরো স্ক্রিনে খুলে যাবে, যেন আয়াত বা হাদিসটি চোখে পড়ে। '
                 'খোলা পাতায় "Ayah Reminder"-এর পাশের সুইচটি চালু করুন।',
             done: _fullScreen,
             button: 'অনুমতি দিন',
@@ -198,7 +198,7 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
             icon: Icons.alarm_rounded,
             title: 'ঠিক সময়ে অ্যালার্মের অনুমতি',
             body:
-                'এতে রিমাইন্ডার ঠিক আপনার বেছে নেওয়া সময়েই আসবে, দেরি করে নয়। '
+                'এতে রিমাইন্ডার ও আজান ঠিক সময়েই বাজবে, দেরি করে নয়। '
                 'খোলা পাতায় সুইচটি চালু করুন।',
             done: _exactAlarm,
             button: 'অনুমতি দিন',

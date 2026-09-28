@@ -106,10 +106,15 @@ def fetch_one(title, out):
                                 timeout=300) as resp:
         src.write_bytes(resp.read())
     out.parent.mkdir(parents=True, exist_ok=True)
-    # Audio only, mono, 64 kbps, even loudness.
+    # Audio only, mono, 64 kbps, silence cut from both ends, even loudness.
+    trim = ("silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.3,areverse,"
+            "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.3,areverse,"
+            "loudnorm=I=-16:TP=-1.5")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vn", "-ac", "1",
-                    "-ar", "44100", "-af", "loudnorm=I=-16:TP=-1.5", "-b:a", "64k", str(out)],
-                   check=True)
+                    "-ar", "44100", "-af", trim, "-b:a", "64k", str(out)], check=True)
+    dur = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                          "-of", "default=nw=1:nk=1", str(out)], capture_output=True, text=True).stdout
+    print(f"Length after trimming: {dur.strip()} s")
     src.unlink()
     print(f"Saved {out} ({out.stat().st_size} bytes)")
     return {"title": r["title"],

@@ -31,6 +31,39 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Full azan at prayer times (Azan.kt).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/azan")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "schedule" -> {
+                        AzanStore.save(
+                            this,
+                            call.argument<String>("events") ?: "[]",
+                            call.argument<Boolean>("inSilent") ?: true,
+                            call.argument<Boolean>("fullScreen") ?: true,
+                        )
+                        AzanScheduler.scheduleNext(this)
+                        result.success(true)
+                    }
+                    "playNow" -> {
+                        AzanService.start(
+                            this,
+                            call.argument<String>("name") ?: "",
+                            call.argument<Boolean>("fajr") ?: false,
+                            System.currentTimeMillis(),
+                        )
+                        result.success(true)
+                    }
+                    "stop" -> {
+                        AzanService.stop(this); result.success(true)
+                    }
+                    "isPlaying" -> result.success(AzanService.isPlaying)
+                    "hasFajrSound" -> result.success(
+                        resources.getIdentifier("azan_fajr", "raw", packageName) != 0
+                    )
+                    else -> result.notImplemented()
+                }
+            }
         // Location for prayer times and Qibla, with Android's own LocationManager
         // (no Google Play Services). It is only read on request and stays on the phone.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/location")

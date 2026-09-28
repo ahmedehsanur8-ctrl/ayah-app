@@ -2,9 +2,7 @@ import 'dart:convert';
 
 import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter/services.dart';
 
 import '../models/content.dart';
 import 'reminders.dart';
@@ -118,13 +116,22 @@ class Prayers {
 
   // ---------------------------------------------------------------- azan
 
-  static const _firstId = 3000;
-  static const daysAhead = 14;
+  /// Old azan notifications (before the full azan) used these ids.
+  static const _oldFirstId = 3000;
+
+  /// How many days of prayer times are handed to the Android alarm.
+  static const daysAhead = 30;
+
+  static const _channel = MethodChannel('ayah_reminder/azan');
 
   /// True when a licensed azan recording is bundled (res/raw/azan.mp3).
   static bool azanBundled = false;
 
-  /// Licence details of the bundled azan (for the credits page).
+  /// True when a separate Fajr azan is bundled (res/raw/azan_fajr.mp3).
+  static bool fajrBundled = false;
+
+  /// Licence details of the bundled azan (for the credits page); the Fajr
+  /// recording, if any, is under the "fajr" key.
   static Map<String, dynamic> azanLicense = const {};
 
   static Future<void> loadAzanInfo() async {
@@ -132,102 +139,69 @@ class Prayers {
       final j = jsonDecode(await rootBundle.loadString('assets/azan_license.json'));
       azanLicense = (j as Map<String, dynamic>);
       azanBundled = (azanLicense['title'] ?? '').toString().isNotEmpty;
+      fajrBundled = ((azanLicense['fajr'] as Map?)?['title'] ?? '').toString().isNotEmpty;
     } catch (_) {
       azanBundled = false;
     }
   }
 
-  /// The sound that will actually be used ('azan' falls back to 'soft' when
-  /// no azan recording is bundled).
-  static String effectiveSound(AppSettings s) =>
-      s.azanSound == 'azan' && !azanBundled ? 'soft' : s.azanSound;
-
-  static AndroidNotificationDetails _details(String sound, String title) {
-    final (id, name) = switch (sound) {
-      'azan' => ('azan_voice', 'আজান'),
-      'silent' => ('azan_silent', 'নামাজের সময় (নীরব)'),
-      _ => ('azan_soft', 'নামাজের সময় (মৃদু শব্দ)'),
-    };
-    return AndroidNotificationDetails(
-      id,
-      name,
-      channelDescription: 'প্রতি ওয়াক্ত নামাজের সময় জানায়',
-      importance: sound == 'silent' ? Importance.defaultImportance : Importance.max,
-      priority: Priority.high,
-      category: AndroidNotificationCategory.reminder,
-      visibility: NotificationVisibility.public,
-      playSound: sound != 'silent',
-      sound: sound == 'azan' ? const RawResourceAndroidNotificationSound('azan') : null,
-      // A notification sound: stays quiet when the phone is on silent / vibrate.
-      audioAttributesUsage: AudioAttributesUsage.notification,
-      color: const Color(0xFF14553F),
-      ticker: title,
-      actions: sound == 'silent'
-          ? null
-          : const [
-              AndroidNotificationAction(
-                'stop',
-                'থামান',
-                cancelNotification: true,
-                showsUserInterface: false,
-              ),
-            ],
-    );
-  }
-
-  /// Cancels and re-plans the azan notifications for the next [daysAhead] days.
-  static Future<void> schedule(AppSettings s) async {
-    final plugin = Reminders.plugin;
-    for (var i = 0; i < daysAhead * 5 + 10; i++) {
-      try {
-        await plugin.cancel(id: _firstId + i);
-      } catch (_) {}
-    }
-    if (!s.hasLocation) return;
-    final exact = await Reminders.android?.canScheduleExactNotifications() ?? false;
-    final mode = exact
-        ? AndroidScheduleMode.exactAllowWhileIdle
-        : AndroidScheduleMode.inexactAllowWhileIdle;
-    final sound = effectiveSound(s);
-    final now = DateTime.now();
-    var n = 0;
+  /// The prayer times the Android side should act on, as JSON.
+  static String eventsJson(AppSettings s, DateTime now) {
+    final events = <Map<String, Object>>[];
     for (var d = 0; d < daysAhead; d++) {
       final day = DateTime(now.year, now.month, now.day + d);
       for (final p in forDay(s, day)) {
-        if (p.isSunrise || !s.azanOn(p.key) || !p.time.isAfter(now)) {
-          if (!p.isSunrise) n++;
-          continue;
-        }
-        final title = '${genitive(p.key)} সময় হয়েছে';
-        try {
-          await plugin.zonedSchedule(
-            id: _firstId + n,
-            title: title,
-            body: '${p.name} · ${formatClock(p.time)}',
-            scheduledDate: tz.TZDateTime.from(p.time, tz.UTC),
-            notificationDetails: NotificationDetails(android: _details(sound, title)),
-            androidScheduleMode: mode,
-            payload: 'azan|${p.key}',
-          );
-        } catch (e) {
-          debugPrint('azan schedule failed: $e');
-        }
-        n++;
+        final mode = s.azanMode(p.key);
+        if (p.isSunrise || mode == 'off' || !p.time.isAfter(now)) continue;
+        events.add({
+          't': p.time.millisecondsSinceEpoch,
+          'key': p.key,
+          'name': p.name,
+          'mode': mode == 'azan' && azanBundled ? 'azan' : 'notify',
+          'fajr': p.key == 'fajr',
+        });
       }
+    }
+    return jsonEncode(events);
+  }
+
+  /// Hands the next [daysAhead] days of prayer times to Android, which sets an
+  /// alarm for the next one (and the one after that when it rings).
+  static Future<void> schedule(AppSettings s) async {
+    // Remove notifications planned by older versions of the app.
+    for (var i = 0; i < 80; i++) {
+      try {
+        await Reminders.plugin.cancel(id: _oldFirstId + i);
+      } catch (_) {}
+    }
+    try {
+      await _channel.invokeMethod('schedule', {
+        'events': s.hasLocation ? eventsJson(s, DateTime.now()) : '[]',
+        'inSilent': s.azanInSilent,
+        'fullScreen': s.azanFullScreen,
+      });
+    } on MissingPluginException {
+      // Tests / non-Android.
+    } on PlatformException catch (e) {
+      debugPrint('azan schedule failed: $e');
     }
   }
 
-  /// Plays the chosen azan sound once, as a test.
-  static Future<void> showTest(AppSettings s) async {
-    final sound = effectiveSound(s);
-    const title = 'আজান পরীক্ষা';
-    await Reminders.plugin.show(
-      id: _firstId + daysAhead * 5 + 5,
-      title: title,
-      body: 'এভাবেই নামাজের সময় জানানো হবে',
-      notificationDetails: NotificationDetails(android: _details(sound, title)),
-      payload: 'azan|test',
-    );
+  /// Plays the full azan now (the same way it plays at prayer time).
+  static Future<void> playNow({bool fajr = false}) async {
+    try {
+      await _channel.invokeMethod('playNow', {'name': fajr ? 'ফজর' : 'আজান', 'fajr': fajr});
+    } on MissingPluginException {
+      // Tests / non-Android.
+    }
+  }
+
+  static Future<void> stop() async {
+    try {
+      await _channel.invokeMethod('stop');
+    } on MissingPluginException {
+      // Tests / non-Android.
+    }
   }
 }
 
