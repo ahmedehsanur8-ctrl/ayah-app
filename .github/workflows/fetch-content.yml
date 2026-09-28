@@ -47,5 +47,6 @@ jobs:
             echo "Content unchanged."
           else
             git commit -m "Update downloaded content"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
             git push
           fi
