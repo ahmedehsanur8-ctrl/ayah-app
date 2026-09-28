@@ -25,8 +25,8 @@ reads them from four GitHub Secrets:
 | `ANDROID_KEY_PASSWORD` | the same password from `password.txt` |
 
 The build (`.github/workflows/build-apk.yml`) fails if a secret is missing, and
-checks with `apksigner verify` that the APK is signed (v1, v2 and v3 schemes; v1 is needed by some phone installers such as Oppo/Realme,
-v2/v3 by Android 7.0+) with
+checks with `apksigner verify` that the APK is signed (v2 and v3 schemes, used by
+Android 7.0+, the app's minimum) with
 the certificate whose SHA-256 is in `android/release-signing-sha256.txt`.
 Only then is the APK published.
 
