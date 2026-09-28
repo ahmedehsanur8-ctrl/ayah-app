@@ -1,0 +1,57 @@
+# Downloads the full Quran (Tanzil Arabic + QuranEnc / Tanzil Bangla translations).
+# The Arabic text and the Zakaria translation are committed to assets/quran/
+# (bundled in the app); the other translations are uploaded to the
+# "quran-data" pre-release, from where the app downloads them when chosen.
+name: Quran data
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/fetch_quran.py
+      - .github/workflows/quran-data.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: quran-data-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download the Quran
+        run: python3 tools/fetch_quran.py
+
+      - name: Upload downloadable translations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l build/quran-data
+          if ! gh release view quran-data >/dev/null 2>&1; then
+            gh release create quran-data --prerelease --latest=false \
+              --title "Quran translations (data for the app)" \
+              --notes "Bangla Quran translations the app downloads when the user chooses them. Text copied unchanged from QuranEnc.com (Rowwad Translation Center) and Tanzil.net (Muhiuddin Khan, Zohurul Hoque; non-commercial use). Not an app release."
+          fi
+          gh release upload quran-data build/quran-data/*.json.gz --clobber
+
+      - name: Commit bundled Quran
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/quran tools/data/quran_report.txt
+          if git diff --cached --quiet; then
+            echo "Quran data unchanged."
+          else
+            git commit -m "Update bundled Quran data"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push
+          fi
