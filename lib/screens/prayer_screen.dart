@@ -133,8 +133,17 @@ class _PrayerScreenState extends State<PrayerScreen> {
                   onBell: list[i].isSunrise
                       ? null
                       : () async {
-                          await _s.setAzanOn(list[i].key, !_s.azanOn(list[i].key));
-                          await _changed();
+                          final key = list[i].key;
+                          final v = await pickOption<String>(
+                            context,
+                            '${list[i].name} · কীভাবে জানাবে',
+                            _s.azanMode(key),
+                            azanModeNames,
+                          );
+                          if (v != null) {
+                            await _s.setAzanMode(key, v);
+                            await _changed();
+                          }
                         },
                 ),
               ],
@@ -143,7 +152,8 @@ class _PrayerScreenState extends State<PrayerScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'ঘণ্টার চিহ্নে চাপ দিয়ে কোন ওয়াক্তে আজান হবে তা ঠিক করুন। ফোন সাইলেন্ট থাকলে আজান বাজবে না।',
+          'ডান পাশের চিহ্নে চাপ দিয়ে প্রতি ওয়াক্তের জন্য বেছে নিন: আজান, শুধু নোটিফিকেশন বা বন্ধ। '
+          'আজান বাজার সময় "থামান" বোতাম বা ফোনের ভলিউম বোতাম চাপলে থেমে যাবে।',
           style: TextStyle(color: p.muted, fontSize: 12.5, height: 1.5),
         ),
         const SectionLabel('সেটিংস'),
@@ -182,33 +192,51 @@ class _PrayerScreenState extends State<PrayerScreen> {
             NavRow(
               icon: Icons.volume_up_outlined,
               tint: p.sky,
-              title: 'আজানের শব্দ',
-              subtitle: _soundName(_s.azanSound),
-              onTap: () async {
-                final v = await pickOption<String>(context, 'আজানের শব্দ', _s.azanSound, {
-                  if (Prayers.azanBundled) 'azan': 'আজান',
-                  'soft': 'মৃদু নোটিফিকেশন শব্দ',
-                  'silent': 'শব্দ ছাড়া (শুধু নোটিফিকেশন)',
-                });
-                if (v != null) {
-                  await _s.setAzanSound(v);
+              title: 'সাইলেন্ট মোডেও আজান বাজবে',
+              subtitle: 'অ্যালার্মের মতো বাজবে, ফোন সাইলেন্ট থাকলেও',
+              trailing: Switch(
+                value: _s.azanInSilent,
+                onChanged: (v) async {
+                  await _s.setAzanInSilent(v);
                   await _changed();
-                }
-              },
+                },
+              ),
+            ),
+            NavRow(
+              icon: Icons.fullscreen_rounded,
+              tint: p.lilac,
+              title: 'পুরো স্ক্রিনে আজান',
+              subtitle: 'লক স্ক্রিনের ওপর নামাজের নাম ও বড় থামান বোতাম',
+              trailing: Switch(
+                value: _s.azanFullScreen,
+                onChanged: (v) async {
+                  await _s.setAzanFullScreen(v);
+                  await _changed();
+                },
+              ),
             ),
             NavRow(
               icon: Icons.play_circle_outline_rounded,
               tint: p.rose,
-              title: 'আজান পরীক্ষা করুন',
-              subtitle: 'এখনই একবার শুনে দেখুন ("থামান" দিয়ে বন্ধ করুন)',
-              onTap: () => Prayers.showTest(_s),
+              title: 'আজান শুনে দেখুন',
+              subtitle: 'এখনই পুরো আজান বাজবে ("থামান" বা ভলিউম বোতামে থামবে)',
+              onTap: () => Prayers.playNow(),
             ),
+            if (Prayers.fajrBundled)
+              NavRow(
+                icon: Icons.wb_twilight_outlined,
+                tint: p.sand,
+                title: 'ফজরের আজান শুনে দেখুন',
+                subtitle: '"আস-সালাতু খাইরুম মিনান নাউম" সহ',
+                onTap: () => Prayers.playNow(fajr: true),
+              ),
           ],
         ),
         const SizedBox(height: 10),
         Text(
           'নামাজের সময় ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না। প্রতিবার অ্যাপ খুললে '
-          'পরের ১৪ দিনের আজান নতুন করে ঠিক করা হয়। স্থানীয় মসজিদের সময়ের সাথে '
+          'পরের ৩০ দিনের আজান নতুন করে ঠিক করা হয়, ফোন রিস্টার্ট হলেও থাকে। '
+          'আজান ঠিকমতো না বাজলে আরও → "অনুমতি ও সেটআপ" দেখুন। স্থানীয় মসজিদের সময়ের সাথে '
           '১–২ মিনিট পার্থক্য হতে পারে।',
           style: TextStyle(color: p.muted, fontSize: 12.5, height: 1.5),
         ),
@@ -218,15 +246,6 @@ class _PrayerScreenState extends State<PrayerScreen> {
 
   static bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
-
-  String _soundName(String v) {
-    if (v == 'azan' && !Prayers.azanBundled) return 'মৃদু নোটিফিকেশন শব্দ';
-    return switch (v) {
-      'azan' => 'আজান',
-      'silent' => 'শব্দ ছাড়া',
-      _ => 'মৃদু নোটিফিকেশন শব্দ',
-    };
-  }
 }
 
 class _PrayerRow extends StatelessWidget {
@@ -240,7 +259,7 @@ class _PrayerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final s = AppState.instance.settings;
-    final on = !prayer.isSunrise && s.azanOn(prayer.key);
+    final mode = prayer.isSunrise ? 'off' : s.azanMode(prayer.key);
     return Container(
       color: isNext ? p.pill : null,
       constraints: const BoxConstraints(minHeight: 60),
@@ -276,12 +295,13 @@ class _PrayerRow extends StatelessWidget {
             child: onBell == null
                 ? null
                 : IconButton(
-                    tooltip: on ? 'আজান বন্ধ করুন' : 'আজান চালু করুন',
+                    tooltip: azanModeNames[mode],
                     onPressed: onBell,
-                    icon: Icon(
-                      on ? Icons.notifications_active_outlined : Icons.notifications_off_outlined,
-                      color: on ? p.primary : p.muted,
-                    ),
+                    icon: Icon(switch (mode) {
+                      'azan' => Icons.volume_up_outlined,
+                      'notify' => Icons.notifications_none_rounded,
+                      _ => Icons.notifications_off_outlined,
+                    }, color: mode == 'off' ? p.muted : p.primary),
                   ),
           ),
         ],
@@ -327,6 +347,9 @@ class ChooseLocationView extends StatelessWidget {
     );
   }
 }
+
+/// The three choices for each prayer.
+const azanModeNames = {'azan': 'আজান', 'notify': 'শুধু নোটিফিকেশন', 'off': 'বন্ধ'};
 
 /// Explains, asks for location permission and saves the location.
 Future<void> useMyLocation(BuildContext context) async {

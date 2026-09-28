@@ -77,15 +77,13 @@ class CreditsScreen extends StatelessWidget {
             icon: Icons.mosque_outlined,
             name: 'আজান',
             what: Prayers.azanBundled
-                ? 'আজানের অডিও — ${(Prayers.azanLicense['author'] ?? '').toString().isEmpty ? 'Wikimedia Commons' : Prayers.azanLicense['author']}'
-                : 'আজানের অডিও এখনো যোগ করা হয়নি; ফোনের মৃদু শব্দ বাজে',
-            details: Prayers.azanBundled
-                ? [
-                    Prayers.azanLicense['title'],
-                    'লাইসেন্স: ${Prayers.azanLicense['license']}',
-                    Prayers.azanLicense['source'],
-                  ].whereType<Object>().join('\n')
-                : 'নামাজের সময় ফোনেই হিসাব করা হয় (adhan লাইব্রেরি, MIT License)।',
+                ? 'আজানের অডিও (Wikimedia Commons থেকে, অ্যাপের ভেতরেই রাখা, ইন্টারনেট লাগে না)'
+                : 'আজানের অডিও এখনো যোগ করা হয়নি; শুধু নোটিফিকেশন আসে',
+            details: [
+              if (Prayers.azanBundled) _licenseText('সব ওয়াক্ত', Prayers.azanLicense),
+              if (Prayers.fajrBundled)
+                _licenseText('ফজর', (Prayers.azanLicense['fajr'] as Map).cast<String, dynamic>()),
+            ].join('\n\n'),
           ),
           const _Source(
             icon: Icons.schedule_outlined,
@@ -119,6 +117,14 @@ class CreditsScreen extends StatelessWidget {
     );
   }
 }
+
+/// Title, author, licence and link of a bundled recording.
+String _licenseText(String label, Map<String, dynamic> l) => [
+  '$label: ${(l['title'] ?? '').toString().replaceFirst('File:', '')}',
+  if ((l['author'] ?? '').toString().isNotEmpty) 'শিল্পী/আপলোডকারী: ${l['author']}',
+  'লাইসেন্স: ${l['license']}',
+  if ((l['source'] ?? '').toString().isNotEmpty) '${l['source']}',
+].join('\n');
 
 class _Source extends StatelessWidget {
   const _Source({

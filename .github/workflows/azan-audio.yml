@@ -22,11 +22,13 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: List candidates
         run: python3 tools/azan_audio.py list
+      - name: Search for Fajr azan recordings
+        run: python3 tools/azan_audio.py search
       - name: Fetch chosen file
         run: python3 tools/azan_audio.py fetch
       - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tools/data/azan_candidates.json android/app/src/main/res/raw assets/azan_license.json 2>/dev/null || true
+          git add tools/data/azan_candidates.json tools/data/azan_search.json android/app/src/main/res/raw assets/azan_license.json 2>/dev/null || true
           if git diff --cached --quiet; then echo "Nothing new."; else git commit -m "Azan audio: candidates / chosen file" && git pull --rebase origin "${GITHUB_REF_NAME}" && git push; fi

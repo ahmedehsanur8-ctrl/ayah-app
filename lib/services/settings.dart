@@ -136,9 +136,6 @@ class AppSettings extends ChangeNotifier {
   /// 'hanafi' or 'shafi' (Asr time).
   String get asrMethod => _prefs.getString('asrMethod') ?? 'hanafi';
 
-  /// 'azan' (recorded azan), 'soft' (gentle phone sound) or 'silent'.
-  String get azanSound => _prefs.getString('azanSound') ?? 'azan';
-
   Future<void> setCalcMethod(String v) async {
     await _prefs.setString('calcMethod', v);
     notifyListeners();
@@ -149,16 +146,33 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setAzanSound(String v) async {
-    await _prefs.setString('azanSound', v);
+  /// Per prayer ('fajr', 'dhuhr', 'asr', 'maghrib', 'isha'):
+  /// 'azan' (full azan), 'notify' (notification only) or 'off'.
+  String azanMode(String prayer) {
+    final v = _prefs.getString('azanMode_$prayer');
+    if (v != null) return v;
+    // Older versions stored an on/off bell.
+    return (_prefs.getBool('azan_$prayer') ?? true) ? 'azan' : 'off';
+  }
+
+  Future<void> setAzanMode(String prayer, String mode) async {
+    await _prefs.setString('azanMode_$prayer', mode);
     notifyListeners();
   }
 
-  /// Azan bell for a prayer ('fajr', 'dhuhr', 'asr', 'maghrib', 'isha').
-  bool azanOn(String prayer) => _prefs.getBool('azan_$prayer') ?? true;
+  /// Play the azan on the alarm stream, so it is heard in silent mode too.
+  bool get azanInSilent => _prefs.getBool('azanInSilent') ?? true;
 
-  Future<void> setAzanOn(String prayer, bool v) async {
-    await _prefs.setBool('azan_$prayer', v);
+  Future<void> setAzanInSilent(bool v) async {
+    await _prefs.setBool('azanInSilent', v);
+    notifyListeners();
+  }
+
+  /// Show the full-screen azan page (over the lock screen) while it plays.
+  bool get azanFullScreen => _prefs.getBool('azanFullScreen') ?? true;
+
+  Future<void> setAzanFullScreen(bool v) async {
+    await _prefs.setBool('azanFullScreen', v);
     notifyListeners();
   }
 

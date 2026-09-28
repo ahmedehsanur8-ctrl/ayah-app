@@ -172,4 +172,26 @@ void main() {
     final q = Prayers.qibla(s)!;
     expect(q, inInclusiveRange(270, 285)); // west-north-west from Bangladesh
   });
+
+  test('azan events: per-prayer modes, Fajr flag, no sunrise', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = await AppSettings.load();
+    await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+    await s.setAzanMode('asr', 'notify');
+    await s.setAzanMode('isha', 'off');
+    Prayers.azanBundled = true;
+    final now = DateTime(2026, 3, 21, 0, 1);
+    final events = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
+    // 4 prayers (isha off) for 30 days; the first day may already have started.
+    expect(events.length, inInclusiveRange(30 * 4 - 4, 30 * 4));
+    expect(events.map((e) => e['key']).toSet(), {'fajr', 'dhuhr', 'asr', 'maghrib'});
+    expect(events.where((e) => e['key'] == 'asr').every((e) => e['mode'] == 'notify'), isTrue);
+    expect(
+      events
+          .where((e) => e['key'] == 'fajr')
+          .every((e) => e['fajr'] == true && e['mode'] == 'azan'),
+      isTrue,
+    );
+    expect(s.azanInSilent, isTrue);
+  });
 }

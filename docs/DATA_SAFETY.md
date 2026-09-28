@@ -26,6 +26,19 @@ Answers for the Data safety form in Play Console, based on what the app does.
 | `VIBRATE`, `WAKE_LOCK` | Notification vibration; gentle vibration when facing the Qibla. |
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Lets the user allow reminders on phones that stop background alarms. |
 | `INTERNET` | Arabic recitation audio from EveryAyah.com. |
+| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | Plays the full azan at the prayer times the user turned on (see below). |
+
+## Foreground service declaration (Play Console → App content → Foreground service permissions)
+
+- **Type:** `mediaPlayback` (`AzanService`).
+- **What it does:** at each prayer time the user set to "আজান", an exact alarm starts the
+  service, which plays the bundled azan recording (about 1–3 minutes) from start to end
+  and then stops itself. A notification with a "থামান" (stop) button is shown the whole
+  time; pressing a volume key also stops it.
+- **Why it can't wait / be deferred:** the azan must start exactly at the prayer time and
+  keep playing when the screen is locked or the app is closed.
+- **User control:** per prayer "আজান / শুধু নোটিফিকেশন / বন্ধ", and "সাইলেন্ট মোডেও আজান বাজবে".
+- A short screen recording of the azan playing with the stop button is needed for the form.
 
 Location is read with Android's own `LocationManager` (no Google Play
 Services), only when the user asks for it or when the app opens; the app never
