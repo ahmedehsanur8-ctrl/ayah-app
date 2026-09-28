@@ -112,8 +112,10 @@ class AudioController extends ChangeNotifier {
       final len = settings.storyLength(story.id);
       // Finished last time: start again from the beginning.
       if (len > Duration.zero && start >= len - const Duration(seconds: 3)) start = Duration.zero;
+      var length = len;
       final sub = _p.positionStream.listen((pos) {
         if (session != _session) return;
+        length = _p.duration ?? length;
         // Save about every 5 seconds.
         if ((pos.inSeconds - _lastSaved.inSeconds).abs() >= 5) {
           _lastSaved = pos;
@@ -122,9 +124,9 @@ class AudioController extends ChangeNotifier {
       });
       final ok = await _playSources(session, [AudioSource.asset(story.audioAsset)], start: start);
       await sub.cancel();
-      if (ok && session == _session) {
-        final len2 = _p.duration ?? len;
-        await settings.saveStoryProgress(story.id, len2, len2);
+      if (ok && session == _session && length > Duration.zero) {
+        // Played to the end: next time it starts from the beginning.
+        await settings.saveStoryProgress(story.id, length, length);
       }
       if (ok || session != _session) return _finish(session);
     }
