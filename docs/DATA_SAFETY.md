@@ -27,9 +27,9 @@ Answers for the Data safety form in Play Console, based on what the app does.
 | `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Lets the user allow reminders on phones that stop background alarms. |
 | `INTERNET` | Arabic recitation audio from EveryAyah.com. |
 
-The location library's background location service and
-`FOREGROUND_SERVICE_LOCATION` permission are removed in the manifest
-(`tools:node="remove"`): the app never uses location in the background.
+Location is read with Android's own `LocationManager` (no Google Play
+Services), only when the user asks for it or when the app opens; the app never
+uses location in the background.
 
 ## Other form answers
 
