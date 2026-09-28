@@ -42,7 +42,7 @@ android {
                 keyAlias = System.getenv("ANDROID_KEY_ALIAS")
                 keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
                 // The build workflow re-signs with apksigner to add v1 as well
-                // (Gradle skips v1 for minSdk 24+; Oppo/ColorOS needs it).
+                // (Gradle skips v1 for minSdk 24+; some Oppo/ColorOS installers want it).
                 enableV2Signing = true
                 enableV3Signing = true
             }
