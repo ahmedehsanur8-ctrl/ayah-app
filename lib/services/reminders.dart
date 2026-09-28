@@ -28,6 +28,12 @@ class ReminderPayload {
   }
 }
 
+/// Runs when a notification button (like the azan's "থামান") is pressed
+/// while the app is closed. The plugin already removes the notification,
+/// which stops its sound, so nothing else is needed.
+@pragma('vm:entry-point')
+void notificationActionInBackground(NotificationResponse response) {}
+
 String dateKey(DateTime d) =>
     '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -53,7 +59,7 @@ class Reminders {
     }
   }
 
-  static Future<void> init(void Function(ReminderPayload) onOpen) async {
+  static Future<void> init(void Function(ReminderPayload) onOpen, {void Function()? onAzan}) async {
     tzdata.initializeTimeZones();
     dhaka = tz.getLocation('Asia/Dhaka');
     tz.setLocalLocation(dhaka);
@@ -62,10 +68,22 @@ class Reminders {
         android: AndroidInitializationSettings('ic_notification'),
       ),
       onDidReceiveNotificationResponse: (r) {
+        if ((r.payload ?? '').startsWith('azan|')) {
+          if (r.actionId != 'stop') onAzan?.call();
+          return;
+        }
         final p = ReminderPayload.decode(r.payload);
         if (p != null) onOpen(p);
       },
+      onDidReceiveBackgroundNotificationResponse: notificationActionInBackground,
     );
+  }
+
+  /// The azan notification opened the app.
+  static Future<bool> launchedFromAzan() async {
+    final details = await plugin.getNotificationAppLaunchDetails();
+    return details?.didNotificationLaunchApp == true &&
+        (details?.notificationResponse?.payload ?? '').startsWith('azan|');
   }
 
   /// The reminder that launched the app, if any.
@@ -77,9 +95,15 @@ class Reminders {
 
   static tz.TZDateTime nowDhaka() => tz.TZDateTime.now(dhaka);
 
-  /// Cancels everything and schedules the next [daysAhead] days of reminders.
+  /// Cancels the reminders and schedules the next [daysAhead] days again.
+  /// (Azan notifications are planned separately, see Prayers.schedule.)
   static Future<void> reschedule(AppSettings settings, ContentData data) async {
-    await plugin.cancelAllPendingNotifications();
+    for (var i = 0; i <= daysAhead; i++) {
+      try {
+        await plugin.cancel(id: 1000 + i);
+        await plugin.cancel(id: 2000 + i);
+      } catch (_) {}
+    }
     if (!settings.remindersOn) return;
 
     final exact = await android?.canScheduleExactNotifications() ?? false;

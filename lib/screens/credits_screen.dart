@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
+import '../services/prayer.dart';
 import '../theme.dart';
 import '../widgets/pattern.dart';
 
@@ -45,11 +46,8 @@ class CreditsScreen extends StatelessWidget {
             what: 'আয়াতের বাংলা অনুবাদ ও টীকা — ড. আবু বকর মুহাম্মাদ যাকারিয়া',
             details: [
               if (data.quranEncTitle.isNotEmpty) data.quranEncTitle,
-              version.isEmpty
-                  ? 'সংস্করণ (Version): QuranEnc-এর API এই অনুবাদের সংস্করণ নম্বর দেয় না'
-                  : 'সংস্করণ (Version): $version',
+              if (version.isNotEmpty) 'সংস্করণ: $version',
               'ডাউনলোডের তারিখ: ${toBanglaDigits(data.downloadedOn)}',
-              'Key: bengali_zakaria',
               'https://quranenc.com',
             ].join('\n'),
           ),
@@ -75,6 +73,26 @@ class CreditsScreen extends StatelessWidget {
                 'যে জীবনীর অডিও এখনো তৈরি হয়নি, সেটি ফোনের বাংলা কণ্ঠে (Text-to-speech) পড়া হয়। '
                 'আরবি তিলাওয়াত কখনো কৃত্রিম কণ্ঠে নয়। https://elevenlabs.io',
           ),
+          _Source(
+            icon: Icons.mosque_outlined,
+            name: 'আজান',
+            what: Prayers.azanBundled
+                ? 'আজানের অডিও — ${(Prayers.azanLicense['author'] ?? '').toString().isEmpty ? 'Wikimedia Commons' : Prayers.azanLicense['author']}'
+                : 'আজানের অডিও এখনো যোগ করা হয়নি; ফোনের মৃদু শব্দ বাজে',
+            details: Prayers.azanBundled
+                ? [
+                    Prayers.azanLicense['title'],
+                    'লাইসেন্স: ${Prayers.azanLicense['license']}',
+                    Prayers.azanLicense['source'],
+                  ].whereType<Object>().join('\n')
+                : 'নামাজের সময় ফোনেই হিসাব করা হয় (adhan লাইব্রেরি, MIT License)।',
+          ),
+          const _Source(
+            icon: Icons.schedule_outlined,
+            name: 'নামাজের সময় ও কিবলা',
+            what: 'ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না',
+            details: 'adhan (Dart) লাইব্রেরি — MIT License। অবস্থান শুধু ফোনে থাকে, কোথাও পাঠানো হয় না।',
+          ),
           const _Source(
             icon: Icons.menu_book_outlined,
             name: 'সাহাবিদের জীবনী',
@@ -84,7 +102,8 @@ class CreditsScreen extends StatelessWidget {
           const _Source(
             icon: Icons.font_download_outlined,
             name: 'ফন্ট',
-            what: 'Amiri Quran (আরবি), Noto Sans Bengali ও Hind Siliguri (বাংলা)',
+            what:
+                'Amiri Quran (আরবি), Noto Serif Bengali, Hind Siliguri ও Noto Sans Bengali (বাংলা)',
             details: 'SIL Open Font License 1.1 — The Amiri Project Authors, The Noto Project Authors, Indian Type Foundry.',
           ),
           const _Source(
@@ -132,10 +151,10 @@ class _Source extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: context.palette.primary.withValues(alpha: 0.12),
+                      color: context.palette.mint.background,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(icon, color: context.palette.primary),
+                    child: Icon(icon, color: context.palette.mint.foreground),
                   ),
                   const SizedBox(width: 10),
                   Text(

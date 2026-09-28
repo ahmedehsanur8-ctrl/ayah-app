@@ -1,7 +1,12 @@
 import 'package:ayah_reminder/app_state.dart';
-import 'package:ayah_reminder/screens/categories_screen.dart';
+import 'package:ayah_reminder/screens/about_screen.dart';
+import 'package:ayah_reminder/screens/collection_screen.dart';
 import 'package:ayah_reminder/screens/credits_screen.dart';
 import 'package:ayah_reminder/screens/home_shell.dart';
+import 'package:ayah_reminder/screens/prayer_screen.dart';
+import 'package:ayah_reminder/screens/privacy_screen.dart';
+import 'package:ayah_reminder/screens/qibla_screen.dart';
+import 'package:ayah_reminder/screens/reader_screen.dart';
 import 'package:ayah_reminder/screens/reading_screen.dart';
 import 'package:ayah_reminder/screens/setup_screen.dart';
 import 'package:ayah_reminder/screens/splash_screen.dart';
@@ -14,6 +19,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -29,6 +35,13 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     SharedPreferences.setMockInitialValues({});
+    PackageInfo.setMockInitialValues(
+      appName: 'Ayah Reminder',
+      packageName: 'com.ayahreminder.ayah_reminder',
+      version: '1.0.50',
+      buildNumber: '50',
+      buildSignature: '',
+    );
     tzdata.initializeTimeZones();
     Reminders.dhaka = tz.getLocation('Asia/Dhaka');
     await AppState.load();
@@ -45,7 +58,13 @@ void main() {
 
     await load('AmiriQuran', ['AmiriQuran-Regular.ttf']);
     await load('NotoSansBengali', ['NotoSansBengali-Regular.ttf', 'NotoSansBengali-Bold.ttf']);
-    await load('HindSiliguri', ['HindSiliguri-SemiBold.ttf', 'HindSiliguri-Bold.ttf']);
+    await load('HindSiliguri', [
+      'HindSiliguri-Regular.ttf',
+      'HindSiliguri-Medium.ttf',
+      'HindSiliguri-SemiBold.ttf',
+      'HindSiliguri-Bold.ttf',
+    ]);
+    await load('NotoSerifBengali', ['NotoSerifBengali-SemiBold.ttf', 'NotoSerifBengali-Bold.ttf']);
   });
 
   test('default reminder times: 9:00 AM and 9:00 PM', () {
@@ -56,34 +75,130 @@ void main() {
 
   for (final b in Brightness.values) {
     group('$b', () {
-      testWidgets('home, categories, favourites and settings tabs', (t) async {
+      testWidgets('the five tabs', (t) async {
         await t.binding.setSurfaceSize(const Size(390, 844));
+        HomeShell.tab.value = 0;
         await t.pumpWidget(app(const HomeShell(), b));
         await t.pumpAndSettle();
-        expect(find.text('আজকের আয়াত'), findsWidgets);
+        expect(find.textContaining('আজকের আয়াত'), findsWidgets);
+        expect(find.text('আসসালামু আলাইকুম'), findsOneWidget);
+        expect(find.text('শুনুন'), findsOneWidget);
         await t.scrollUntilVisible(find.text('আজকের হাদিস'), 300);
         expect(find.text('আজকের হাদিস'), findsOneWidget);
-
         await t.tap(find.text('পরের').last);
-        await t.pumpAndSettle();
+        await t.pump();
 
-        await t.tap(find.text('বিষয়সমূহ').last);
+        await t.tap(find.text('মন').last);
         await t.pumpAndSettle();
+        expect(find.text('তোমার মন এখন কেমন?'), findsOneWidget);
+        final moods = AppState.instance.data.moods;
+        expect(moods.length, 16);
+        expect(find.text(moods.first.name), findsOneWidget);
+
+        await t.tap(find.text('বিষয়').last);
+        await t.pumpAndSettle();
+        expect(find.text('মনের অবস্থা'), findsOneWidget);
         expect(find.text('আশা ও রহমত'), findsOneWidget);
-        await t.tap(find.text('হাদিসের বিষয়'));
+        await t.enterText(find.byType(TextField), 'সবর');
         await t.pumpAndSettle();
+        expect(find.text('সবর'), findsWidgets);
 
-        await t.tap(find.text('প্রিয়'));
+        await t.tap(find.text('জীবনী').last);
         await t.pumpAndSettle();
-        expect(find.text('এখনো কিছু রাখা হয়নি'), findsOneWidget);
+        expect(find.text('সাহাবিদের জীবনী'), findsOneWidget);
 
-        await t.tap(find.text('সেটিংস'));
+        await t.tap(find.text('আরও').last);
+        await t.pumpAndSettle();
+        expect(find.text('নামাজের সময়'), findsOneWidget);
+        expect(find.text('অ্যাপ সম্পর্কে'), findsOneWidget);
+        await t.tap(find.text('রিমাইন্ডার'));
         await t.pumpAndSettle();
         expect(find.text('সকাল ৯:০০'), findsOneWidget);
         expect(find.text('রাত ৯:০০'), findsOneWidget);
-        await t.scrollUntilVisible(find.text('ক্বারী (আরবি তিলাওয়াত)'), 200);
-        expect(find.text('মিশারি রাশিদ আলাফাসি'), findsOneWidget);
-        expect(find.text('আরবি + বাংলা অর্থ'), findsOneWidget);
+        HomeShell.tab.value = 0;
+      });
+
+      testWidgets('mood page and reader with player', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        final data = AppState.instance.data;
+        final m = data.moods.first;
+        await t.pumpWidget(
+          app(
+            CollectionScreen(
+              styleId: m.id,
+              title: m.name,
+              ayahs: data.byIds(m.ayahIds),
+              surahs: data.byIds(m.surahIds),
+              hadiths: data.byIds(m.hadithIds),
+            ),
+            b,
+          ),
+        );
+        await t.pumpAndSettle();
+        expect(find.text('সব শুনুন'), findsOneWidget);
+        expect(find.text('পূর্ণ সূরা'), findsOneWidget);
+        expect(data.byIds(m.ayahIds).length, m.ayahIds.length);
+
+        // Short ayahs, so the buttons under the text are on screen.
+        final items = (data.byIds(
+          m.ayahIds,
+        )..sort((a, b) => a.bangla.length.compareTo(b.bangla.length))).take(5).toList();
+        await t.pumpWidget(app(ReaderScreen(items: items, title: m.name), b));
+        await t.pumpAndSettle();
+        expect(find.text('১ / ৫'), findsOneWidget);
+        expect(find.text('ছবি করে শেয়ার'), findsOneWidget);
+        await t.tap(find.byTooltip('পরের'));
+        await t.pumpAndSettle();
+        expect(find.text('২ / ৫'), findsOneWidget);
+        await t.tap(find.text('প্রিয়'));
+        await t.pump();
+        expect(AppState.instance.settings.isFavorite(items[1].id), isTrue);
+        await t.tap(find.text('প্রিয়'));
+        await t.pump();
+        final withNote =
+            (data.items.where((i) => i.isAyah && i.note.isNotEmpty).toList()
+                  ..sort((a, b) => a.bangla.length.compareTo(b.bangla.length)))
+                .first;
+        await t.pumpWidget(app(ReaderScreen(key: UniqueKey(), items: [withNote]), b));
+        await t.pumpAndSettle();
+        await t.tap(find.text('টীকা দেখুন'));
+        await t.pumpAndSettle();
+        expect(find.textContaining('টীকা · আবু বকর যাকারিয়া'), findsOneWidget);
+      });
+
+      testWidgets('every full surah and mood item renders in the reader', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        final items = AppState.instance.data.moodItems;
+        for (var i = 0; i < items.length; i += 7) {
+          await t.pumpWidget(app(ReaderScreen(key: UniqueKey(), items: items, index: i), b));
+          await t.pump(const Duration(milliseconds: 300));
+        }
+      });
+
+      testWidgets('prayer times, Qibla and about', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        final s = AppState.instance.settings;
+        await t.pumpWidget(app(const PrayerScreen(), b));
+        await t.pump();
+        if (!s.hasLocation) {
+          expect(find.text('আপনার এলাকা বেছে নিন'), findsOneWidget);
+          await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+          await t.pump();
+        }
+        expect(find.text('পরের নামাজ'), findsOneWidget);
+        for (final n in ['ফজর', 'সূর্যোদয়', 'যোহর', 'আসর', 'মাগরিব', 'ইশা']) {
+          expect(find.text(n), findsWidgets, reason: n);
+        }
+        await t.pumpWidget(app(const QiblaScreen(), b));
+        await t.pump(const Duration(milliseconds: 200));
+        expect(find.textContaining('কিবলার দিক'), findsOneWidget);
+        await t.pumpWidget(app(const AboutScreen(), b));
+        await t.pumpAndSettle();
+        expect(find.text('Ahmed Ehsanur Rahman'), findsOneWidget);
+        expect(find.text('সম্পূর্ণ বিনামূল্যে · কোনো বিজ্ঞাপন নেই'), findsOneWidget);
+        await t.pumpWidget(app(const PrivacyScreen(), b));
+        await t.pumpAndSettle();
+        expect(find.text('কোনো তথ্য সংগ্রহ করা হয় না'), findsOneWidget);
       });
 
       testWidgets('stories list and a story page', (t) async {
@@ -107,14 +222,6 @@ void main() {
           await t.pump();
         }
         expect(find.textContaining('needs scholar review'), findsOneWidget);
-      });
-
-      testWidgets('category page', (t) async {
-        await t.binding.setSurfaceSize(const Size(360, 740));
-        final c = AppState.instance.data.ayahCategories.first;
-        await t.pumpWidget(app(CategoryItemsScreen(category: c), b));
-        await t.pumpAndSettle();
-        expect(find.text(c.name), findsWidgets);
       });
 
       testWidgets('reading: countdown, favourite and share', (t) async {
