@@ -51,3 +51,4 @@ app.*.map.json
 *.jks
 *.keystore
 key.properties
+__pycache__/

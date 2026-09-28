@@ -5,6 +5,7 @@ import '../services/reminders.dart';
 import '../services/system_settings.dart';
 import '../models/content.dart';
 import '../theme.dart';
+import 'settings_screen.dart';
 import '../widgets/pattern.dart';
 import 'home_shell.dart';
 
@@ -245,6 +246,13 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
             },
           ),
           const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () => SettingsScreen.sendTestReminder(context),
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+            icon: const Icon(Icons.notifications_active_outlined),
+            label: const Text('পরীক্ষামূলক রিমাইন্ডার পাঠান'),
+          ),
+          const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: _finish,
             icon: const Icon(Icons.check_rounded),
@@ -252,7 +260,7 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 10),
           Text(
-            'পরে যেকোনো সময় সেটিংস → "অনুমতি ও সেটআপ" থেকে আবার এই পাতায় আসতে পারবেন।',
+            'পরে যেকোনো সময় আরও → "অনুমতি ও সেটআপ" থেকে আবার এই পাতায় আসতে পারবেন।',
             textAlign: TextAlign.center,
             style: TextStyle(color: p.muted, fontSize: 13),
           ),

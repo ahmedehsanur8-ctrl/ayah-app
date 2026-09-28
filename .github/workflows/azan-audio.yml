@@ -1,0 +1,32 @@
+# Lists freely licensed azan recordings on Wikimedia Commons and, when
+# tools/azan_choice.txt names one, bundles it as res/raw/azan.mp3.
+name: Azan audio
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/azan_audio.py
+      - tools/azan_choice.txt
+      - .github/workflows/azan-audio.yml
+
+permissions:
+  contents: write
+
+jobs:
+  azan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: List candidates
+        run: python3 tools/azan_audio.py list
+      - name: Fetch chosen file
+        run: python3 tools/azan_audio.py fetch
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/data/azan_candidates.json android/app/src/main/res/raw assets/azan_license.json 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Nothing new."; else git commit -m "Azan audio: candidates / chosen file" && git pull --rebase origin "${GITHUB_REF_NAME}" && git push; fi

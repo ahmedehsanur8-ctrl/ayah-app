@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'app_state.dart';
 import 'screens/home_shell.dart';
+import 'screens/prayer_screen.dart';
 import 'screens/reading_screen.dart';
 import 'screens/setup_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/location.dart';
+import 'services/prayer.dart';
 import 'services/reminders.dart';
 import 'theme.dart';
 
@@ -13,13 +16,28 @@ final navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = await AppState.load();
-  await Reminders.init(_openFromReminder);
+  await Prayers.loadAzanInfo();
+  await Reminders.init(_openFromReminder, onAzan: _openPrayerTimes);
   final launch = await Reminders.launchPayload();
+  final fromAzan = await Reminders.launchedFromAzan();
   runApp(AyahReminderApp(launch: launch));
+  if (fromAzan) WidgetsBinding.instance.addPostFrameCallback((_) => _openPrayerTimes());
   if (state.settings.setupDone) {
     // Plan the next days of reminders every time the app starts.
     Reminders.reschedule(state.settings, state.data);
   }
+  // Prayer times: update the location if the phone moved, then plan the azan
+  // for the next days (so times are recalculated at least every app start).
+  _refreshPrayerTimes(state);
+}
+
+Future<void> _refreshPrayerTimes(AppState state) async {
+  await LocationService.refreshIfMoved(state.settings);
+  await Prayers.schedule(state.settings);
+}
+
+void _openPrayerTimes() {
+  navigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => const PrayerScreen()));
 }
 
 /// A reminder was tapped (or shown full screen) while the app was running.
@@ -42,14 +60,18 @@ class AyahReminderApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = AppState.instance;
     final launchItem = launch == null ? null : state.data.byId(launch!.itemId);
-    return MaterialApp(
-      title: 'Ayah Reminder',
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey,
-      theme: buildTheme(Brightness.light),
-      darkTheme: buildTheme(Brightness.dark),
-      themeMode: ThemeMode.system,
-      home: launchItem != null
+    return ListenableBuilder(
+      listenable: state.settings,
+      builder: (context, home) => MaterialApp(
+        title: 'Ayah Reminder',
+        debugShowCheckedModeBanner: false,
+        navigatorKey: navigatorKey,
+        theme: _light,
+        darkTheme: _dark,
+        themeMode: state.settings.themeMode,
+        home: home,
+      ),
+      child: launchItem != null
           // Opened from a reminder: go straight to the reading screen.
           ? ReadingScreen(item: launchItem, payload: launch, fromReminder: true)
           : SplashScreen(
@@ -60,3 +82,6 @@ class AyahReminderApp extends StatelessWidget {
     );
   }
 }
+
+final _light = buildTheme(Brightness.light);
+final _dark = buildTheme(Brightness.dark);

@@ -11,7 +11,8 @@ Usage:
   python3 tools/fetch_content.py details # full text of ids in tools/hadith_candidates.txt
   python3 tools/fetch_content.py build   # write assets/content.json
 
-The list of ayahs and hadiths comes from ayah-app-content-list.md.
+The list of ayahs and hadiths comes from ayah-app-content-list.md; the moods
+(with full surahs) come from mood-content.md.
 Which HadeethEnc hadith matches each sunnah.com reference is recorded by hand
 in tools/hadith_map.json (null = not on HadeethEnc, so it is skipped).
 """
@@ -26,6 +27,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 LIST_FILE = ROOT / "ayah-app-content-list.md"
+MOOD_FILE = ROOT / "mood-content.md"
 MAP_FILE = ROOT / "tools" / "hadith_map.json"
 DATA_DIR = ROOT / "tools" / "data"
 OUT_FILE = ROOT / "assets" / "content.json"
@@ -92,6 +94,38 @@ def parse_list():
             refs = [r.strip() for r in m.group(3).split(",") if r.strip()]
             hadith_themes.append({"id": m.group(1), "name": m.group(2), "refs": refs})
     return ayah_cats, hadith_themes
+
+
+def parse_moods():
+    """Moods from mood-content.md: ayah refs, full surahs and hadith refs.
+    A hadith marked (H) needs a scholar to check its grade."""
+    if not MOOD_FILE.exists():
+        return []
+    moods, cur = [], None
+    for line in MOOD_FILE.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        m = re.match(r"^(\d+)\.\s*\S+\s+(.+?)\s*\((.+?)\)\s*$", line)
+        if m:
+            cur = {"id": f"M{m.group(1)}", "name": m.group(2), "nameEn": m.group(3),
+                   "ayahs": [], "surahs": [], "hadiths": []}
+            moods.append(cur)
+            continue
+        if not cur or ":" not in line:
+            continue
+        key, rest = line.split(":", 1)
+        key = key.strip().lower()
+        if key == "ayahs":
+            for s_, a, b in re.findall(r"(\d+):(\d+)(?:-(\d+))?", rest):
+                cur["ayahs"].append((int(s_), int(a), int(b) if b else int(a)))
+        elif key == "surahs":
+            cur["surahs"] = [int(n) for n in re.findall(r"(\d+)\s+[A-Za-z]", rest)]
+        elif key == "hadith":
+            for part in rest.split(","):
+                check = "(H)" in part
+                ref = re.sub(r"\(.*?\)", "", part).strip()
+                if ref:
+                    cur["hadiths"].append({"ref": ref, "check": check})
+    return moods
 
 
 # ---------------------------------------------------------------- index
@@ -238,7 +272,7 @@ def quranenc_translation_info():
                        + " | ".join(seen))
 
 
-def build_ayahs(ayah_cats, problems):
+def build_ayahs(ayah_cats, problems, extra_surahs=()):
     try:
         tanzil, tanzil_header = load_tanzil()
     except Exception as e:  # noqa: BLE001
@@ -257,7 +291,7 @@ def build_ayahs(ayah_cats, problems):
     if info.get("key") != QURANENC_KEY:
         raise RuntimeError(f"wrong QuranEnc translation: {info.get('key')}")
 
-    needed = sorted({s for c in ayah_cats for s, _, _ in c["refs"]})
+    needed = sorted({s for c in ayah_cats for s, _, _ in c["refs"]} | set(extra_surahs))
     qe = {}
     for s in needed:
         try:
@@ -267,42 +301,46 @@ def build_ayahs(ayah_cats, problems):
         except Exception as e:  # noqa: BLE001
             problems.append(f"QuranEnc surah {s}: {e}")
 
-    items = []
-    for c in ayah_cats:
-        for s, a, b in c["refs"]:
-            ar_parts, bn_parts, notes = [], [], []
-            missing = False
-            for v in range(a, b + 1):
-                ar = tanzil.get((s, v))
-                q = qe.get((s, v))
-                if ar is None or q is None:
-                    missing = True
-                    problems.append(f"Ayah {s}:{v} missing ({'Arabic' if ar is None else ''}"
-                                    f"{' Bangla' if q is None else ''})")
-                ar_parts.append({"n": v, "text": ar if ar is not None else PLACEHOLDER})
-                bn_parts.append({"n": v, "text": q["translation"] if q else PLACEHOLDER})
-                if q and (q.get("footnotes") or "").strip():
-                    notes.append(q["footnotes"].strip())
-            name = surah_names.get(s, {})
-            ref = f"{s}:{a}" if a == b else f"{s}:{a}-{b}"
-            items.append({
-                "id": f"a-{s}-{a}" + ("" if a == b else f"-{b}"),
-                "type": "ayah",
-                "categoryId": c["id"],
-                "category": c["name"],
-                "reference": ref,
-                "referenceBn": ref.translate(BN_DIGITS),
-                "surah": s,
-                "ayahStart": a,
-                "ayahEnd": b,
-                "surahNameAr": name.get("ar", ""),
-                "surahNameEn": name.get("tr", ""),
-                "arabicVerses": ar_parts,
-                "banglaVerses": bn_parts,
-                "note": "\n\n".join(notes),
-                "placeholder": missing,
-            })
-    return items, {
+    def make(s, a, b, cat_id, cat_name, item_id=None):
+        ar_parts, bn_parts, notes = [], [], []
+        missing = False
+        for v in range(a, b + 1):
+            ar = tanzil.get((s, v))
+            q = qe.get((s, v))
+            if ar is None or q is None:
+                missing = True
+                problems.append(f"Ayah {s}:{v} missing ({'Arabic' if ar is None else ''}"
+                                f"{' Bangla' if q is None else ''})")
+            ar_parts.append({"n": v, "text": ar if ar is not None else PLACEHOLDER})
+            bn_parts.append({"n": v, "text": q["translation"] if q else PLACEHOLDER})
+            if q and (q.get("footnotes") or "").strip():
+                notes.append(q["footnotes"].strip())
+        name = surah_names.get(s, {})
+        ref = f"{s}:{a}" if a == b else f"{s}:{a}-{b}"
+        return {
+            "id": item_id or (f"a-{s}-{a}" + ("" if a == b else f"-{b}")),
+            "type": "ayah",
+            "categoryId": cat_id,
+            "category": cat_name,
+            "reference": ref,
+            "referenceBn": ref.translate(BN_DIGITS),
+            "surah": s,
+            "ayahStart": a,
+            "ayahEnd": b,
+            "surahNameAr": name.get("ar", ""),
+            "surahNameEn": name.get("tr", ""),
+            "arabicVerses": ar_parts,
+            "banglaVerses": bn_parts,
+            "note": "\n\n".join(notes),
+            "placeholder": missing,
+        }
+
+    def verse_count(s):
+        return max((v for (ss, v) in tanzil if ss == s), default=0)
+
+    items = [make(s, a, b, c["id"], c["name"]) for c in ayah_cats for s, a, b in c["refs"]]
+    self_make = make
+    return items, self_make, verse_count, {
         "tanzil": {"name": "Tanzil Quran Text", "type": "Uthmani",
                    "url": "https://tanzil.net", "licenseHeader": tanzil_header,
                    # Tanzil text files start verse 1 of each surah (except 1 and 9)
@@ -315,43 +353,104 @@ def build_ayahs(ayah_cats, problems):
     }
 
 
+MAPPING = json.loads(MAP_FILE.read_text(encoding="utf-8")) if MAP_FILE.exists() else {}
+_hadith_cache = {}
+
+
+def hadith_id(ref):
+    return "h-" + re.sub(r"[^a-z0-9]+", "-", ref.lower()).strip("-")
+
+
+def make_hadith(ref, hid, cat_id, cat_name, problems):
+    if hid not in _hadith_cache:
+        try:
+            _hadith_cache[hid] = fetch_json(f"{HADEETHENC_API}/hadeeths/one/?language=bn&id={hid}")
+        except Exception as e:  # noqa: BLE001
+            problems.append(f"HadeethEnc {ref} (id {hid}): {e}")
+            _hadith_cache[hid] = None
+    h = _hadith_cache[hid]
+    return {
+        "id": hadith_id(ref),
+        "type": "hadith",
+        "categoryId": cat_id,
+        "category": cat_name,
+        "reference": ref,
+        "hadeethencId": int(hid),
+        "attribution": (h or {}).get("attribution", ""),
+        "grade": (h or {}).get("grade", ""),
+        "arabic": (h or {}).get("hadeeth_ar") or PLACEHOLDER,
+        "bangla": (h or {}).get("hadeeth") or PLACEHOLDER,
+        "note": (h or {}).get("explanation") or "",
+        "placeholder": h is None,
+    }
+
+
 def build_hadiths(themes, problems):
-    mapping = json.loads(MAP_FILE.read_text(encoding="utf-8")) if MAP_FILE.exists() else {}
     items, skipped = [], []
     for t in themes:
         for ref in t["refs"]:
-            hid = mapping.get(ref)
+            hid = MAPPING.get(ref)
             if not hid:
                 skipped.append({"reference": ref, "theme": t["name"],
                                 "reason": "not found on HadeethEnc"})
                 continue
-            try:
-                h = fetch_json(f"{HADEETHENC_API}/hadeeths/one/?language=bn&id={hid}")
-            except Exception as e:  # noqa: BLE001
-                problems.append(f"HadeethEnc {ref} (id {hid}): {e}")
-                h = None
-            items.append({
-                "id": "h-" + re.sub(r"[^a-z0-9]+", "-", ref.lower()).strip("-"),
-                "type": "hadith",
-                "categoryId": t["id"],
-                "category": t["name"],
-                "reference": ref,
-                "hadeethencId": int(hid),
-                "attribution": (h or {}).get("attribution", ""),
-                "grade": (h or {}).get("grade", ""),
-                "arabic": (h or {}).get("hadeeth_ar") or PLACEHOLDER,
-                "bangla": (h or {}).get("hadeeth") or PLACEHOLDER,
-                "note": (h or {}).get("explanation") or "",
-                "placeholder": h is None,
-            })
+            items.append(make_hadith(ref, hid, t["id"], t["name"], problems))
     return items, skipped
+
+
+def build_moods(moods, items, make_ayah, verse_count, problems):
+    """Mood lists point at item ids. Items that are not already in a topic go
+    into moodItems (categoryId ""), so topics and daily rotation stay the same."""
+    by_id = {i["id"]: i for i in items}
+    extra, out, skipped, check = {}, [], [], set()
+    for m in moods:
+        ayahs, surahs, hadiths = [], [], []
+        for s, a, b in m["ayahs"]:
+            iid = f"a-{s}-{a}" + ("" if a == b else f"-{b}")
+            if iid not in by_id and iid not in extra:
+                extra[iid] = make_ayah(s, a, b, "", "")
+            ayahs.append(iid)
+        for s in m["surahs"]:
+            iid = f"s-{s}"
+            if iid not in extra:
+                n = verse_count(s)
+                if n == 0:
+                    problems.append(f"Surah {s}: no verses")
+                    continue
+                it = make_ayah(s, 1, n, "", "", item_id=iid)
+                it["fullSurah"] = True
+                extra[iid] = it
+            surahs.append(iid)
+        for h in m["hadiths"]:
+            hid = MAPPING.get(h["ref"])
+            if not hid:
+                skipped.append({"reference": h["ref"], "theme": m["name"],
+                                "reason": "not found on HadeethEnc"})
+                continue
+            iid = hadith_id(h["ref"])
+            if iid not in by_id and iid not in extra:
+                extra[iid] = make_hadith(h["ref"], hid, "", "", problems)
+            if h["check"]:
+                check.add(iid)
+            if iid not in hadiths:
+                hadiths.append(iid)
+        out.append({"id": m["id"], "name": m["name"], "nameEn": m["nameEn"],
+                    "ayahs": ayahs, "surahs": surahs, "hadiths": hadiths})
+    for it in list(items) + list(extra.values()):
+        if it["id"] in check:
+            it["gradeCheck"] = True
+    return out, list(extra.values()), skipped
 
 
 def cmd_build():
     ayah_cats, themes = parse_list()
+    moods = parse_moods()
     problems = []
-    ayahs, sources = build_ayahs(ayah_cats, problems)
+    mood_surahs = {s for m in moods for s, _, _ in m["ayahs"]} | {s for m in moods for s in m["surahs"]}
+    ayahs, make_ayah, verse_count, sources = build_ayahs(ayah_cats, problems, mood_surahs)
     hadiths, skipped = build_hadiths(themes, problems)
+    mood_list, mood_items, mood_skipped = build_moods(moods, ayahs + hadiths, make_ayah,
+                                                      verse_count, problems)
     kept_themes = {h["categoryId"] for h in hadiths}
     out = {
         "meta": {
@@ -359,6 +458,7 @@ def cmd_build():
             "sources": {**sources, "hadeethenc": {"name": "HadeethEnc.com",
                                                   "url": "https://hadeethenc.com"}},
             "skippedHadiths": skipped,
+            "skippedMoodHadiths": mood_skipped,
             "problems": problems,
         },
         "ayahCategories": [{"id": c["id"], "name": c["name"], "nameEn": c["nameEn"]}
@@ -366,6 +466,8 @@ def cmd_build():
         "hadithThemes": [{"id": t["id"], "name": t["name"]}
                          for t in themes if t["id"] in kept_themes],
         "items": ayahs + hadiths,
+        "moods": mood_list,
+        "moodItems": mood_items,
     }
     OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUT_FILE.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -375,6 +477,10 @@ def cmd_build():
         print("  PROBLEM:", p)
     for s in skipped:
         print("  SKIPPED:", s["reference"])
+    print(f"Moods: {len(mood_list)}, extra mood items: {len(mood_items)}, "
+          f"mood hadiths skipped: {len(mood_skipped)}")
+    for s in mood_skipped:
+        print("  MOOD SKIPPED:", s["theme"], "-", s["reference"])
 
 
 if __name__ == "__main__":

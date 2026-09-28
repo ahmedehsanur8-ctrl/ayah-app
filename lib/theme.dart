@@ -1,25 +1,42 @@
 import 'package:flutter/material.dart';
 
-const banglaFont = 'NotoSansBengali';
-const headingFont = 'HindSiliguri';
+/// Big titles.
+const titleFont = 'NotoSerifBengali';
+
+/// Bangla text and UI.
+const banglaFont = 'HindSiliguri';
+const headingFont = banglaFont;
 const arabicFont = 'AmiriQuran';
 
-/// Noto Sans Bengali has no Latin punctuation or Arabic letters, so fall back
-/// to Hind Siliguri (Bangla + Latin) and then Amiri Quran (Arabic).
-const fontFallback = [headingFont, arabicFont];
+/// Hind Siliguri covers Bangla and Latin; Noto Sans Bengali and Amiri Quran
+/// fill any gaps (rare Bangla signs, Arabic letters inside Bangla text).
+const fontFallback = ['NotoSansBengali', arabicFont];
 
 /// Brand colours that do not change with light/dark mode.
 class Brand {
-  static const emerald = Color(0xFF0F5C3E);
-  static const deepEmerald = Color(0xFF0A3D2A);
-  static const night = Color(0xFF06231A);
-  static const gold = Color(0xFFC9A24B);
-  static const lightGold = Color(0xFFE9D39A);
-  static const cream = Color(0xFFFBF6E9);
+  static const green = Color(0xFF14553F);
+  static const greenDark = Color(0xFF0E3B2C);
+  static const gold = Color(0xFFF1DDA8);
+  static const goldText = Color(0xFF7A5A14);
+  static const cream = Color(0xFFFFFBF0);
+
+  // Older names, still used by a few widgets.
+  static const emerald = green;
+  static const deepEmerald = greenDark;
+  static const night = Color(0xFF0A1511);
+  static const lightGold = gold;
 }
 
-/// Colours that change between light and dark mode.
-/// Use it with `context.palette`.
+/// A soft background colour with its matching text colour.
+@immutable
+class Tint {
+  const Tint(this.background, this.foreground);
+
+  final Color background;
+  final Color foreground;
+}
+
+/// Colours that change between light and dark mode. Use it with `context.palette`.
 @immutable
 class Palette extends ThemeExtension<Palette> {
   const Palette({
@@ -30,65 +47,109 @@ class Palette extends ThemeExtension<Palette> {
     required this.text,
     required this.muted,
     required this.primary,
-    required this.accent,
+    required this.onPrimary,
+    required this.greenCard,
+    required this.greenCardDark,
+    required this.gold,
+    required this.goldText,
+    required this.pill,
     required this.arabic,
-    required this.heroStart,
-    required this.heroEnd,
-    required this.readingTop,
-    required this.readingBottom,
-    required this.pattern,
+    required this.tints,
     required this.isDark,
   });
 
   final Color background;
   final Color surface;
+
+  /// Slightly darker than [surface], for boxes inside cards.
   final Color surfaceSoft;
   final Color border;
   final Color text;
   final Color muted;
+
+  /// Buttons, links, active icons.
   final Color primary;
-  final Color accent;
+  final Color onPrimary;
+
+  /// The deep green of the ayah card and the player.
+  final Color greenCard;
+  final Color greenCardDark;
+
+  /// Gold on green (buttons, divider).
+  final Color gold;
+
+  /// Gold text on a light background.
+  final Color goldText;
+
+  /// Light green pill behind the active tab.
+  final Color pill;
   final Color arabic;
-  final Color heroStart;
-  final Color heroEnd;
-  final Color readingTop;
-  final Color readingBottom;
-  final Color pattern;
+
+  /// rose, sand, sky, mint, lilac.
+  final List<Tint> tints;
   final bool isDark;
 
+  Tint get rose => tints[0];
+  Tint get sand => tints[1];
+  Tint get sky => tints[2];
+  Tint get mint => tints[3];
+  Tint get lilac => tints[4];
+
+  // Older names, still used by a few screens.
+  Color get accent => goldText;
+  Color get heroStart => greenCard;
+  Color get heroEnd => greenCardDark;
+  Color get readingTop => background;
+  Color get readingBottom => background;
+  Color get pattern => isDark ? gold : primary;
+
   static const light = Palette(
-    background: Color(0xFFF6F7F2),
-    surface: Colors.white,
-    surfaceSoft: Color(0xFFEFF5EF),
-    border: Color(0xFFE2EAE3),
-    text: Color(0xFF1B2A22),
-    muted: Color(0xFF66766D),
-    primary: Brand.emerald,
-    accent: Color(0xFFB08A35),
-    arabic: Color(0xFF0A3D2A),
-    heroStart: Color(0xFF0F5C3E),
-    heroEnd: Color(0xFF1E7A55),
-    readingTop: Color(0xFFFBF7EC),
-    readingBottom: Color(0xFFEAF3EC),
-    pattern: Color(0xFF0F5C3E),
+    background: Color(0xFFF5F2EA),
+    surface: Color(0xFFFFFFFF),
+    surfaceSoft: Color(0xFFF8F6F0),
+    border: Color(0xFFE6E1D6),
+    text: Color(0xFF1E2A24),
+    muted: Color(0xFF6E6A5E),
+    primary: Brand.green,
+    onPrimary: Colors.white,
+    greenCard: Brand.green,
+    greenCardDark: Brand.greenDark,
+    gold: Brand.gold,
+    goldText: Brand.goldText,
+    pill: Color(0xFFE1EFE7),
+    arabic: Color(0xFF14231C),
+    tints: [
+      Tint(Color(0xFFF6E7E4), Color(0xFF7A2E26)),
+      Tint(Color(0xFFF5ECD9), Color(0xFF6A4B10)),
+      Tint(Color(0xFFE2EBF4), Color(0xFF1E4568)),
+      Tint(Color(0xFFE1EFE7), Color(0xFF1C5A3F)),
+      Tint(Color(0xFFECE5F3), Color(0xFF4A3370)),
+    ],
     isDark: false,
   );
 
   static const dark = Palette(
-    background: Color(0xFF09130F),
-    surface: Color(0xFF111F18),
-    surfaceSoft: Color(0xFF172920),
-    border: Color(0xFF223529),
-    text: Color(0xFFE7EFEA),
-    muted: Color(0xFF9BAFA4),
-    primary: Color(0xFF4CC195),
-    accent: Color(0xFFDDBD6C),
-    arabic: Color(0xFFF3E7C6),
-    heroStart: Color(0xFF0B3325),
-    heroEnd: Color(0xFF12503A),
-    readingTop: Color(0xFF07130E),
-    readingBottom: Color(0xFF0E2219),
-    pattern: Color(0xFFDDBD6C),
+    background: Color(0xFF0F1512),
+    surface: Color(0xFF18201C),
+    surfaceSoft: Color(0xFF1E2823),
+    border: Color(0xFF2A352F),
+    text: Color(0xFFECE8DD),
+    muted: Color(0xFFA6A99E),
+    primary: Color(0xFF6CC79D),
+    onPrimary: Color(0xFF0A1511),
+    greenCard: Color(0xFF123F2F),
+    greenCardDark: Color(0xFF0B2A1F),
+    gold: Brand.gold,
+    goldText: Color(0xFFE3C77F),
+    pill: Color(0xFF1F3A2D),
+    arabic: Color(0xFFF3ECD8),
+    tints: [
+      Tint(Color(0xFF3A2624), Color(0xFFF2BFB6)),
+      Tint(Color(0xFF362D1C), Color(0xFFEACD8E)),
+      Tint(Color(0xFF1E2C3A), Color(0xFFAFCBEA)),
+      Tint(Color(0xFF1C3127), Color(0xFFA9DABF)),
+      Tint(Color(0xFF2C253C), Color(0xFFD1BEEE)),
+    ],
     isDark: true,
   );
 
@@ -103,18 +164,32 @@ extension PaletteX on BuildContext {
   Palette get palette => Theme.of(this).extension<Palette>()!;
 }
 
-const radiusL = 24.0;
+const radiusL = 26.0;
 const radiusM = 18.0;
+
+/// Smallest touch target.
+const minTouch = 44.0;
+
+/// Style for big serif titles.
+TextStyle titleStyle(Palette p, {double size = 24}) => TextStyle(
+  fontFamily: titleFont,
+  fontFamilyFallback: fontFallback,
+  fontWeight: FontWeight.w600,
+  fontSize: size,
+  height: 1.35,
+  color: p.text,
+);
 
 ThemeData buildTheme(Brightness brightness) {
   final p = brightness == Brightness.dark ? Palette.dark : Palette.light;
   final scheme = ColorScheme.fromSeed(
-    seedColor: Brand.emerald,
+    seedColor: Brand.green,
     brightness: brightness,
     primary: p.primary,
+    onPrimary: p.onPrimary,
     surface: p.surface,
   );
-  const heading = TextStyle(fontFamily: headingFont, fontWeight: FontWeight.w700);
+  const ui = TextStyle(fontFamily: banglaFont, fontFamilyFallback: fontFallback);
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
@@ -123,13 +198,15 @@ ThemeData buildTheme(Brightness brightness) {
     fontFamilyFallback: fontFallback,
     scaffoldBackgroundColor: p.background,
     extensions: [p],
+    materialTapTargetSize: MaterialTapTargetSize.padded,
     textTheme: TextTheme(
-      headlineSmall: heading.copyWith(fontSize: 24, color: p.text),
-      titleLarge: heading.copyWith(fontSize: 20, color: p.text),
-      titleMedium: heading.copyWith(fontSize: 17, color: p.text, fontWeight: FontWeight.w600),
-      bodyLarge: TextStyle(fontSize: 16, color: p.text, height: 1.6),
-      bodyMedium: TextStyle(fontSize: 14.5, color: p.text, height: 1.55),
-      bodySmall: TextStyle(fontSize: 12.5, color: p.muted, height: 1.45),
+      headlineSmall: titleStyle(p, size: 24),
+      titleLarge: titleStyle(p, size: 20),
+      titleMedium: ui.copyWith(fontSize: 16.5, color: p.text, fontWeight: FontWeight.w600),
+      bodyLarge: ui.copyWith(fontSize: 16, color: p.text, height: 1.6),
+      bodyMedium: ui.copyWith(fontSize: 14.5, color: p.text, height: 1.55),
+      bodySmall: ui.copyWith(fontSize: 12.5, color: p.muted, height: 1.45),
+      labelLarge: ui.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: p.background,
@@ -138,7 +215,7 @@ ThemeData buildTheme(Brightness brightness) {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: heading.copyWith(fontSize: 22, color: p.text),
+      titleTextStyle: titleStyle(p, size: 21),
     ),
     cardTheme: CardThemeData(
       color: p.surface,
@@ -153,39 +230,45 @@ ThemeData buildTheme(Brightness brightness) {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: p.primary,
-        foregroundColor: p.isDark ? Brand.night : Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
+        foregroundColor: p.onPrimary,
+        minimumSize: const Size(minTouch, 48),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusM)),
-        textStyle: heading.copyWith(fontSize: 16),
+        textStyle: ui.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: p.primary,
-        side: BorderSide(color: p.primary.withValues(alpha: 0.5)),
+        minimumSize: const Size(minTouch, minTouch),
+        side: BorderSide(color: p.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        textStyle: heading.copyWith(fontSize: 14.5, fontWeight: FontWeight.w600),
+        textStyle: ui.copyWith(fontSize: 14.5, fontWeight: FontWeight.w600),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: p.primary,
-        textStyle: heading.copyWith(fontSize: 14.5, fontWeight: FontWeight.w600),
+        minimumSize: const Size(minTouch, minTouch),
+        textStyle: ui.copyWith(fontSize: 14.5, fontWeight: FontWeight.w600),
       ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(minimumSize: const Size(minTouch, minTouch)),
     ),
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: p.surface,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: p.primary.withValues(alpha: 0.14),
-      height: 70,
+      indicatorColor: p.pill,
+      indicatorShape: const StadiumBorder(),
+      height: 68,
       iconTheme: WidgetStateProperty.resolveWith(
         (s) => IconThemeData(color: s.contains(WidgetState.selected) ? p.primary : p.muted),
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (s) => TextStyle(
-          fontFamily: headingFont,
+        (s) => ui.copyWith(
           fontSize: 12.5,
-          fontWeight: FontWeight.w600,
+          fontWeight: s.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
           color: s.contains(WidgetState.selected) ? p.primary : p.muted,
         ),
       ),
@@ -199,7 +282,11 @@ ThemeData buildTheme(Brightness brightness) {
       ),
     ),
     sliderTheme: SliderThemeData(activeTrackColor: p.primary, thumbColor: p.primary),
-    listTileTheme: ListTileThemeData(iconColor: p.primary, textColor: p.text),
+    listTileTheme: ListTileThemeData(
+      iconColor: p.primary,
+      textColor: p.text,
+      minVerticalPadding: 10,
+    ),
     dividerTheme: DividerThemeData(color: p.border, space: 1),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
@@ -208,6 +295,7 @@ ThemeData buildTheme(Brightness brightness) {
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: p.surface,
       surfaceTintColor: Colors.transparent,
+      showDragHandle: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(radiusL)),
       ),
@@ -216,6 +304,23 @@ ThemeData buildTheme(Brightness brightness) {
       backgroundColor: p.surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusL)),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: p.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusM),
+        borderSide: BorderSide(color: p.border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusM),
+        borderSide: BorderSide(color: p.border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(radiusM),
+        borderSide: BorderSide(color: p.primary, width: 1.5),
+      ),
     ),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {TargetPlatform.android: FadeForwardsPageTransitionsBuilder()},

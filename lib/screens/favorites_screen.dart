@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../theme.dart';
 import '../widgets/pattern.dart';
-import 'categories_screen.dart';
+import '../widgets/ui.dart';
+import 'reader_screen.dart';
 
 /// Ayahs and hadiths the user saved with the heart button.
 class FavoritesScreen extends StatelessWidget {
@@ -12,18 +13,72 @@ class FavoritesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = AppState.instance;
+    final p = context.palette;
     return Scaffold(
-      appBar: AppBar(title: const Text('প্রিয় তালিকা')),
+      appBar: AppBar(title: const Text('প্রিয়')),
       body: ListenableBuilder(
         listenable: state.settings,
         builder: (context, _) {
           final items = state.settings.favorites.map(state.data.byId).nonNulls.toList();
           if (items.isEmpty) return const _Empty();
-          return ListView.separated(
+          return ListView(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (context, i) => ItemListCard(items[i], showCategory: true),
+            children: [
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < items.length; i++) ...[
+                      if (i > 0) Divider(height: 1, color: p.border),
+                      InkWell(
+                        onTap: () =>
+                            push(context, ReaderScreen(items: items, index: i, title: 'প্রিয়')),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 64),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${items[i].isAyah ? 'আয়াত' : 'হাদিস'} · ${items[i].title}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: p.primary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        items[i].banglaPlain,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(fontSize: 14, color: p.text, height: 1.5),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'প্রিয় থেকে সরান',
+                                  onPressed: () => state.settings.toggleFavorite(items[i].id),
+                                  icon: const Icon(
+                                    Icons.favorite_rounded,
+                                    color: Color(0xFFD6455F),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -52,22 +107,24 @@ class _Empty extends StatelessWidget {
                     child: SizedBox.square(
                       dimension: 140,
                       child: ColoredBox(
-                        color: p.surfaceSoft,
+                        color: p.rose.background,
                         child: Stack(
-                          children: [PatternLayer(color: p.pattern, opacity: 0.12, cell: 34)],
+                          children: [
+                            PatternLayer(color: p.rose.foreground, opacity: 0.10, cell: 34),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                  const Icon(Icons.favorite_rounded, size: 52, color: Color(0xFFE0506B)),
+                  Icon(Icons.favorite_border_rounded, size: 52, color: p.rose.foreground),
                 ],
               ),
             ),
             const SizedBox(height: 22),
-            Text('এখনো কিছু রাখা হয়নি', style: Theme.of(context).textTheme.titleLarge),
+            Text('এখনো কিছু রাখা হয়নি', style: titleStyle(p, size: 20)),
             const SizedBox(height: 8),
             Text(
-              'যে আয়াত বা হাদিস মনে ধরে, তার পাশের ♡ চিহ্নে চাপ দিন। সেটি এখানে জমা থাকবে।',
+              'যে আয়াত বা হাদিস মনে ধরে, তার পাশের হৃদয় চিহ্নে চাপ দিন। সেটি এখানে জমা থাকবে।',
               textAlign: TextAlign.center,
               style: TextStyle(color: p.muted, height: 1.6),
             ),

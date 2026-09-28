@@ -3,10 +3,15 @@ import 'dart:io';
 
 import 'package:ayah_reminder/models/content.dart';
 import 'package:ayah_reminder/models/story.dart';
+import 'package:ayah_reminder/models/surah_names.dart';
+import 'package:ayah_reminder/models/topics.dart';
 import 'package:ayah_reminder/services/audio.dart';
 import 'package:ayah_reminder/services/bangla_tts.dart';
+import 'package:ayah_reminder/services/prayer.dart';
 import 'package:ayah_reminder/services/rotation.dart';
+import 'package:ayah_reminder/services/settings.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   final data = ContentData.fromJson(
@@ -113,5 +118,58 @@ void main() {
 
   test('footnote markers are not read aloud', () {
     expect(BanglaTts.clean('দয়ালু [১]। আর---আল্লাহ'), 'দয়ালু । আর, আল্লাহ');
+  });
+
+  test('16 moods; every listed item exists', () {
+    expect(data.moods.length, 16);
+    for (final m in data.moods) {
+      expect(m.ayahIds, isNotEmpty, reason: m.name);
+      expect(
+        data.byIds([...m.ayahIds, ...m.surahIds, ...m.hadithIds]).length,
+        m.ayahIds.length + m.surahIds.length + m.hadithIds.length,
+        reason: m.name,
+      );
+    }
+    // Full surahs start at verse 1 and are marked.
+    final duha = data.byId('s-93')!;
+    expect(duha.fullSurah, isTrue);
+    expect(duha.ayahStart, 1);
+    expect(duha.ayahEnd, 11);
+    expect(duha.title, 'সূরা আদ-দুহা (সম্পূর্ণ)');
+  });
+
+  test('every topic group covers each category and theme exactly once', () {
+    final ids = [
+      for (final g in topicGroups)
+        for (final t in g.topics) ...[...t.ayahCats, ...t.hadithThemes],
+    ];
+    expect(ids.toSet().length, ids.length);
+    for (final c in data.ayahCategories) {
+      expect(ids, contains(c.id));
+    }
+    for (final h in data.hadithThemes) {
+      expect(ids, contains(h.id));
+    }
+  });
+
+  test('Bangla surah names and footnote-free text', () {
+    expect(surahNamesBn.length, 114);
+    expect(surahNameBn(2), 'আল-বাকারা');
+    expect(withoutFootnoteMarks('দয়ালু [১]। আর [2]'), 'দয়ালু। আর');
+    final item = data.items.firstWhere((i) => i.surah == 2 && i.ayahStart == 153);
+    expect(item.title, 'সূরা আল-বাকারা · ২:১৫৩');
+  });
+
+  test('prayer times for Sylhet are in order (Karachi, Hanafi)', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = await AppSettings.load();
+    await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+    final times = Prayers.forDay(s, DateTime(2026, 3, 21));
+    expect(times.map((p) => p.key), ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']);
+    for (var i = 1; i < times.length; i++) {
+      expect(times[i].time.isAfter(times[i - 1].time), isTrue);
+    }
+    final q = Prayers.qibla(s)!;
+    expect(q, inInclusiveRange(270, 285)); // west-north-west from Bangladesh
   });
 }

@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 
+import 'surah_names.dart';
+
 const _bnDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const _arDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
 
@@ -20,7 +22,12 @@ const _bookNamesBn = {
   'Ahmad': 'মুসনাদে আহমাদ',
   'Al-Adab al-Mufrad': 'আল-আদাবুল মুফরাদ',
   'Mustadrak al-Hakim': 'মুস্তাদরাকে হাকিম',
+  'Ibn Majah': 'সুনান ইবনে মাজাহ',
 };
+
+/// Removes footnote markers like [১] or [2] from a translation.
+String withoutFootnoteMarks(String s) =>
+    s.replaceAll(RegExp(r'\s*\[[০-৯0-9]+\]'), '').replaceAll(RegExp(r'-{2,}'), '—');
 
 enum ItemType { ayah, hadith }
 
@@ -48,7 +55,24 @@ class ContentItem {
     this.surah = 0,
     this.ayahStart = 0,
     this.ayahEnd = 0,
+    this.fullSurah = false,
+    this.gradeCheck = false,
   });
+
+  /// A whole surah (from the mood lists).
+  final bool fullSurah;
+
+  /// The hadith's grade still needs to be checked by a scholar.
+  final bool gradeCheck;
+
+  /// Bangla surah name, e.g. "আল-বাকারা" (ayahs only).
+  String get surahName => surahNameBn(surah);
+
+  /// Bangla text without footnote markers.
+  String get banglaPlain => withoutFootnoteMarks(bangla);
+
+  /// Short one-line label for lists: reference for ayahs, book for hadiths.
+  String get shortRef => title;
 
   /// Surah and verse numbers (ayahs only; 0 for hadiths).
   final int surah;
@@ -100,14 +124,20 @@ class ContentItem {
       final surahAr = (j['surahNameAr'] ?? '') as String;
       final surahEn = (j['surahNameEn'] ?? '') as String;
       final refBn = (j['referenceBn'] ?? toBanglaDigits(j['reference'])) as String;
-      final name = surahAr.isNotEmpty ? 'সূরা $surahAr' : 'সূরা';
+      final surahNo = (j['surah'] ?? 0) as int;
+      final full = j['fullSurah'] == true;
+      final bnName = surahNameBn(surahNo);
+      final name = bnName.isNotEmpty
+          ? 'সূরা $bnName'
+          : (surahAr.isNotEmpty ? 'সূরা $surahAr' : 'সূরা');
       return ContentItem(
         id: j['id'],
         type: type,
-        categoryId: j['categoryId'],
-        category: j['category'],
+        categoryId: j['categoryId'] ?? '',
+        category: j['category'] ?? '',
         reference: j['reference'],
-        title: '$name · $refBn',
+        title: full ? '$name (সম্পূর্ণ)' : '$name · $refBn',
+        fullSurah: full,
         subtitle: surahEn,
         arabic: arabic,
         bangla: bangla,
@@ -128,15 +158,47 @@ class ContentItem {
     return ContentItem(
       id: j['id'],
       type: type,
-      categoryId: j['categoryId'],
-      category: j['category'],
+      categoryId: j['categoryId'] ?? '',
+      category: j['category'] ?? '',
       reference: ref,
       title: title,
+      gradeCheck: j['gradeCheck'] == true,
       subtitle: [attribution, grade].where((s) => s.trim().isNotEmpty).join(' · '),
       arabic: j['arabic'] ?? '',
       bangla: j['bangla'] ?? '',
       note: (j['note'] ?? '') as String,
       placeholder: j['placeholder'] == true,
+    );
+  }
+}
+
+/// A feeling (মন) with the ayahs, full surahs and hadiths chosen for it.
+class Mood {
+  const Mood({
+    required this.id,
+    required this.name,
+    required this.nameEn,
+    required this.ayahIds,
+    required this.surahIds,
+    required this.hadithIds,
+  });
+
+  final String id;
+  final String name;
+  final String nameEn;
+  final List<String> ayahIds;
+  final List<String> surahIds;
+  final List<String> hadithIds;
+
+  static Mood fromJson(Map<String, dynamic> j) {
+    List<String> ids(String k) => ((j[k] ?? []) as List).cast<String>();
+    return Mood(
+      id: j['id'],
+      name: j['name'],
+      nameEn: j['nameEn'] ?? '',
+      ayahIds: ids('ayahs'),
+      surahIds: ids('surahs'),
+      hadithIds: ids('hadiths'),
     );
   }
 }
@@ -147,15 +209,31 @@ class ContentData {
     required this.hadithThemes,
     required this.items,
     required this.meta,
-  }) : _byId = {for (final i in items) i.id: i};
+    this.moods = const [],
+    this.moodItems = const [],
+  }) : _byId = {
+         for (final i in [...items, ...moodItems]) i.id: i,
+       };
 
   final List<Category> ayahCategories;
   final List<Category> hadithThemes;
+
+  /// Items that belong to a topic (used for topics and the daily reminders).
   final List<ContentItem> items;
   final Map<String, dynamic> meta;
+  final List<Mood> moods;
+
+  /// Extra ayahs, surahs and hadiths that only appear in moods.
+  final List<ContentItem> moodItems;
   final Map<String, ContentItem> _byId;
 
   ContentItem? byId(String id) => _byId[id];
+
+  /// The items with these ids, in order (unknown ids are skipped).
+  List<ContentItem> byIds(Iterable<String> ids) => [
+    for (final id in ids)
+      if (_byId[id] != null) _byId[id]!,
+  ];
 
   List<ContentItem> itemsIn(String categoryId) =>
       items.where((i) => i.categoryId == categoryId).toList();
@@ -185,6 +263,12 @@ class ContentData {
           .map((e) => ContentItem.fromJson(e as Map<String, dynamic>, basmala: basmala))
           .toList(),
       meta: (j['meta'] ?? <String, dynamic>{}) as Map<String, dynamic>,
+      moods: ((j['moods'] ?? []) as List)
+          .map((m) => Mood.fromJson(m as Map<String, dynamic>))
+          .toList(),
+      moodItems: ((j['moodItems'] ?? []) as List)
+          .map((e) => ContentItem.fromJson(e as Map<String, dynamic>, basmala: basmala))
+          .toList(),
     );
   }
 

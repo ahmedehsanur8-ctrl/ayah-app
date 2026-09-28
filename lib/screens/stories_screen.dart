@@ -8,38 +8,133 @@ import '../services/audio.dart';
 import '../theme.dart';
 import '../widgets/audio_button.dart';
 import '../widgets/item_view.dart';
-import '../widgets/pattern.dart';
+import '../widgets/ui.dart';
 
-/// "সাহাবিদের জীবনী" (Life of the Sahaba): a card for each life story.
+String _mmss(Duration d) {
+  final h = d.inHours;
+  final m = d.inMinutes % 60;
+  final s = (d.inSeconds % 60).toString().padLeft(2, '0');
+  return toBanglaDigits(h > 0 ? '$h:${m.toString().padLeft(2, '0')}:$s' : '$m:$s');
+}
+
+/// "সাহাবিদের জীবনী" (Life of the Sahaba).
 class StoriesScreen extends StatelessWidget {
   const StoriesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final stories = AppState.instance.stories;
+    final settings = AppState.instance.settings;
     return Scaffold(
-      appBar: AppBar(title: const Text('সাহাবিদের জীবনী')),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-        itemCount: stories.length + 1,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemBuilder: (context, i) =>
-            i == 0 ? const _Intro() : _StoryCard(story: stories[i - 1], number: i),
+      body: SafeArea(
+        child: ListenableBuilder(
+          listenable: settings,
+          builder: (context, _) {
+            final last = stories
+                .where((s) => s.id == settings.lastStoryId && s.hasAudio)
+                .firstOrNull;
+            final pos = last == null ? Duration.zero : settings.storyPosition(last.id);
+            final len = last == null ? Duration.zero : settings.storyLength(last.id);
+            final showContinue =
+                last != null &&
+                pos > const Duration(seconds: 5) &&
+                len > Duration.zero &&
+                pos < len - const Duration(seconds: 5);
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+              children: [
+                const PageTitle(
+                  'সাহাবিদের জীবনী',
+                  subtitle:
+                      'রাসূলুল্লাহ (সাঃ)-এর সাহাবিদের জীবনের ঘটনা, সহজ ভাষায়। '
+                      'লেখাগুলো এখনো খসড়া; একজন আলেম যাচাই করে দেখবেন।',
+                ),
+                if (showContinue) ...[
+                  _ContinueCard(story: last, position: pos, length: len),
+                  const SizedBox(height: 14),
+                ],
+                for (var i = 0; i < stories.length; i++) ...[
+                  _StoryCard(story: stories[i], number: i + 1),
+                  const SizedBox(height: 10),
+                ],
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class _Intro extends StatelessWidget {
-  const _Intro();
+class _ContinueCard extends StatelessWidget {
+  const _ContinueCard({required this.story, required this.position, required this.length});
+
+  final Story story;
+  final Duration position;
+  final Duration length;
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Text(
-      'রাসূলুল্লাহ (সা.)-এর সাহাবিদের জীবনের সত্য ঘটনা—সহীহ হাদিস ও সীরাত গ্রন্থ থেকে সহজ ভাষায়। '
-      'লেখাগুলো এখনো খসড়া; একজন আলেম যাচাই করে দেখবেন।',
-      style: TextStyle(color: p.muted, height: 1.6, fontSize: 13.5),
+    final dim = Colors.white.withValues(alpha: 0.78);
+    return Material(
+      color: p.greenCard,
+      borderRadius: BorderRadius.circular(radiusM),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(radiusM),
+        onTap: () {
+          push(context, StoryScreen(story: story));
+          AudioController.instance.playStory(story);
+        },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(color: p.gold, shape: BoxShape.circle),
+                child: const Icon(Icons.play_arrow_rounded, color: Brand.greenDark, size: 30),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'শুনছিলেন',
+                      style: TextStyle(color: p.gold, fontSize: 12.5, fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      story.companion,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: position.inMilliseconds / length.inMilliseconds,
+                        minHeight: 4,
+                        color: p.gold,
+                        backgroundColor: Colors.white24,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_mmss(position)} / ${_mmss(length)}',
+                      style: TextStyle(color: dim, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -53,77 +148,69 @@ class _StoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () =>
-            Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => StoryScreen(story: story))),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -20,
-              width: 110,
-              height: 110,
-              child: Stack(children: [PatternLayer(color: p.pattern, opacity: 0.08, cell: 34)]),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-              child: Row(
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [p.heroEnd, p.heroStart]),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      toBanglaDigits(number),
-                      style: const TextStyle(
-                        fontFamily: headingFont,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 17,
-                        color: Brand.lightGold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(story.companion, style: Theme.of(context).textTheme.titleMedium),
-                        const SizedBox(height: 2),
-                        Text(story.title, style: TextStyle(color: p.muted, fontSize: 13.5)),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              story.hasAudio
-                                  ? Icons.headphones_rounded
-                                  : Icons.record_voice_over_rounded,
-                              size: 15,
-                              color: p.accent,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              story.hasAudio ? 'অডিও আছে' : 'ফোনের কণ্ঠে শোনা যাবে',
-                              style: TextStyle(fontSize: 12, color: p.accent),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right_rounded, color: p.muted),
-                ],
+    final tint = story.hasAudio ? p.mint : p.sand;
+    return AppCard(
+      onTap: () => push(context, StoryScreen(story: story)),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: p.greenCard, borderRadius: BorderRadius.circular(14)),
+            child: Text(
+              toBanglaDigits(number),
+              style: TextStyle(
+                fontFamily: titleFont,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                color: p.gold,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  story.companion,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
+                ),
+                Text(story.title, style: TextStyle(color: p.muted, fontSize: 13.5)),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: tint.background,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        story.hasAudio ? Icons.headphones_outlined : Icons.schedule_outlined,
+                        size: 14,
+                        color: tint.foreground,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        story.hasAudio ? 'অডিও আছে' : 'শীঘ্রই অডিও',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: tint.foreground,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: p.muted),
+        ],
       ),
     );
   }
@@ -152,13 +239,14 @@ class _StoryScreenState extends State<StoryScreen> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final s = widget.story;
+    final audio = AudioController.instance;
     return Scaffold(
       appBar: AppBar(
         title: Text(s.companion, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
             tooltip: 'শেয়ার করুন',
-            icon: const Icon(Icons.share_rounded),
+            icon: const Icon(Icons.share_outlined),
             onPressed: () => SharePlus.instance.share(ShareParams(text: s.shareText)),
           ),
         ],
@@ -166,30 +254,46 @@ class _StoryScreenState extends State<StoryScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
         children: [
-          Text(s.title, style: Theme.of(context).textTheme.headlineSmall),
+          Text(s.title, style: titleStyle(p, size: 24)),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: AudioButton(
-                  id: s.id,
-                  label: 'শুনুন',
-                  onToggle: () => AudioController.instance.toggleStory(s),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => SharePlus.instance.share(ShareParams(text: s.shareText)),
-                  icon: const Icon(Icons.share_rounded),
-                  label: const Text('শেয়ার'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
+          AudioButton(id: s.id, label: 'শুনুন', onToggle: () => audio.toggleStory(s)),
+          if (s.hasAudio)
+            ListenableBuilder(
+              listenable: audio,
+              builder: (context, _) {
+                if (audio.currentId != s.id || audio.status == AudioStatus.idle) {
+                  return const SizedBox.shrink();
+                }
+                return StreamBuilder<Duration>(
+                  stream: audio.positionStream,
+                  builder: (context, snap) {
+                    final dur = audio.duration ?? Duration.zero;
+                    final pos = snap.data ?? Duration.zero;
+                    final max = dur.inMilliseconds.toDouble();
+                    return Row(
+                      children: [
+                        Text(_mmss(pos), style: TextStyle(fontSize: 12, color: p.muted)),
+                        Expanded(
+                          child: Slider(
+                            value: max <= 0 ? 0 : pos.inMilliseconds.clamp(0, max).toDouble(),
+                            max: max <= 0 ? 1 : max,
+                            onChanged: max <= 0
+                                ? null
+                                : (v) => audio.seek(Duration(milliseconds: v.round())),
+                          ),
+                        ),
+                        Text(_mmss(dur), style: TextStyle(fontSize: 12, color: p.muted)),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          const SizedBox(height: 4),
           Text(
-            s.hasAudio ? 'কণ্ঠ: ElevenLabs' : 'এই জীবনীটি এখন ফোনের বাংলা কণ্ঠে শোনা যাবে।',
+            s.hasAudio
+                ? 'কণ্ঠ: ElevenLabs · যেখানে থেমেছিলেন সেখান থেকে চলবে'
+                : 'এই জীবনীটি এখন ফোনের বাংলা কণ্ঠে শোনা যাবে।',
             style: TextStyle(color: p.muted, fontSize: 12),
           ),
           const SizedBox(height: 18),
@@ -198,16 +302,21 @@ class _StoryScreenState extends State<StoryScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: p.surfaceSoft,
+              color: p.sand.background,
               borderRadius: BorderRadius.circular(radiusM),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.lightbulb_rounded, color: p.accent),
+                Icon(Icons.lightbulb_outline_rounded, color: p.sand.foreground),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: BanglaText('শিক্ষা: ${s.lesson}', size: 16, weight: FontWeight.w700),
+                  child: BanglaText(
+                    'শিক্ষা: ${s.lesson}',
+                    size: 16,
+                    weight: FontWeight.w700,
+                    color: p.sand.foreground,
+                  ),
                 ),
               ],
             ),
@@ -216,26 +325,19 @@ class _StoryScreenState extends State<StoryScreen> {
           if (s.source.isNotEmpty) BanglaText('সূত্র: ${s.source}', size: 13.5, color: p.muted),
           if (s.note.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                border: Border.all(color: p.border),
-                borderRadius: BorderRadius.circular(radiusM),
-              ),
-              child: BanglaText(s.note, size: 13.5, color: p.muted),
-            ),
+            AppCard(child: BanglaText(s.note, size: 13.5, color: p.muted)),
           ],
           if (s.isDraft) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.12),
+                color: p.rose.background,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
+              child: Text(
                 'খসড়া — একজন আলেমের যাচাই প্রয়োজন (draft - needs scholar review)',
-                style: TextStyle(fontSize: 12.5, color: Colors.orange),
+                style: TextStyle(fontSize: 12.5, color: p.rose.foreground),
               ),
             ),
           ],

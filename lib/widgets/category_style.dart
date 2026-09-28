@@ -2,61 +2,71 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Colour and icon for each ayah category (A1–A20) and hadith theme (H1–H12).
+/// Line icon and soft tint for each topic (A1–A20, H1–H12) and mood (M1–M16).
 class CategoryStyle {
-  const CategoryStyle(this.hue, this.icon);
+  const CategoryStyle(this.tint, this.icon);
 
-  /// Hue on the colour wheel (0–360).
-  final double hue;
+  /// 0 rose, 1 sand, 2 sky, 3 mint, 4 lilac.
+  final int tint;
   final IconData icon;
 
-  Color background(Palette p) => p.isDark
-      ? HSLColor.fromAHSL(1, hue, 0.28, 0.17).toColor()
-      : HSLColor.fromAHSL(1, hue, 0.55, 0.92).toColor();
-
-  Color foreground(Palette p) => p.isDark
-      ? HSLColor.fromAHSL(1, hue, 0.60, 0.72).toColor()
-      : HSLColor.fromAHSL(1, hue, 0.55, 0.30).toColor();
-
-  Color bubble(Palette p) => p.isDark
-      ? HSLColor.fromAHSL(1, hue, 0.35, 0.24).toColor()
-      : HSLColor.fromAHSL(1, hue, 0.60, 0.84).toColor();
+  Tint tintOf(Palette p) => p.tints[tint];
+  Color background(Palette p) => tintOf(p).background;
+  Color foreground(Palette p) => tintOf(p).foreground;
+  Color bubble(Palette p) => tintOf(p).background;
 
   static const _styles = <String, CategoryStyle>{
-    'A1': CategoryStyle(42, Icons.wb_sunny_rounded), // Hope
-    'A2': CategoryStyle(200, Icons.hourglass_bottom_rounded), // Patience
-    'A3': CategoryStyle(215, Icons.shield_rounded), // Trust
-    'A4': CategoryStyle(345, Icons.favorite_rounded), // Peace of heart
-    'A5': CategoryStyle(160, Icons.volunteer_activism_rounded), // Dua
-    'A6': CategoryStyle(24, Icons.trending_up_rounded), // Effort
-    'A7': CategoryStyle(188, Icons.water_drop_rounded), // Repentance
-    'A8': CategoryStyle(88, Icons.local_florist_rounded), // Gratitude
-    'A9': CategoryStyle(268, Icons.healing_rounded), // Comfort in grief
-    'A10': CategoryStyle(230, Icons.explore_rounded), // Purpose
-    'A11': CategoryStyle(250, Icons.nights_stay_rounded), // Worry & fear
-    'A12': CategoryStyle(120, Icons.eco_rounded), // Provision
-    'A13': CategoryStyle(32, Icons.emoji_people_rounded), // Good character
-    'A14': CategoryStyle(8, Icons.family_restroom_rounded), // Parents & family
-    'A15': CategoryStyle(205, Icons.menu_book_rounded), // Knowledge
-    'A16': CategoryStyle(52, Icons.schedule_rounded), // Time & Hereafter
-    'A17': CategoryStyle(140, Icons.park_rounded), // Hope for Jannah
-    'A18': CategoryStyle(170, Icons.mosque_rounded), // Salah
-    'A19': CategoryStyle(290, Icons.self_improvement_rounded), // Humility
-    'A20': CategoryStyle(178, Icons.verified_rounded), // Honesty
-    'H1': CategoryStyle(300, Icons.favorite_border_rounded), // Intention & heart
-    'H2': CategoryStyle(42, Icons.wb_twilight_rounded), // Hope in mercy
-    'H3': CategoryStyle(268, Icons.healing_rounded), // Hardship & patience
-    'H4': CategoryStyle(215, Icons.shield_rounded), // Tawakkul
-    'H5': CategoryStyle(188, Icons.water_drop_rounded), // Repentance
-    'H6': CategoryStyle(160, Icons.volunteer_activism_rounded), // Dua
-    'H7': CategoryStyle(140, Icons.all_inclusive_rounded), // Dhikr
-    'H8': CategoryStyle(24, Icons.stairs_rounded), // Consistency
-    'H9': CategoryStyle(88, Icons.spa_rounded), // Contentment
-    'H10': CategoryStyle(32, Icons.emoji_people_rounded), // Good character
-    'H11': CategoryStyle(8, Icons.diversity_3_rounded), // People & family
-    'H12': CategoryStyle(230, Icons.public_rounded), // This world & the next
+    'A1': CategoryStyle(1, Icons.wb_sunny_outlined), // Hope
+    'A2': CategoryStyle(2, Icons.hourglass_empty_rounded), // Patience
+    'A3': CategoryStyle(3, Icons.shield_outlined), // Trust
+    'A4': CategoryStyle(4, Icons.favorite_border_rounded), // Peace of heart
+    'A5': CategoryStyle(3, Icons.volunteer_activism_outlined), // Dua
+    'A6': CategoryStyle(1, Icons.trending_up_rounded), // Effort
+    'A7': CategoryStyle(2, Icons.water_drop_outlined), // Repentance
+    'A8': CategoryStyle(3, Icons.local_florist_outlined), // Gratitude
+    'A9': CategoryStyle(0, Icons.healing_outlined), // Comfort in grief
+    'A10': CategoryStyle(2, Icons.explore_outlined), // Purpose
+    'A11': CategoryStyle(4, Icons.nights_stay_outlined), // Worry & fear
+    'A12': CategoryStyle(3, Icons.eco_outlined), // Provision
+    'A13': CategoryStyle(1, Icons.sentiment_satisfied_outlined), // Good character
+    'A14': CategoryStyle(0, Icons.family_restroom_outlined), // Parents & family
+    'A15': CategoryStyle(2, Icons.menu_book_outlined), // Knowledge
+    'A16': CategoryStyle(1, Icons.schedule_outlined), // Time & Hereafter
+    'A17': CategoryStyle(3, Icons.park_outlined), // Hope for Jannah
+    'A18': CategoryStyle(3, Icons.mosque_outlined), // Salah
+    'A19': CategoryStyle(4, Icons.self_improvement_outlined), // Humility
+    'A20': CategoryStyle(2, Icons.verified_outlined), // Honesty
+    'H1': CategoryStyle(4, Icons.favorite_outline_rounded), // Intention & heart
+    'H2': CategoryStyle(1, Icons.wb_twilight_outlined),
+    'H3': CategoryStyle(0, Icons.healing_outlined),
+    'H4': CategoryStyle(3, Icons.shield_outlined),
+    'H5': CategoryStyle(2, Icons.water_drop_outlined),
+    'H6': CategoryStyle(3, Icons.volunteer_activism_outlined),
+    'H7': CategoryStyle(3, Icons.all_inclusive_rounded),
+    'H8': CategoryStyle(1, Icons.stairs_outlined),
+    'H9': CategoryStyle(3, Icons.spa_outlined),
+    'H10': CategoryStyle(1, Icons.sentiment_satisfied_outlined),
+    'H11': CategoryStyle(0, Icons.diversity_3_outlined),
+    'H12': CategoryStyle(2, Icons.public_outlined),
+    // Moods
+    'M1': CategoryStyle(2, Icons.cloud_outlined), // Sad
+    'M2': CategoryStyle(1, Icons.wb_sunny_outlined), // Happy / grateful
+    'M3': CategoryStyle(0, Icons.healing_outlined), // Sick
+    'M4': CategoryStyle(4, Icons.person_outline_rounded), // Lonely
+    'M5': CategoryStyle(1, Icons.battery_2_bar_rounded), // Demotivated
+    'M6': CategoryStyle(2, Icons.air_rounded), // Anxious / afraid
+    'M7': CategoryStyle(0, Icons.local_fire_department_outlined), // Angry
+    'M8': CategoryStyle(4, Icons.water_drop_outlined), // Guilty
+    'M9': CategoryStyle(0, Icons.heart_broken_outlined), // Hurt by someone
+    'M10': CategoryStyle(4, Icons.spa_outlined), // Loss of a loved one
+    'M11': CategoryStyle(3, Icons.account_balance_wallet_outlined), // Money worries
+    'M12': CategoryStyle(2, Icons.school_outlined), // Exams, job, future
+    'M13': CategoryStyle(3, Icons.volunteer_activism_outlined), // Dua unanswered
+    'M14': CategoryStyle(1, Icons.local_florist_outlined), // Weak iman
+    'M15': CategoryStyle(4, Icons.self_improvement_outlined), // Feeling worthless
+    'M16': CategoryStyle(2, Icons.bedtime_outlined), // Before sleep
   };
 
   static CategoryStyle of(String id) =>
-      _styles[id] ?? const CategoryStyle(150, Icons.auto_awesome_rounded);
+      _styles[id] ?? const CategoryStyle(3, Icons.auto_awesome_outlined);
 }
