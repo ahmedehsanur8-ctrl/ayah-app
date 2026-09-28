@@ -160,6 +160,18 @@ class _PrayerScreenState extends State<PrayerScreen> {
         RowGroup(
           children: [
             NavRow(
+              icon: Icons.notifications_active_outlined,
+              title: 'আজান ও নামাজের নোটিফিকেশন',
+              subtitle: _s.azanEnabled ? 'চালু' : 'সব বন্ধ (থামানো আছে)',
+              trailing: Switch(
+                value: _s.azanEnabled,
+                onChanged: (v) async {
+                  await _s.setAzanEnabled(v);
+                  await _changed();
+                },
+              ),
+            ),
+            NavRow(
               icon: Icons.calculate_outlined,
               title: 'হিসাবের পদ্ধতি',
               subtitle: Prayers.methodById(_s.calcMethod).name,
@@ -352,32 +364,36 @@ class ChooseLocationView extends StatelessWidget {
 const azanModeNames = {'azan': 'আজান', 'notify': 'শুধু নোটিফিকেশন', 'off': 'বন্ধ'};
 
 /// Explains, asks for location permission and saves the location.
-Future<void> useMyLocation(BuildContext context) async {
+/// With [explain] false the dialog is skipped (the page already explains).
+Future<void> useMyLocation(BuildContext context, {bool explain = true}) async {
   final s = AppState.instance.settings;
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      icon: const Icon(Icons.location_on_outlined),
-      title: const Text('অবস্থানের অনুমতি'),
-      content: const Text(
-        'নামাজের সময় ও কিবলার দিক ঠিকভাবে হিসাব করতে অ্যাপটি ফোনের আনুমানিক অবস্থান ব্যবহার করবে। '
-        'হিসাব ফোনেই হয়, অবস্থান কোথাও পাঠানো হয় না।\n\nপরের ধাপে ফোন অনুমতি চাইবে।',
-        style: TextStyle(height: 1.6),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text('না, শহর বেছে নেব'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text('চালিয়ে যান'),
-        ),
-      ],
-    ),
-  );
+  final ok =
+      !explain ||
+      (await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              icon: const Icon(Icons.location_on_outlined),
+              title: const Text('অবস্থানের অনুমতি'),
+              content: const Text(
+                'নামাজের সময় ও কিবলার দিক ঠিকভাবে হিসাব করতে অ্যাপটি ফোনের আনুমানিক অবস্থান ব্যবহার করবে। '
+                'হিসাব ফোনেই হয়, অবস্থান কোথাও পাঠানো হয় না।\n\nপরের ধাপে ফোন অনুমতি চাইবে।',
+                style: TextStyle(height: 1.6),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('না, শহর বেছে নেব'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('চালিয়ে যান'),
+                ),
+              ],
+            ),
+          )) ==
+          true;
   if (!context.mounted) return;
-  if (ok != true) return pickCity(context);
+  if (!ok) return pickCity(context);
   final messenger = ScaffoldMessenger.of(context);
   messenger.showSnackBar(const SnackBar(content: Text('অবস্থান খোঁজা হচ্ছে…')));
   final r = await LocationService.useCurrentLocation(s);

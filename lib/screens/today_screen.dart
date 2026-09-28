@@ -19,6 +19,7 @@ import 'home_shell.dart';
 import 'prayer_screen.dart';
 import 'qibla_screen.dart';
 import 'reader_screen.dart';
+import 'setup_screen.dart';
 
 /// আজ: greeting, next prayer, today's ayah and hadith.
 class TodayScreen extends StatefulWidget {
@@ -52,6 +53,7 @@ class _TodayScreenState extends State<TodayScreen> {
               children: [
                 _Header(now: now),
                 const SizedBox(height: 14),
+                const SetupBanner(),
                 const NextPrayerStrip(),
                 const SizedBox(height: 14),
                 if (ayah != null)

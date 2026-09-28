@@ -8,7 +8,7 @@ import '../theme.dart';
 import '../widgets/item_view.dart';
 import '../widgets/pattern.dart';
 import 'home_shell.dart';
-import 'setup_screen.dart';
+import 'onboarding_screen.dart';
 
 /// Shows one ayah or hadith full screen. The "আমি পড়েছি" button unlocks
 /// after a 12 second countdown, so the reader takes a moment with the text.
@@ -41,6 +41,37 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
     _countdown.addStatusListener((s) {
       if (s == AnimationStatus.completed && mounted) setState(() {});
     });
+    // "আয়াতের তিলাওয়াতের শুরু" as the reminder sound: start the recitation.
+    if (widget.fromReminder && AppState.instance.settings.reminderSound == 'tilawat') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) AudioController.instance.playItem(widget.item);
+      });
+    }
+  }
+
+  /// Leaves the page (to the home screen when it was opened from a reminder).
+  void _leave() {
+    final settings = AppState.instance.settings;
+    final nav = Navigator.of(context);
+    if (nav.canPop()) {
+      nav.pop();
+    } else {
+      nav.pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => settings.setupDone ? const HomeShell() : const OnboardingScreen(),
+        ),
+      );
+    }
+  }
+
+  /// "১০ মিনিট পরে": stop the sound and ring again in 10 minutes.
+  Future<void> _snooze() async {
+    await AudioController.instance.stop();
+    await Reminders.snooze();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('১০ মিনিট পর আবার মনে করিয়ে দেওয়া হবে')));
+    _leave();
   }
 
   @override
@@ -61,19 +92,10 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
         ? '${p.dateKey}-${p.slot}'
         : '${dateKey(Reminders.nowDhaka())}-${widget.item.isAyah ? 'morning' : 'night'}';
     await settings.markRead(key);
+    await Reminders.stopSound();
     await Reminders.dismissShown();
     if (!mounted) return;
-    final nav = Navigator.of(context);
-    if (nav.canPop()) {
-      nav.pop();
-    } else {
-      nav.pushReplacement(
-        MaterialPageRoute(
-          builder: (_) =>
-              settings.setupDone ? const HomeShell() : const SetupScreen(firstTime: true),
-        ),
-      );
-    }
+    _leave();
   }
 
   @override
@@ -153,9 +175,18 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
+                      padding: EdgeInsets.fromLTRB(20, 4, 20, widget.fromReminder ? 4 : 18),
                       child: _CountdownButton(controller: _countdown, onPressed: _done),
                     ),
+                    if (widget.fromReminder)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: TextButton.icon(
+                          onPressed: _snooze,
+                          icon: const Icon(Icons.snooze_rounded),
+                          label: const Text('১০ মিনিট পরে'),
+                        ),
+                      ),
                   ],
                 ),
               ),

@@ -147,6 +147,7 @@ class AzanAlarmReceiver : BroadcastReceiver() {
 class AzanBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         AzanScheduler.scheduleNext(context)
+        ReminderScheduler.scheduleNext(context)
     }
 }
 

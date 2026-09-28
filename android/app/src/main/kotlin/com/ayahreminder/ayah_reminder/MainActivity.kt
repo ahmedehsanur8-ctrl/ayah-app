@@ -28,9 +28,68 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private var permissionResult: MethodChannel.Result? = null
+    private var reminderChannel: MethodChannel? = null
+
+    /** Reminder that opened the app, until Flutter asks for it. */
+    private var pendingReminderPayload: String? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        pendingReminderPayload = intent?.getStringExtra("reminder_payload")
+        super.onCreate(savedInstanceState)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val payload = intent.getStringExtra("reminder_payload") ?: return
+        val ch = reminderChannel
+        if (ch == null) pendingReminderPayload = payload else ch.invokeMethod("open", payload)
+    }
+
+    private fun appDetails() =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(Uri.parse("package:$packageName"))
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Alarm-style ayah / hadith reminders (Reminder.kt).
+        val reminders = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/reminder")
+        reminderChannel = reminders
+        reminders.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "schedule" -> {
+                    ReminderStore.save(
+                        this,
+                        call.argument<String>("events") ?: "[]",
+                        call.argument<String>("sound") ?: "chime",
+                        call.argument<Boolean>("vibrate") ?: true,
+                    )
+                    ReminderScheduler.scheduleNext(this)
+                    result.success(true)
+                }
+                "test" -> {
+                    val e = org.json.JSONObject(call.argument<String>("event") ?: "{}")
+                    val delay = (call.argument<Int>("seconds") ?: 60) * 1000L
+                    ReminderScheduler.scheduleOnce(this, e, System.currentTimeMillis() + delay, ReminderScheduler.REQUEST_TEST)
+                    result.success(true)
+                }
+                "stopSound" -> {
+                    ReminderService.stopSound(this); result.success(true)
+                }
+                "snooze" -> {
+                    ReminderService.snooze(this); result.success(true)
+                }
+                "done" -> {
+                    ReminderService.stopSound(this)
+                    (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(ReminderService.NOTIFICATION_ID)
+                    result.success(true)
+                }
+                "launchPayload" -> {
+                    result.success(pendingReminderPayload)
+                    pendingReminderPayload = null
+                }
+                else -> result.notImplemented()
+            }
+        }
         // Full azan at prayer times (Azan.kt).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/azan")
             .setMethodCallHandler { call, result ->
@@ -87,6 +146,51 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "isIgnoringBatteryOptimizations" -> result.success(isIgnoringBatteryOptimizations())
+                    "canDrawOverlays" -> result.success(Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this))
+                    "openOverlaySettings" -> result.success(
+                        tryStart(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).setData(Uri.parse("package:$packageName")))
+                            || tryStart(appDetails())
+                    )
+                    "notificationsEnabled" -> result.success(
+                        (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).areNotificationsEnabled()
+                    )
+                    "openNotificationSettings" -> result.success(
+                        (Build.VERSION.SDK_INT >= 26 && tryStart(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                        )) || tryStart(appDetails())
+                    )
+                    "canScheduleExactAlarms" -> result.success(
+                        Build.VERSION.SDK_INT < 31 ||
+                            (getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager).canScheduleExactAlarms()
+                    )
+                    "openExactAlarmSettings" -> result.success(
+                        (Build.VERSION.SDK_INT >= 31 && tryStart(
+                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).setData(Uri.parse("package:$packageName"))
+                        )) || tryStart(appDetails())
+                    )
+                    "openFullScreenSettings" -> result.success(
+                        (Build.VERSION.SDK_INT >= 34 && tryStart(
+                            Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).setData(Uri.parse("package:$packageName"))
+                        )) || tryStart(appDetails())
+                    )
+                    "openAppDetails" -> result.success(tryStart(appDetails()))
+                    "openMiuiPermissions" -> result.success(
+                        tryStart(Intent("miui.intent.action.APP_PERM_EDITOR")
+                            .setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+                            .putExtra("extra_pkgname", packageName))
+                            || tryStart(appDetails())
+                    )
+                    "openBatterySettings" -> result.success(
+                        tryStart(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) || tryStart(appDetails())
+                    )
+                    "openSamsungBattery" -> result.success(
+                        listOf(
+                            "com.samsung.android.sm.battery.ui.BatteryActivity",
+                            "com.samsung.android.sm.ui.battery.BatteryActivity",
+                        ).any { tryStart(Intent().setClassName("com.samsung.android.lool", it)) }
+                            || tryStart(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                            || tryStart(appDetails())
+                    )
                     "requestIgnoreBatteryOptimizations" -> result.success(requestIgnoreBatteryOptimizations())
                     "openAutostartSettings" -> result.success(openAutostartSettings())
                     "canUseFullScreenIntent" -> result.success(canUseFullScreenIntent())

@@ -176,7 +176,7 @@ class Prayers {
     }
     try {
       await _channel.invokeMethod('schedule', {
-        'events': s.hasLocation ? eventsJson(s, DateTime.now()) : '[]',
+        'events': s.hasLocation && s.azanEnabled ? eventsJson(s, DateTime.now()) : '[]',
         'inSilent': s.azanInSilent,
         'fullScreen': s.azanFullScreen,
       });

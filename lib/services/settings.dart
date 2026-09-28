@@ -85,6 +85,42 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Phone-maker steps (autostart, pop-up windows …) the user marked as done.
+  /// Android can't tell the app whether these are on.
+  Set<String> get brandStepsDone => (_prefs.getStringList('brandStepsDone') ?? []).toSet();
+
+  Future<void> setBrandStepDone(String id, bool done) async {
+    final v = brandStepsDone;
+    done ? v.add(id) : v.remove(id);
+    await _prefs.setStringList('brandStepsDone', v.toList());
+    notifyListeners();
+  }
+
+  // ------------------------------------------------------------ reminder sound
+
+  /// 'chime', 'bell', 'phone', 'tilawat' (start of the recitation) or 'off'.
+  String get reminderSound => _prefs.getString('reminderSound') ?? 'chime';
+
+  Future<void> setReminderSound(String v) async {
+    await _prefs.setString('reminderSound', v);
+    notifyListeners();
+  }
+
+  bool get reminderVibrate => _prefs.getBool('reminderVibrate') ?? true;
+
+  Future<void> setReminderVibrate(bool v) async {
+    await _prefs.setBool('reminderVibrate', v);
+    notifyListeners();
+  }
+
+  /// Master switch for the azan and prayer notifications (pause all).
+  bool get azanEnabled => _prefs.getBool('azanEnabled') ?? true;
+
+  Future<void> setAzanEnabled(bool v) async {
+    await _prefs.setBool('azanEnabled', v);
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------ appearance
 
   /// 'system', 'light' or 'dark'.
