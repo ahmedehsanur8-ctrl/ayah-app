@@ -1,0 +1,66 @@
+# Diagnostic: downloads two released APKs and compares how they are built and signed.
+name: Compare APKs
+
+on:
+  workflow_dispatch:
+    inputs:
+      good:
+        description: "Release tag of an APK that installs"
+        default: v1.0.12
+      bad:
+        description: "Release tag of an APK that fails to install"
+        default: v1.0.21
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download both APKs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ inputs.good }}" -R "${{ github.repository }}" -p '*.apk' -O good.apk
+          gh release download "${{ inputs.bad }}" -R "${{ github.repository }}" -p '*.apk' -O bad.apk
+          ls -la *.apk; sha256sum *.apk
+
+      - name: Compare
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
+          for f in good bad; do
+            echo "==================== $f"
+            "${BT}apksigner" verify --verbose --print-certs "$f.apk" | grep -v WARNING | head -20
+            echo "--- min-sdk 21 check"; "${BT}apksigner" verify --min-sdk-version 21 "$f.apk" 2>&1 | grep -v WARNING | head -5
+            echo "--- zipalign 16 KB check"; "${BT}zipalign" -c -P 16 4 "$f.apk" && echo aligned-16k || echo NOT-aligned
+            echo "--- badging"; "${BT}aapt2" dump badging "$f.apk" | grep -Ev "^(locales|densities|application-label-)" | head -40
+            echo "--- manifest"; "${BT}aapt2" dump xmltree --file AndroidManifest.xml "$f.apk" > "$f-manifest.txt"; wc -l "$f-manifest.txt"
+            unzip -Z1 "$f.apk" | sort > "$f-files.txt"
+            echo "--- entries: $(wc -l < "$f-files.txt")"
+            echo "--- unusual names (hidden, non-ASCII, spaces, very long)"
+            grep -nP '(^|/)\.|[^\x20-\x7e]| |.{200,}' "$f-files.txt" || echo none
+            echo "--- zip details"
+            python3 - "$f.apk" <<'PY'
+          import sys, zipfile, struct, collections
+          z = zipfile.ZipFile(sys.argv[1])
+          infos = z.infolist()
+          print("entries", len(infos))
+          print("compress types", collections.Counter(i.compress_type for i in infos))
+          print("utf8-flag entries", sum(1 for i in infos if i.flag_bits & 0x800))
+          print("data-descriptor entries", sum(1 for i in infos if i.flag_bits & 0x8))
+          print("zip64-ish", [i.filename for i in infos if i.file_size >= 0xFFFFFFFF or i.header_offset >= 0xFFFFFFFF][:5])
+          big = sorted(infos, key=lambda i: -i.file_size)[:8]
+          for i in big: print(f"  {i.file_size:>10} {i.compress_type} {i.filename}")
+          dup = [n for n, c in collections.Counter(i.filename for i in infos).items() if c > 1]
+          print("duplicate names", dup)
+          data = open(sys.argv[1], "rb").read()
+          eocd = data.rfind(b"PK\x05\x06")
+          cd_size, cd_off = struct.unpack("<II", data[eocd+12:eocd+20])
+          print("central dir offset", cd_off, "size", cd_size, "eocd", eocd, "file", len(data), "comment len", struct.unpack("<H", data[eocd+20:eocd+22])[0])
+          print("APK Sig Block magic before CD:", data[cd_off-16:cd_off])
+          PY
+          done
+          echo "==================== files only in good"; comm -23 good-files.txt bad-files.txt
+          echo "==================== files only in bad"; comm -13 good-files.txt bad-files.txt
+          echo "==================== manifest diff"; diff good-manifest.txt bad-manifest.txt || true
