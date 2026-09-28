@@ -9,6 +9,11 @@ name: Build APK
 on:
   push:
   workflow_dispatch:
+    inputs:
+      signing_test:
+        description: "Also publish a test pre-release with differently signed copies (to find what a phone's installer accepts)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -98,6 +103,46 @@ jobs:
             --out "$APK" "$RUNNER_TEMP/aligned.apk"
           rm -f "$RUNNER_TEMP/aligned.apk"
 
+      # Test copies, same key and same app, only the signature layout differs.
+      - name: Make signing test copies
+        if: inputs.signing_test
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
+          SRC=build/app/outputs/flutter-apk/app-release.apk
+          mkdir -p dist-test
+          sign() { # name, min-sdk, v1, v2, v3, input
+            "${BT}apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD \
+              --min-sdk-version "$2" --v1-signing-enabled "$3" --v2-signing-enabled "$4" \
+              --v3-signing-enabled "$5" --out "dist-test/$1.apk" "$6"
+            echo "== $1"; "${BT}apksigner" verify --verbose --min-sdk-version 24 "dist-test/$1.apk" | grep -E "^Verifies|scheme"
+          }
+          # Unsigned copy of the app, re-zipped and aligned the classic way (4 KB pages).
+          python3 - "$SRC" "$RUNNER_TEMP/unsigned.apk" <<'PY'
+          import sys, zipfile
+          src, dst = sys.argv[1], sys.argv[2]
+          with zipfile.ZipFile(src) as zi, zipfile.ZipFile(dst, "w") as zo:
+              for info in zi.infolist():
+                  if info.filename.startswith("META-INF/") and info.filename.rsplit(".", 1)[-1] in ("SF", "RSA", "EC", "DSA", "MF"):
+                      continue
+                  data = zi.read(info.filename)
+                  new = zipfile.ZipInfo(info.filename, date_time=info.date_time)
+                  new.compress_type = info.compress_type
+                  new.external_attr = info.external_attr
+                  zo.writestr(new, data)
+          PY
+          "${BT}zipalign" -p -f 4 "$RUNNER_TEMP/unsigned.apk" "$RUNNER_TEMP/unsigned-aligned.apk"
+          sign test-A-v1-v2-v3        21 true  true  true  "$SRC"
+          sign test-B-v1-v2           21 true  true  false "$SRC"
+          sign test-C-v2-only         24 false true  false "$SRC"
+          sign test-D-plain-zip-v1-v2 21 true  true  false "$RUNNER_TEMP/unsigned-aligned.apk"
+          rm -f "$RUNNER_TEMP"/unsigned*.apk
+          ls -la dist-test
+
       - name: Remove signing key from the runner
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"
@@ -134,8 +179,20 @@ jobs:
           name: AyahReminder-apk
           path: dist/*.apk
 
+      - name: Publish signing test pre-release
+        if: inputs.signing_test
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: signing-test-${{ github.run_number }}
+          name: Signing test ${{ github.run_number }} (install test only)
+          prerelease: true
+          body: |
+            Four copies of the same app (1.0.${{ github.run_number }}), signed with the same key
+            in different ways. Try installing each one and note which install and which fail.
+          files: dist-test/*.apk
+
       - name: Publish GitHub Release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && !inputs.signing_test
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
