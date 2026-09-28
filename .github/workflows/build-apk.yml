@@ -9,6 +9,11 @@ name: Build APK
 on:
   push:
   workflow_dispatch:
+    inputs:
+      signing_test:
+        description: "Publish a test pre-release (A, B, C variants) instead of a normal release"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -78,6 +83,42 @@ jobs:
           --build-name=1.0.${{ github.run_number }}
           --build-number=${{ github.run_number }}
 
+      # Test variants for phones whose installer rejects the normal APK.
+      #   A: universal APK (all CPU types), signed v1 + v2 + v3
+      #   B: arm64-v8a only (smaller), signed like the normal release (v2 + v3)
+      #   C: arm64-v8a only, signed v1 + v2 + v3
+      # Gradle skips v1 for minSdk 24+ even with enableV1Signing, so v1 is added
+      # with apksigner (--min-sdk-version 21 makes it write the v1 signature).
+      - name: Build test variants A, B, C
+        if: inputs.signing_test
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          V=1.0.${{ github.run_number }}
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
+          mkdir -p dist-test
+          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/universal.apk"
+          flutter build apk --release --split-per-abi --target-platform android-arm64 \
+            --build-name=$V --build-number=${{ github.run_number }}
+          ARM=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          cp "$RUNNER_TEMP/universal.apk" build/app/outputs/flutter-apk/app-release.apk
+          v123() {
+            "${BT}apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD \
+              --min-sdk-version 21 --v1-signing-enabled true --v2-signing-enabled true \
+              --v3-signing-enabled true --out "$2" "$1"
+          }
+          v123 "$RUNNER_TEMP/universal.apk" "dist-test/A-universal-v1v2v3-$V.apk"
+          cp "$ARM" "dist-test/B-arm64-v2v3-$V.apk"
+          v123 "$ARM" "dist-test/C-arm64-v1v2v3-$V.apk"
+          for f in dist-test/*.apk; do
+            echo "=== $f ($(du -h "$f" | cut -f1))"
+            "${BT}apksigner" verify --verbose --print-certs --min-sdk-version 21 "$f" \
+              | grep -E "^Verifies|DOES NOT|scheme \((JAR|APK Signature Scheme v[23])\)|certificate SHA-256"
+          done
+
       - name: Remove signing key from the runner
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"
@@ -122,8 +163,22 @@ jobs:
           name: AyahReminder-apk
           path: dist/*.apk
 
+      - name: Publish test pre-release
+        if: inputs.signing_test
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test-${{ github.run_number }}
+          name: Install test ${{ github.run_number }} (A, B, C)
+          prerelease: true
+          body: |
+            Test copies of Ayah Reminder 1.0.${{ github.run_number }}, all signed with the permanent key.
+            - **A**: all phones (universal), v1 + v2 + v3 signatures
+            - **B**: arm64 only (smaller), v2 + v3 signatures (same as normal releases)
+            - **C**: arm64 only (smaller), v1 + v2 + v3 signatures
+          files: dist-test/*.apk
+
       - name: Publish GitHub Release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && !inputs.signing_test
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
