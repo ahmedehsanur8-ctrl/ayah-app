@@ -9,6 +9,11 @@ name: Build APK
 on:
   push:
   workflow_dispatch:
+    inputs:
+      install_test:
+        description: "Publish an install-test pre-release (T1, T2, T3) instead of a normal release"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -95,6 +100,45 @@ jobs:
             --v3-signing-enabled true --out "$RUNNER_TEMP/signed.apk" "$APK"
           mv "$RUNNER_TEMP/signed.apk" "$APK"
 
+      # Test copies to find what a phone's installer refuses (all v1 + v2 + v3, same key):
+      #   T1: the app as released
+      #   T2: T1 without the azan sound file
+      #   T3: the app built without the location permission
+      - name: Build install-test copies T1, T2, T3
+        if: inputs.install_test
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          V=1.0.${{ github.run_number }}
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          sign() {
+            "${BT}apksigner" sign --ks "$ANDROID_KEYSTORE_PATH" --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --ks-pass env:ANDROID_KEYSTORE_PASSWORD --key-pass env:ANDROID_KEY_PASSWORD \
+              --min-sdk-version 21 --v1-signing-enabled true --v2-signing-enabled true \
+              --v3-signing-enabled true --out "$2" "$1"
+            "${BT}apksigner" verify --min-sdk-version 21 "$2"
+          }
+          mkdir -p dist-test
+          cp "$APK" "dist-test/T1-full-$V.apk"
+          # T2: remove the azan sound (its file name in the APK is shortened by the build).
+          AZAN="$("${BT}aapt2" dump resources "$APK" | grep -A2 'raw/azan' | grep -o 'res/[^ ]*\.mp3' | head -1)"
+          echo "azan file in APK: $AZAN"
+          [ -n "$AZAN" ]
+          cp "$APK" "$RUNNER_TEMP/t2.apk"
+          zip -q -d "$RUNNER_TEMP/t2.apk" "$AZAN" 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/MANIFEST.MF'
+          "${BT}zipalign" -P 16 -f 4 "$RUNNER_TEMP/t2.apk" "$RUNNER_TEMP/t2a.apk"
+          sign "$RUNNER_TEMP/t2a.apk" "dist-test/T2-no-azan-sound-$V.apk"
+          # T3: build again without the location permission.
+          sed -i '/ACCESS_COARSE_LOCATION/d; /android.hardware.location/d; /sensor.compass/d' android/app/src/main/AndroidManifest.xml
+          flutter build apk --release --build-name=$V --build-number=${{ github.run_number }}
+          git checkout android/app/src/main/AndroidManifest.xml
+          sign "$APK" "dist-test/T3-no-location-permission-$V.apk"
+          cp "dist-test/T1-full-$V.apk" "$APK"
+          ls -la dist-test
+
       - name: Remove signing key from the runner
         if: always()
         run: rm -f "$RUNNER_TEMP/release.jks"
@@ -139,8 +183,22 @@ jobs:
           name: AyahReminder-apk
           path: dist/*.apk
 
+      - name: Publish install-test pre-release
+        if: inputs.install_test
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: install-test-${{ github.run_number }}
+          name: Install test ${{ github.run_number }} (T1, T2, T3)
+          prerelease: true
+          body: |
+            Test copies of Ayah Reminder 1.0.${{ github.run_number }}, all signed with the permanent key (v1 + v2 + v3).
+            - **T1**: the full app
+            - **T2**: the full app without the azan sound file
+            - **T3**: the full app without the location permission
+          files: dist-test/*.apk
+
       - name: Publish GitHub Release
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && !inputs.install_test
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}

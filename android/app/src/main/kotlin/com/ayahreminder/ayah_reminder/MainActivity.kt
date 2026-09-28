@@ -1,9 +1,14 @@
 package com.ayahreminder.ayah_reminder
 
+import android.Manifest
 import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.hardware.GeomagneticField
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -11,6 +16,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
@@ -19,8 +27,29 @@ import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
+    private var permissionResult: MethodChannel.Result? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Location for prayer times and Qibla, with Android's own LocationManager
+        // (no Google Play Services). It is only read on request and stays on the phone.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/location")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "status" -> result.success(locationStatus())
+                    "request" -> requestLocationPermission(result)
+                    "enabled" -> result.success(isLocationEnabled())
+                    "get" -> getLocation(result)
+                    "openAppSettings" -> result.success(
+                        tryStart(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            .setData(Uri.parse("package:$packageName")))
+                    )
+                    "openLocationSettings" -> result.success(
+                        tryStart(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
+                    )
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/system")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -96,6 +125,94 @@ class MainActivity : FlutterActivity() {
                 .setData(Uri.parse("package:$packageName"))
         )
         return false
+    }
+
+    private fun hasLocationPermission(): Boolean =
+        checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
+    /** "granted", "denied" or "deniedForever" (asked before and the phone will not ask again). */
+    private fun locationStatus(): String {
+        if (hasLocationPermission()) return "granted"
+        val prefs = getSharedPreferences("location_permission", Context.MODE_PRIVATE)
+        val askedBefore = prefs.getBoolean("asked", false)
+        return if (askedBefore && !shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_COARSE_LOCATION))
+            "deniedForever" else "denied"
+    }
+
+    private fun requestLocationPermission(result: MethodChannel.Result) {
+        if (hasLocationPermission()) {
+            result.success("granted"); return
+        }
+        permissionResult?.success(locationStatus())
+        permissionResult = result
+        getSharedPreferences("location_permission", Context.MODE_PRIVATE).edit().putBoolean("asked", true).apply()
+        requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION), 4001)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 4001) {
+            permissionResult?.success(locationStatus())
+            permissionResult = null
+        }
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return if (Build.VERSION.SDK_INT >= 28) lm.isLocationEnabled
+        else lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) || lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
+
+    /** The newest known location (under an hour old), else one fresh reading (20 s timeout). */
+    @Suppress("MissingPermission", "DEPRECATION")
+    private fun getLocation(result: MethodChannel.Result) {
+        if (!hasLocationPermission()) {
+            result.success(null); return
+        }
+        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val providers = lm.getProviders(true)
+        var newest: Location? = null
+        for (p in providers) {
+            val l = try { lm.getLastKnownLocation(p) } catch (e: Exception) { null } ?: continue
+            val n = newest
+            if (n == null || l.time > n.time) newest = l
+        }
+        val best: Location? = newest
+        fun send(l: Location?) = result.success(l?.let { mapOf("lat" to it.latitude, "lng" to it.longitude) })
+        val fresh = best != null && System.currentTimeMillis() - best.time < 60 * 60 * 1000
+        val provider = when {
+            providers.contains(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+            providers.contains(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
+            else -> null
+        }
+        if (fresh || provider == null) {
+            send(best); return
+        }
+        val handler = Handler(Looper.getMainLooper())
+        var done = false
+        val listener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                if (done) return
+                done = true
+                lm.removeUpdates(this)
+                send(location)
+            }
+            override fun onProviderEnabled(provider: String) {}
+            override fun onProviderDisabled(provider: String) {}
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+        }
+        try {
+            lm.requestLocationUpdates(provider, 0L, 0f, listener, Looper.getMainLooper())
+        } catch (e: Exception) {
+            send(best); return
+        }
+        handler.postDelayed({
+            if (!done) {
+                done = true
+                lm.removeUpdates(listener)
+                send(best)
+            }
+        }, 20000)
     }
 
     private fun tryStart(intent: Intent): Boolean {
