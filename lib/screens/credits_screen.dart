@@ -77,6 +77,17 @@ class CreditsScreen extends StatelessWidget {
             ].join('\n'),
           ),
           const _Source(
+            icon: Icons.front_hand_outlined,
+            name: 'দোয়া ও জিকির',
+            what:
+                'দোয়ার আরবি পাঠ: কুরআন ও সহিহ হাদিস গ্রন্থসমূহ; কিছু হাদিস HadeethEnc.com থেকে। '
+                'বাংলা অর্থ ও উচ্চারণ: অ্যাপ টিম (আলেম কর্তৃক যাচাই সাপেক্ষে)।',
+            details:
+                'কুরআনের দোয়ার আরবি Tanzil থেকে, বাংলা অর্থ ড. আবু বকর মুহাম্মাদ যাকারিয়ার অনুবাদ '
+                '(QuranEnc.com) থেকে, হুবহু। প্রতিটি দোয়ার সঙ্গে মূল গ্রন্থের সূত্র ও মান দেওয়া আছে। '
+                'সব দোয়া একজন আলেমের যাচাইয়ের অপেক্ষায়।',
+          ),
+          const _Source(
             icon: Icons.format_quote_rounded,
             name: 'HadeethEnc.com',
             what: 'হাদিসের আরবি, বাংলা অনুবাদ ও সংক্ষিপ্ত ব্যাখ্যা',

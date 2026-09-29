@@ -9,6 +9,7 @@ import 'favorites_screen.dart';
 import 'prayer_screen.dart';
 import 'qibla_screen.dart';
 import 'settings_screen.dart';
+import 'dua_screens.dart';
 import 'quran_downloads_screen.dart';
 import 'setup_screen.dart';
 
@@ -69,6 +70,8 @@ class MoreScreen extends StatelessWidget {
                 big(Icons.explore_outlined, 'কিবলা', p.sky, const QiblaScreen()),
                 const SizedBox(width: 10),
                 big(Icons.favorite_border_rounded, 'প্রিয়', p.rose, const FavoritesScreen()),
+                const SizedBox(width: 10),
+                big(Icons.front_hand_outlined, 'দোয়া', p.sand, const DuaHomeScreen()),
               ],
             ),
             const SectionLabel('সেটিংস'),

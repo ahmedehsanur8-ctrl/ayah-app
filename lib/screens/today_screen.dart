@@ -14,6 +14,7 @@ import '../widgets/audio_button.dart';
 import '../widgets/item_view.dart';
 import '../widgets/share_card.dart';
 import '../widgets/ui.dart';
+import 'dua_screens.dart';
 import 'favorites_screen.dart';
 import 'home_shell.dart';
 import 'prayer_screen.dart';
@@ -70,6 +71,8 @@ class _TodayScreenState extends State<TodayScreen> {
                 const _QuickButtons(),
                 const SizedBox(height: 14),
                 const QuranContinueCard(showWhenEmpty: true),
+                const SizedBox(height: 14),
+                const AdhkarCard(showAllButton: true),
                 if (hadith != null) ...[
                   SectionLabel(
                     _hadithOffset == 0 ? 'আজকের হাদিস' : 'হাদিস',

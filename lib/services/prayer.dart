@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../models/content.dart';
+import 'duas.dart';
 import 'reminders.dart';
 import 'settings.dart';
 
@@ -185,6 +186,8 @@ class Prayers {
     } on PlatformException catch (e) {
       debugPrint('azan schedule failed: $e');
     }
+    // The adhkar notifications follow Fajr and Asr.
+    await AdhkarReminders.schedule(s);
   }
 
   /// Plays the full azan now (the same way it plays at prayer time).

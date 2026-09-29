@@ -255,8 +255,9 @@ class QuranPlayer extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Plays surah [s] from ayah [from] to its end (or as the repeat says).
-  Future<void> play(int s, int from) async {
+  /// Plays surah [s] from ayah [from] to its end (or as the repeat says), or
+  /// only up to ayah [to] (a Quranic dua).
+  Future<void> play(int s, int from, {int? to}) async {
     final session = await _audio.begin(id);
     _session = session;
     surah = s;
@@ -311,7 +312,7 @@ class QuranPlayer extends ChangeNotifier {
         }
         break;
       }
-      if (a >= Quran.surah(s).ayahCount) break;
+      if (a >= Quran.surah(s).ayahCount || (to != null && a >= to)) break;
       a++;
     }
     if (_audio.alive(session)) {

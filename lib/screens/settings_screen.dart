@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
+import '../services/duas.dart';
 import '../services/audio.dart';
 import '../services/bangla_tts.dart';
 import '../services/reminders.dart';
@@ -146,6 +147,32 @@ class SettingsScreen extends StatelessWidget {
                       await reschedule();
                     }
                   : null,
+            ),
+          ),
+          NavRow(
+            icon: Icons.wb_twilight_rounded,
+            tint: context.palette.mint,
+            title: 'সকালের জিকিরের রিমাইন্ডার',
+            subtitle: 'ফজরের ২০ মিনিট পর',
+            trailing: Switch(
+              value: settings.adhkarMorning,
+              onChanged: (v) async {
+                await settings.setAdhkarMorning(v);
+                await AdhkarReminders.schedule(settings);
+              },
+            ),
+          ),
+          NavRow(
+            icon: Icons.nights_stay_outlined,
+            tint: context.palette.lilac,
+            title: 'সন্ধ্যার জিকিরের রিমাইন্ডার',
+            subtitle: 'আসরের ২০ মিনিট পর',
+            trailing: Switch(
+              value: settings.adhkarEvening,
+              onChanged: (v) async {
+                await settings.setAdhkarEvening(v);
+                await AdhkarReminders.schedule(settings);
+              },
             ),
           ),
           NavRow(

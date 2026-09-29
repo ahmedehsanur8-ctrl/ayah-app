@@ -59,7 +59,11 @@ class Reminders {
     }
   }
 
-  static Future<void> init(void Function(ReminderPayload) onOpen, {void Function()? onAzan}) async {
+  static Future<void> init(
+    void Function(ReminderPayload) onOpen, {
+    void Function()? onAzan,
+    void Function(bool evening)? onAdhkar,
+  }) async {
     tzdata.initializeTimeZones();
     dhaka = tz.getLocation('Asia/Dhaka');
     tz.setLocalLocation(dhaka);
@@ -68,6 +72,10 @@ class Reminders {
         android: AndroidInitializationSettings('ic_notification'),
       ),
       onDidReceiveNotificationResponse: (r) {
+        if ((r.payload ?? '').startsWith('adhkar|')) {
+          onAdhkar?.call(r.payload == 'adhkar|evening');
+          return;
+        }
         if ((r.payload ?? '').startsWith('azan|')) {
           if (r.actionId != 'stop') onAzan?.call();
           return;
@@ -84,6 +92,14 @@ class Reminders {
     final details = await plugin.getNotificationAppLaunchDetails();
     return details?.didNotificationLaunchApp == true &&
         (details?.notificationResponse?.payload ?? '').startsWith('azan|');
+  }
+
+  /// 'morning' / 'evening' when an adhkar notification opened the app.
+  static Future<String?> launchedFromAdhkar() async {
+    final details = await plugin.getNotificationAppLaunchDetails();
+    final p = details?.notificationResponse?.payload ?? '';
+    if (details?.didNotificationLaunchApp != true || !p.startsWith('adhkar|')) return null;
+    return p.substring('adhkar|'.length);
   }
 
   /// The reminder that launched the app, if any.
