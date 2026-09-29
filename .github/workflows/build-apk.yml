@@ -1,9 +1,14 @@
-# Builds the release APK, signed with the permanent release key.
-# - Push to main: the APK is attached to a new GitHub Release (Releases page).
-# - Push to any other branch: the APK is saved as a downloadable build artifact.
+# Builds the release APK and the Play Store App Bundle (.aab), both signed with
+# the permanent release key.
+# - The version comes from `version:` in pubspec.yaml (name+code). Raise it for
+#   every release: Google Play rejects a version code it has already seen.
+# - Push to main (or a manual run with "publish_release"): the APK and AAB are
+#   attached to a new GitHub Release, tagged v<version name>. If that tag
+#   already exists (version not raised), nothing is published.
+# - Push to any other branch: they are saved as downloadable build artifacts.
 # The key comes from GitHub Secrets (see docs/SIGNING.md). The build fails if
-# the key is missing or the APK is not signed with it, so an unsigned or
-# wrongly signed APK is never published.
+# the key is missing or a file is not signed with it, so an unsigned or
+# wrongly signed build is never published.
 name: Build APK
 
 on:
@@ -12,6 +17,10 @@ on:
     inputs:
       install_test:
         description: "Publish an install-test pre-release (T1, T2, T3) instead of a normal release"
+        type: boolean
+        default: false
+      publish_release:
+        description: "Publish a GitHub Release with the APK and AAB from this branch"
         type: boolean
         default: false
 
@@ -40,6 +49,19 @@ jobs:
 
       - name: Get packages
         run: flutter pub get
+
+      - name: Read version from pubspec.yaml
+        run: |
+          VERSION="$(grep -m1 '^version:' pubspec.yaml | awk '{print $2}')"
+          NAME="${VERSION%%+*}"
+          CODE="${VERSION##*+}"
+          if [ -z "$NAME" ] || [ "$NAME" = "$VERSION" ] || ! [[ "$CODE" =~ ^[0-9]+$ ]]; then
+            echo "::error::pubspec.yaml version must look like 1.0.70+70 (name+code), got '$VERSION'"
+            exit 1
+          fi
+          echo "VERSION_NAME=$NAME" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$CODE" >> "$GITHUB_ENV"
+          echo "Version $NAME (code $CODE)"
 
       - name: Check code
         run: flutter analyze
@@ -77,11 +99,22 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        # The run number becomes the version, so each build is a newer update.
         run: >
           flutter build apk --release
-          --build-name=1.0.${{ github.run_number }}
-          --build-number=${{ github.run_number }}
+          --build-name=$VERSION_NAME
+          --build-number=$VERSION_CODE
+
+      # The App Bundle for Google Play, signed by Gradle with the same key
+      # (this is the upload key in Play Console).
+      - name: Build release App Bundle (.aab)
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: >
+          flutter build appbundle --release
+          --build-name=$VERSION_NAME
+          --build-number=$VERSION_CODE
 
       # Sign with v1 + v2 + v3 so strict phone installers (e.g. some Oppo/ColorOS
       # versions) accept the APK. Gradle skips v1 for minSdk 24+, so apksigner
@@ -111,7 +144,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          V=1.0.${{ github.run_number }}
+          V=$VERSION_NAME
           BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)"
           APK=build/app/outputs/flutter-apk/app-release.apk
           sign() {
@@ -133,7 +166,7 @@ jobs:
           sign "$RUNNER_TEMP/t2a.apk" "dist-test/T2-no-azan-sound-$V.apk"
           # T3: build again without the location permission.
           sed -i '/ACCESS_COARSE_LOCATION/d; /android.hardware.location/d; /sensor.compass/d' android/app/src/main/AndroidManifest.xml
-          flutter build apk --release --build-name=$V --build-number=${{ github.run_number }}
+          flutter build apk --release --build-name=$V --build-number=$VERSION_CODE
           git checkout android/app/src/main/AndroidManifest.xml
           sign "$APK" "dist-test/T3-no-location-permission-$V.apk"
           cp "dist-test/T1-full-$V.apk" "$APK"
@@ -161,6 +194,19 @@ jobs:
           fi
           echo "APK is signed with the permanent release key."
 
+      - name: Verify the App Bundle signature
+        run: |
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          jarsigner -verify "$AAB" | tee jarsigner.txt
+          grep -q "jar verified" jarsigner.txt
+          EXPECTED="$(tr -d '[:space:]' < android/release-signing-sha256.txt)"
+          ACTUAL="$(keytool -printcert -jarfile "$AAB" | grep -m1 'SHA256:' | awk '{print $2}' | tr -d ':' | tr 'A-F' 'a-f')"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::AAB is signed with $ACTUAL, expected the release key $EXPECTED"
+            exit 1
+          fi
+          echo "AAB is signed with the permanent release key."
+
       # Hidden files (like assets/story_audio/.gitkeep) must never be packaged:
       # an Oppo/ColorOS phone refused such APKs with "APK contains no signature files".
       - name: Check for hidden files in the APK
@@ -172,16 +218,30 @@ jobs:
           fi
           echo "No hidden files."
 
-      - name: Rename APK
+      - name: Rename APK and AAB
         run: |
           mkdir -p dist
-          cp build/app/outputs/flutter-apk/app-release.apk "dist/AyahReminder-1.0.${{ github.run_number }}.apk"
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/AyahReminder-$VERSION_NAME.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/AyahReminder-$VERSION_NAME.aab"
 
-      - name: Upload APK as build artifact
+      - name: Upload APK and AAB as build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AyahReminder-apk
-          path: dist/*.apk
+          name: AyahReminder-${{ env.VERSION_NAME }}
+          path: |
+            dist/*.apk
+            dist/*.aab
+
+      - name: Check the release tag is new
+        id: tag
+        if: (github.ref == 'refs/heads/main' || inputs.publish_release) && !inputs.install_test
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION_NAME" >/dev/null; then
+            echo "::warning::Release v$VERSION_NAME already exists. Raise the version in pubspec.yaml to publish a new release."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Publish install-test pre-release
         if: inputs.install_test
@@ -191,19 +251,24 @@ jobs:
           name: Install test ${{ github.run_number }} (T1, T2, T3)
           prerelease: true
           body: |
-            Test copies of Ayah Reminder 1.0.${{ github.run_number }}, all signed with the permanent key (v1 + v2 + v3).
+            Test copies of Ayah Reminder ${{ env.VERSION_NAME }}, all signed with the permanent key (v1 + v2 + v3).
             - **T1**: the full app
             - **T2**: the full app without the azan sound file
             - **T3**: the full app without the location permission
           files: dist-test/*.apk
 
       - name: Publish GitHub Release
-        if: github.ref == 'refs/heads/main' && !inputs.install_test
+        if: steps.tag.outputs.publish == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Ayah Reminder 1.0.${{ github.run_number }}
+          tag_name: v${{ env.VERSION_NAME }}
+          target_commitish: ${{ github.sha }}
+          name: Ayah Reminder ${{ env.VERSION_NAME }}
           body: |
-            Download **AyahReminder-1.0.${{ github.run_number }}.apk** below and open it on your Android phone.
-            Signed with the permanent Ayah Reminder release key, so later versions install over this one.
-          files: dist/*.apk
+            Version ${{ env.VERSION_NAME }} (version code ${{ env.VERSION_CODE }}).
+            - **AyahReminder-${{ env.VERSION_NAME }}.apk**: download and open it on your Android phone.
+            - **AyahReminder-${{ env.VERSION_NAME }}.aab**: upload this App Bundle to Google Play Console.
+            Both are signed with the permanent Ayah Reminder release key (the Play upload key), so later versions install over this one.
+          files: |
+            dist/*.apk
+            dist/*.aab

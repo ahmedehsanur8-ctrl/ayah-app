@@ -48,3 +48,11 @@ When you publish on Google Play, choose **Play App Signing**. You can either
 upload this key as your app signing key (then Play updates and APK updates share
 one key), or let Google create the app signing key and use this key as your
 **upload key**. Either way, keep this backup.
+
+## Releases and version codes
+
+The version is `version:` in `pubspec.yaml` (for example `1.0.70+70`: name
+`1.0.70`, version code `70`). Raise both for every release; Google Play rejects
+a version code it has already used. Each release on GitHub has the signed APK
+(`AyahReminder-<version>.apk`) and the signed App Bundle for Google Play
+(`AyahReminder-<version>.aab`), both signed with this key.
