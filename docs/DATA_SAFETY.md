@@ -55,5 +55,6 @@ uses location in the background.
 
 - Ads: **No ads.**
 - Target audience: general (all ages); the app collects no data.
-- Privacy policy: `docs/PRIVACY.md` (needs to be published at a public URL for Play).
+- Privacy policy URL for Play: https://ahmedehsanur8-ctrl.github.io/ayah-app/privacy.html
+  (`docs/privacy.html`, served by GitHub Pages from `main` /docs; `docs/PRIVACY.md` is the source text).
 - Exact texts for the permission declarations: `docs/PLAY_DECLARATIONS.md`.
