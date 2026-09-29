@@ -69,6 +69,7 @@ flutter:
     - assets/story_audio/
     - assets/azan_license.json
     - assets/quran/
+    - assets/duas.json
 
   fonts:
     - family: AmiriQuran

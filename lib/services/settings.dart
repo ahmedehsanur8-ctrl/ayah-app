@@ -100,6 +100,44 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ------------------------------------------------------------ duas
+
+  /// Dua ids saved in প্রিয়, newest first.
+  List<String> get duaFavorites => _prefs.getStringList('duaFavorites') ?? const [];
+
+  bool isDuaFavorite(String id) => duaFavorites.contains(id);
+
+  Future<void> toggleDuaFavorite(String id) async {
+    final list = [...duaFavorites];
+    if (!list.remove(id)) list.insert(0, id);
+    await _prefs.setStringList('duaFavorites', list);
+    notifyListeners();
+  }
+
+  /// Show the Bangla pronunciation under the Arabic.
+  bool get showUccharon => _prefs.getBool('showUccharon') ?? true;
+
+  Future<void> setShowUccharon(bool v) async {
+    await _prefs.setBool('showUccharon', v);
+    notifyListeners();
+  }
+
+  /// Notification for the morning adhkar after Fajr.
+  bool get adhkarMorning => _prefs.getBool('adhkarMorning') ?? false;
+
+  /// Notification for the evening adhkar after Asr.
+  bool get adhkarEvening => _prefs.getBool('adhkarEvening') ?? false;
+
+  Future<void> setAdhkarMorning(bool v) async {
+    await _prefs.setBool('adhkarMorning', v);
+    notifyListeners();
+  }
+
+  Future<void> setAdhkarEvening(bool v) async {
+    await _prefs.setBool('adhkarEvening', v);
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------ reminder sound
 
   /// 'chime', 'bell', 'phone', 'tilawat' (start of the recitation) or 'off'.

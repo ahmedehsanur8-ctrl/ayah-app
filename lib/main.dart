@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
 import 'app_state.dart';
+import 'screens/dua_screens.dart';
 import 'screens/home_shell.dart';
 import 'screens/prayer_screen.dart';
 import 'screens/reading_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/duas.dart';
 import 'services/location.dart';
 import 'services/prayer.dart';
 import 'services/quran.dart';
@@ -31,14 +33,19 @@ Future<void> main() async {
   }
   final state = await AppState.load();
   await Quran.loadMeta();
+  await Duas.load();
   await Prayers.loadAzanInfo();
-  await Reminders.init(_openFromReminder, onAzan: _openPrayerTimes);
+  await Reminders.init(_openFromReminder, onAzan: _openPrayerTimes, onAdhkar: _openAdhkar);
   // Opened by a reminder alarm (native) or an older reminder notification.
   final launch = await Reminders.nativeLaunchPayload() ?? await Reminders.launchPayload();
   Reminders.listen(_openFromReminder);
   final fromAzan = await Reminders.launchedFromAzan();
+  final fromAdhkar = await Reminders.launchedFromAdhkar();
   runApp(AyahReminderApp(launch: launch));
   if (fromAzan) WidgetsBinding.instance.addPostFrameCallback((_) => _openPrayerTimes());
+  if (fromAdhkar != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _openAdhkar(fromAdhkar == 'evening'));
+  }
   if (state.settings.setupDone) {
     // Plan the next days of reminders every time the app starts.
     Reminders.reschedule(state.settings, state.data);
@@ -51,6 +58,13 @@ Future<void> main() async {
 Future<void> _refreshPrayerTimes(AppState state) async {
   await LocationService.refreshIfMoved(state.settings);
   await Prayers.schedule(state.settings);
+}
+
+/// The morning / evening adhkar notification was tapped.
+void _openAdhkar(bool evening) {
+  navigatorKey.currentState?.push(
+    MaterialPageRoute(builder: (_) => DuaCounterScreen.adhkar(evening: evening)),
+  );
 }
 
 void _openPrayerTimes() {

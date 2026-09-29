@@ -4,6 +4,7 @@ import '../app_state.dart';
 import '../theme.dart';
 import '../widgets/pattern.dart';
 import '../widgets/ui.dart';
+import 'dua_screens.dart';
 import 'quran_bookmarks_screen.dart';
 import 'reader_screen.dart';
 
@@ -22,12 +23,15 @@ class FavoritesScreen extends StatelessWidget {
         builder: (context, _) {
           final items = state.settings.favorites.map(state.data.byId).nonNulls.toList();
           final bookmarks = state.settings.quran.bookmarks.isNotEmpty;
-          if (items.isEmpty && !bookmarks) return const _Empty();
+          final duas = favoriteDuas().isNotEmpty;
+          if (items.isEmpty && !bookmarks && !duas) return const _Empty();
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
             children: [
+              if (duas) ...[const SectionLabel('প্রিয় দোয়া'), const DuaFavoriteList()],
               if (bookmarks) ...[const SectionLabel('কুরআন বুকমার্ক'), const QuranBookmarkList()],
-              if (items.isNotEmpty && bookmarks) const SectionLabel('প্রিয় আয়াত ও হাদিস'),
+              if (items.isNotEmpty && (bookmarks || duas))
+                const SectionLabel('প্রিয় আয়াত ও হাদিস'),
               if (items.isNotEmpty)
                 AppCard(
                   padding: EdgeInsets.zero,
