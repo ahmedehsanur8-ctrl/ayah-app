@@ -1,0 +1,57 @@
+# Builds assets/duas.json from dua-list.md and tools/dua_content.py.
+# Hadith duas take their Arabic from HadeethEnc.com when the dua is found in
+# one of its hadiths (tools/data/hadeethenc_ar.json.gz, downloaded once here).
+name: Dua data
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - dua-list.md
+      - tools/dua_content.py
+      - tools/build_duas.py
+      - tools/hadeethenc_arabic.py
+      - .github/workflows/dua-data.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dua-data-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: HadeethEnc Arabic (only new hadiths)
+        run: python3 tools/hadeethenc_arabic.py
+
+      - name: Build duas.json
+        run: |
+          if [ -f tools/build_duas.py ] && [ -f tools/dua_content.py ]; then
+            python3 tools/build_duas.py
+          else
+            echo "Dua builder not added yet."
+          fi
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/data/hadeethenc_ar.json.gz
+          [ -f assets/duas.json ] && git add assets/duas.json
+          [ -f tools/data/dua_report.txt ] && git add tools/data/dua_report.txt
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+          else
+            git commit -m "Update dua data"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push
+          fi
