@@ -154,6 +154,14 @@ class AudioController extends ChangeNotifier {
     return _speak(session, story.spokenText);
   }
 
+  /// Plays one short recording (a letter or word in সহজ আরবি, or one ayah).
+  Future<bool> playClip(String id, AudioSource source) async {
+    final session = await _start(id);
+    final ok = await _playSources(session, [source]);
+    if (!ok && session == _session) _report(AudioProblem.offline);
+    return _finish(session) && ok;
+  }
+
   Duration _lastSaved = Duration.zero;
 
   Future<int> _start(String id) async {

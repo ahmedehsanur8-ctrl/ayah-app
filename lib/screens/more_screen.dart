@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import '../theme.dart';
 import '../widgets/ui.dart';
 import 'about_screen.dart';
+import 'arabic_screens.dart';
 import 'credits_screen.dart';
 import 'favorites_screen.dart';
 import 'prayer_screen.dart';
@@ -74,6 +75,8 @@ class MoreScreen extends StatelessWidget {
                 big(Icons.front_hand_outlined, 'দোয়া', p.sand, const DuaHomeScreen()),
               ],
             ),
+            const SizedBox(height: 12),
+            const _ArabicCard(),
             const SectionLabel('সেটিংস'),
             RowGroup(
               children: [
@@ -137,6 +140,67 @@ class MoreScreen extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens সহজ আরবি.
+class _ArabicCard extends StatelessWidget {
+  const _ArabicCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Material(
+      color: p.greenCard,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const ValueKey('arabic-card'),
+        onTap: () => push(context, const ArabicHomeScreen()),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text(
+                  'أ ب',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontFamily: arabicFont, fontSize: 22, color: Brand.gold),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'সহজ আরবি',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'বাংলা থেকে কুরআন পড়তে শিখি: অক্ষর, চিহ্ন, তাজবীদ, খেলা',
+                      style: TextStyle(color: p.gold, fontSize: 12.5, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Brand.gold),
+            ],
+          ),
         ),
       ),
     );
