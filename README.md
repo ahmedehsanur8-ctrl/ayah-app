@@ -6,7 +6,7 @@ every night (default 9:00 PM, Bangladesh time), in Arabic and Bangla, with a ful
 Tabs: **আজ** (greeting, next prayer, today's ayah and hadith), **মন** (16 moods, each with
 ayahs, full surahs and hadiths, from `mood-content.md`), **বিষয়** (topics with search; ayahs
 and hadiths together), **জীবনী** (Sahaba life stories) and **আরও** (prayer times, Qibla,
-favourites, settings, about). One reader with a player (speed, repeat, play all), share as an
+favourites, settings, about, and **সহজ আরবি**). One reader with a player (speed, repeat, play all), share as an
 image, favourites, light/dark mode, and Bangla labels throughout. Reminders open a full-screen
 reading page with a 12-second countdown.
 
@@ -24,6 +24,24 @@ life stories of the Sahaba (drafts that need scholar review); recorded MP3s are 
 `assets/story_audio/`, and stories without one use the phone's Bangla voice.
 The logo, Islamic geometric pattern and icon are drawn in code (no image assets);
 icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font License.
+
+## সহজ আরবি (Learn Arabic from Bangla)
+
+In আরও → সহজ আরবি. Level 1 (পড়তে শিখি) has 22 short lessons: letters in groups, similar
+sounds, letter shapes, joining, the marks (যবর, যের, পেশ, তানবীন, সুকুন, শাদ্দাহ, মাদ্দ), আল,
+Quran words, qalqalah/ghunnah, stop signs, Surah Al-Fatiha and the last three surahs. Each lesson
+has a Bangla explanation, big tap-to-hear letters and 3–4 games (শুনে বেছে নাও, মিলাও, সাজাও,
+লিখে দেখো). Stars, a daily streak, one-by-one unlocking and a spaced-repetition review are saved
+on the phone. Levels 2–4 show as "শীঘ্রই আসছে".
+
+* All lesson text is original and lives in `tools/build_arabic_lessons.py`, which writes
+  `assets/arabic/level1.json` and checks every Quran word against the app's Tanzil text.
+* Qari recordings go in `assets/arabic_audio/` with the names in `docs/ARABIC_AUDIO_LIST.md`;
+  until a file exists the app shows "অডিও শীঘ্রই" (no synthetic voice for Arabic). Surah ayat
+  play from the chosen EveryAyah reciter.
+* Level 2 preparation: `tools/quran_word_frequency.py` counts Quran words by lemma from the
+  Quranic Arabic Corpus (morphology v0.4, © Kais Dukes, GNU GPL, corpus.quran.com) and writes
+  `assets/arabic/level2_words.json` and `docs/LEVEL2_WORDS.md` (the 300 most frequent lemmas).
 
 ## What's inside
 
