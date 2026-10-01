@@ -13,7 +13,11 @@ import '../theme.dart';
 import '../widgets/pattern.dart';
 import '../widgets/share_card.dart';
 import '../widgets/ui.dart';
+import 'favorites_screen.dart';
+import 'home_shell.dart';
 import 'quran_reader_screen.dart';
+import 'settings_screen.dart';
+import 'tasbih_screen.dart';
 
 /// Line icons for the 15 sections of dua-list.md.
 IconData duaSectionIcon(int n) => switch (n) {
@@ -40,7 +44,10 @@ Tint _tint(Palette p, int n) => [p.mint, p.sky, p.sand, p.rose, p.lilac][n % 5];
 
 /// দোয়া ও জিকির: search, today's adhkar and the 15 sections.
 class DuaHomeScreen extends StatefulWidget {
-  const DuaHomeScreen({super.key});
+  const DuaHomeScreen({super.key, this.inTab = false});
+
+  /// Shown as the দোয়া tab (no back arrow).
+  final bool inTab;
 
   @override
   State<DuaHomeScreen> createState() => _DuaHomeScreenState();
@@ -69,21 +76,7 @@ class _DuaHomeScreenState extends State<DuaHomeScreen> {
     final p = context.palette;
     final results = Duas.search(_q);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('দোয়া ও জিকির'),
-        actions: [
-          IconButton(
-            tooltip: 'প্রিয় দোয়া',
-            icon: const Icon(Icons.favorite_border_rounded),
-            onPressed: () => push(context, const DuaFavoritesScreen()),
-          ),
-          IconButton(
-            tooltip: 'দোয়ার সেটিংস',
-            icon: const Icon(Icons.tune_rounded),
-            onPressed: () => showDuaSettingsSheet(context),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('দোয়া ও জিকির'), automaticallyImplyLeading: !widget.inTab),
       body: !Duas.loaded
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -127,12 +120,32 @@ class _DuaHomeScreenState extends State<DuaHomeScreen> {
                         : '${toBanglaDigits(results.length)}টি দোয়া',
                   ),
                   for (var i = 0; i < results.length; i++)
-                    _DuaRow(
+                    DuaRow(
                       dua: results[i],
                       onTap: () => push(context, DuaPagerScreen(duas: results, index: i)),
                     ),
                 ] else ...[
                   const AdhkarCard(),
+                  const SizedBox(height: 12),
+                  const TasbihCard(),
+                  const SizedBox(height: 12),
+                  ActionRow(
+                    children: [
+                      LabeledAction(
+                        icon: Icons.favorite_border_rounded,
+                        label: 'প্রিয় দোয়া',
+                        tint: p.rose,
+                        onTap: () => push(context, const FavoritesScreen(initialTab: 1)),
+                      ),
+                      LabeledAction(
+                        icon: Icons.tune_rounded,
+                        label: 'দোয়ার সেটিং',
+                        tint: p.sky,
+                        onTap: () =>
+                            push(context, const SettingsScreen(section: SettingsSection.duas)),
+                      ),
+                    ],
+                  ),
                   const SectionLabel('বিষয় অনুযায়ী'),
                   GridView.builder(
                     shrinkWrap: true,
@@ -168,13 +181,13 @@ class _DuaHomeScreenState extends State<DuaHomeScreen> {
                                   style: TextStyle(
                                     color: t.foreground,
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     height: 1.3,
                                   ),
                                 ),
                                 Text(
                                   '${toBanglaDigits(s.count)}টি',
-                                  style: TextStyle(color: t.foreground, fontSize: 12),
+                                  style: TextStyle(color: t.foreground, fontSize: 14),
                                 ),
                               ],
                             ),
@@ -231,7 +244,7 @@ class AdhkarCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         showAllButton ? 'দোয়া ও জিকির' : 'আজকের জিকির',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                       ),
                     ],
                   ),
@@ -249,7 +262,7 @@ class AdhkarCard extends StatelessWidget {
                     evening
                         ? 'আসর থেকে রাত পর্যন্ত পড়ার জিকির, গুনে গুনে'
                         : 'ফজর থেকে সকাল পর্যন্ত পড়ার জিকির, গুনে গুনে',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -270,7 +283,7 @@ class AdhkarCard extends StatelessWidget {
                       ),
                       TextButton(
                         onPressed: showAllButton
-                            ? () => push(context, const DuaHomeScreen())
+                            ? () => HomeShell.tab.value = HomeShell.duas
                             : () => push(context, DuaCounterScreen.adhkar(evening: !evening)),
                         style: TextButton.styleFrom(foregroundColor: Colors.white),
                         child: Text(
@@ -289,54 +302,6 @@ class AdhkarCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Settings: উচ্চারণ on/off and the adhkar notifications.
-Future<void> showDuaSettingsSheet(BuildContext context) {
-  final s = AppState.instance.settings;
-  return showModalBottomSheet(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => ListenableBuilder(
-      listenable: s,
-      builder: (context, _) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              value: s.showUccharon,
-              onChanged: s.setShowUccharon,
-              title: const Text('বাংলা উচ্চারণ দেখান'),
-              subtitle: const Text('আরবির নিচে বাংলা উচ্চারণ'),
-            ),
-            SwitchListTile(
-              value: s.adhkarMorning,
-              onChanged: (v) async {
-                await s.setAdhkarMorning(v);
-                await AdhkarReminders.schedule(s);
-              },
-              title: const Text('সকালের জিকিরের রিমাইন্ডার'),
-              subtitle: const Text('ফজরের ২০ মিনিট পর নোটিফিকেশন'),
-            ),
-            SwitchListTile(
-              value: s.adhkarEvening,
-              onChanged: (v) async {
-                await s.setAdhkarEvening(v);
-                await AdhkarReminders.schedule(s);
-              },
-              title: const Text('সন্ধ্যার জিকিরের রিমাইন্ডার'),
-              subtitle: Text(
-                s.hasLocation
-                    ? 'আসরের ২০ মিনিট পর নোটিফিকেশন'
-                    : 'আসরের ২০ মিনিট পর (অবস্থান না থাকলে বিকাল ৪:৩০-এ)',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 // --------------------------------------------------------------- section
@@ -368,7 +333,7 @@ class DuaSectionScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           for (var i = 0; i < duas.length; i++)
-            _DuaRow(
+            DuaRow(
               dua: duas[i],
               number: i + 1,
               onTap: () => push(context, DuaPagerScreen(duas: duas, index: i)),
@@ -379,8 +344,8 @@ class DuaSectionScreen extends StatelessWidget {
   }
 }
 
-class _DuaRow extends StatelessWidget {
-  const _DuaRow({required this.dua, required this.onTap, this.number});
+class DuaRow extends StatelessWidget {
+  const DuaRow({super.key, required this.dua, required this.onTap, this.number});
 
   final Dua dua;
   final VoidCallback onTap;
@@ -413,7 +378,7 @@ class _DuaRow extends StatelessWidget {
                       'কখন: ${dua.when}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12.5, color: p.muted, height: 1.4),
+                      style: TextStyle(fontSize: 14, color: p.muted, height: 1.4),
                     ),
                 ],
               ),
@@ -429,7 +394,7 @@ class _DuaRow extends StatelessWidget {
                     child: Text(
                       '${toBanglaDigits(dua.total)} বার',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: p.goldText,
                         fontWeight: FontWeight.w700,
                       ),
@@ -469,7 +434,7 @@ class GradeChip extends StatelessWidget {
       decoration: BoxDecoration(color: t.background, borderRadius: BorderRadius.circular(20)),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: t.foreground),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: t.foreground),
       ),
     );
   }
@@ -694,7 +659,7 @@ class _DuaViewState extends State<DuaView> {
               const SizedBox(height: 4),
               Text(
                 Duas.uccharonNote,
-                style: TextStyle(fontSize: 12, color: p.muted, fontStyle: FontStyle.italic),
+                style: TextStyle(fontSize: 14, color: p.muted, fontStyle: FontStyle.italic),
               ),
             ],
             if (text.bangla.isNotEmpty) ...[
@@ -705,7 +670,7 @@ class _DuaViewState extends State<DuaView> {
                 style: TextStyle(fontSize: 16 * s.textScale, height: 1.7, color: p.text),
               ),
               if (d.translator.isNotEmpty)
-                Text('— ${d.translator}', style: TextStyle(fontSize: 12, color: p.muted)),
+                Text('— ${d.translator}', style: TextStyle(fontSize: 14, color: p.muted)),
             ],
             if (d.when.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -735,7 +700,7 @@ class _DuaViewState extends State<DuaView> {
               ),
             ),
             if (d.note.isNotEmpty)
-              Text(d.note, style: TextStyle(fontSize: 12.5, color: p.muted, height: 1.5)),
+              Text(d.note, style: TextStyle(fontSize: 14, color: p.muted, height: 1.5)),
             const SizedBox(height: 18),
             Wrap(
               spacing: 10,
@@ -745,7 +710,7 @@ class _DuaViewState extends State<DuaView> {
                   onPressed: () => s.toggleDuaFavorite(d.id),
                   icon: Icon(
                     s.isDuaFavorite(d.id) ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: s.isDuaFavorite(d.id) ? const Color(0xFFD6455F) : null,
+                    color: s.isDuaFavorite(d.id) ? p.heart : null,
                   ),
                   label: const Text('প্রিয়'),
                 ),
@@ -812,11 +777,7 @@ class _Label extends StatelessWidget {
     padding: const EdgeInsets.only(bottom: 4),
     child: Text(
       text,
-      style: TextStyle(
-        color: context.palette.goldText,
-        fontWeight: FontWeight.w700,
-        fontSize: 13.5,
-      ),
+      style: TextStyle(color: context.palette.goldText, fontWeight: FontWeight.w700, fontSize: 14),
     ),
   );
 }
@@ -833,7 +794,7 @@ class _Pill extends StatelessWidget {
     decoration: BoxDecoration(color: tint.background, borderRadius: BorderRadius.circular(20)),
     child: Text(
       text,
-      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: tint.foreground),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: tint.foreground),
     ),
   );
 }
@@ -1040,7 +1001,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
               if (widget.duas.length > 1)
                 Text(
                   '${toBanglaDigits(_index + 1)} / ${toBanglaDigits(widget.duas.length)}',
-                  style: TextStyle(color: p.muted, fontSize: 13),
+                  style: TextStyle(color: p.muted, fontSize: 14),
                 ),
               Text(d.title, style: titleStyle(p, size: 18)),
               const SizedBox(height: 10),
@@ -1066,7 +1027,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
                 Text(
                   Duas.uccharonNote,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11.5, color: p.muted, fontStyle: FontStyle.italic),
+                  style: TextStyle(fontSize: 14, color: p.muted, fontStyle: FontStyle.italic),
                 ),
               ],
               if (d.steps.isNotEmpty)
@@ -1086,7 +1047,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
               Text(
                 '${d.source} · ${d.gradeBn}',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: p.muted),
+                style: TextStyle(fontSize: 14, color: p.muted),
               ),
             ],
           ),
@@ -1151,7 +1112,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
                                     'চাপ দিন',
                                     style: TextStyle(
                                       color: Colors.white.withValues(alpha: 0.75),
-                                      fontSize: 12,
+                                      fontSize: 14,
                                     ),
                                   ),
                               ],
@@ -1187,41 +1148,6 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
 
 // ------------------------------------------------------------ favourites
 
-/// Duas saved with প্রিয় (also listed on the প্রিয় page).
-class DuaFavoritesScreen extends StatelessWidget {
-  const DuaFavoritesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Scaffold(
-      appBar: AppBar(title: const Text('প্রিয় দোয়া')),
-      body: ListenableBuilder(
-        listenable: AppState.instance.settings,
-        builder: (context, _) {
-          final duas = favoriteDuas();
-          if (duas.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(
-                  'দোয়ার পাতায় ‘প্রিয়’ বোতামে চাপ দিলে দোয়াটি এখানে জমা থাকবে।',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: p.muted, height: 1.6),
-                ),
-              ),
-            );
-          }
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-            children: [const DuaFavoriteList()],
-          );
-        },
-      ),
-    );
-  }
-}
-
 List<Dua> favoriteDuas() =>
     AppState.instance.settings.duaFavorites.map(Duas.byId).nonNulls.toList();
 
@@ -1234,7 +1160,7 @@ class DuaFavoriteList extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < duas.length; i++)
-          _DuaRow(
+          DuaRow(
             dua: duas[i],
             onTap: () => push(context, DuaPagerScreen(duas: duas, index: i)),
           ),

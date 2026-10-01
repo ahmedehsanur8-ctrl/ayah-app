@@ -139,7 +139,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             Text('সূরা ${s.nameBn}', style: const TextStyle(fontWeight: FontWeight.w700)),
             Text(
               '${s.meaningBn} · ${s.typeBn} · ${toBanglaDigits(s.ayahCount)} আয়াত',
-              style: TextStyle(fontSize: 12.5, color: p.muted),
+              style: TextStyle(fontSize: 14, color: p.muted),
             ),
           ],
         ),
@@ -236,7 +236,7 @@ class _SurahHeader extends StatelessWidget {
                     Text(
                       '${surah.meaningBn} · ${surah.typeBn} · ${toBanglaDigits(surah.ayahCount)} আয়াত',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13.5),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                     ),
                     if (surah.hasSeparateBasmala) ...[
                       const SizedBox(height: 12),
@@ -409,7 +409,7 @@ class AyahTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text('— ${t.info.name}', style: TextStyle(fontSize: 11.5, color: p.muted)),
+              Text('— ${t.info.name}', style: TextStyle(fontSize: 14, color: p.muted)),
             ],
         ],
       ),
@@ -428,7 +428,6 @@ class _Icon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: tooltip,
-    visualDensity: VisualDensity.compact,
     onPressed: onTap,
     icon: Icon(icon, size: 21, color: color ?? context.palette.muted),
   );

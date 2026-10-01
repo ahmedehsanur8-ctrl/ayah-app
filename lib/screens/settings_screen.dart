@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
@@ -11,15 +12,44 @@ import '../services/settings.dart';
 import '../theme.dart';
 import '../widgets/audio_button.dart';
 import '../widgets/ui.dart';
+import '../widgets/quran_widgets.dart' show QuranReadingSettings;
+import 'about_screen.dart';
+import 'credits_screen.dart';
+import 'prayer_screen.dart' show AzanSettings;
+import 'privacy_screen.dart';
+import 'quran_downloads_screen.dart';
 import 'reader_screen.dart' show speedLabel;
+import 'setup_screen.dart';
 
-enum SettingsSection { reminders, audio, display }
+/// The headings of the one সেটিংস page, in order.
+enum SettingsSection {
+  reminders('রিমাইন্ডার', Icons.notifications_none_rounded),
+  azan('আজান ও নামাজ', Icons.mosque_outlined),
+  quran('কুরআন পড়া', Icons.menu_book_outlined),
+  audio('অডিও ও ক্বারী', Icons.mic_none_rounded),
+  duas('দোয়া', Icons.front_hand_outlined),
+  display('লেখার আকার ও ডার্ক মোড', Icons.format_size_rounded),
+  storage('ডাউনলোড', Icons.download_for_offline_outlined),
+  setup('অনুমতি ও সেটআপ', Icons.verified_user_outlined),
+  about('অ্যাপ সম্পর্কে', Icons.info_outline_rounded);
 
-/// One part of the settings, opened from আরও.
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key, required this.section});
+  const SettingsSection(this.title, this.icon);
 
-  final SettingsSection section;
+  final String title;
+  final IconData icon;
+}
+
+/// সেটিংস: every setting on one page. [section] scrolls straight to that heading
+/// (used by the settings buttons on the Quran, prayer and dua pages).
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key, this.section});
+
+  final SettingsSection? section;
+
+  static const shareText =
+      'আয়াত রিমাইন্ডার — প্রতিদিন সকালে কুরআনের একটি আয়াত আর রাতে একটি হাদিস, '
+      'আরবি ও বাংলা অর্থসহ। মন কেমন সেই অনুযায়ী আয়াত, নামাজের সময় ও কিবলা। '
+      'সম্পূর্ণ বিনামূল্যে, কোনো বিজ্ঞাপন নেই।';
 
   static String formatTime(TimeOfDay t) {
     final h = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
@@ -55,28 +85,144 @@ class SettingsScreen extends StatelessWidget {
   };
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  final _keys = {for (final s in SettingsSection.values) s: GlobalKey()};
+
+  @override
+  void initState() {
+    super.initState();
+    final section = widget.section;
+    if (section != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _jump(section, animate: false));
+    }
+  }
+
+  void _jump(SettingsSection s, {bool animate = true}) {
+    final c = _keys[s]?.currentContext;
+    if (c == null) return;
+    Scrollable.ensureVisible(
+      c,
+      duration: animate ? const Duration(milliseconds: 300) : Duration.zero,
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final settings = AppState.instance.settings;
-    final title = switch (section) {
-      SettingsSection.reminders => 'রিমাইন্ডার',
-      SettingsSection.audio => 'অডিও ও ক্বারী',
-      SettingsSection.display => 'লেখার আকার ও ডার্ক মোড',
+    final p = context.palette;
+    List<Widget> body(SettingsSection s) => switch (s) {
+      SettingsSection.reminders => _reminders(context, settings),
+      SettingsSection.azan => const [AzanSettings()],
+      SettingsSection.quran => [AppCard(child: const QuranReadingSettings(embedded: true))],
+      SettingsSection.audio => _audio(context, settings),
+      SettingsSection.duas => _duas(context, settings),
+      SettingsSection.display => _display(context, settings),
+      SettingsSection.storage => [
+        RowGroup(
+          children: [
+            NavRow(
+              icon: Icons.download_for_offline_outlined,
+              tint: p.mint,
+              title: 'কুরআন ডাউনলোড',
+              subtitle: 'ডাউনলোড করা তিলাওয়াত ও অনুবাদ, জায়গা খালি করুন',
+              onTap: () => push(context, const QuranDownloadsScreen()),
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.setup => [
+        RowGroup(
+          children: [
+            NavRow(
+              icon: Icons.verified_user_outlined,
+              tint: p.lilac,
+              title: 'অনুমতি ও সেটআপ',
+              subtitle: 'রিমাইন্ডার বা আজান না এলে এখানে দেখুন',
+              onTap: () => push(context, const SetupScreen()),
+            ),
+          ],
+        ),
+      ],
+      SettingsSection.about => [
+        RowGroup(
+          children: [
+            NavRow(
+              icon: Icons.person_outline_rounded,
+              title: 'ডেভেলপার সম্পর্কে',
+              onTap: () => push(context, const AboutScreen()),
+            ),
+            NavRow(
+              icon: Icons.volunteer_activism_outlined,
+              tint: p.sand,
+              title: 'কৃতজ্ঞতা ও উৎস',
+              onTap: () => push(context, const CreditsScreen()),
+            ),
+            NavRow(
+              icon: Icons.privacy_tip_outlined,
+              tint: p.lilac,
+              title: 'গোপনীয়তা নীতি',
+              onTap: () => push(context, const PrivacyScreen()),
+            ),
+            NavRow(
+              icon: Icons.share_outlined,
+              tint: p.sky,
+              title: 'অ্যাপ শেয়ার করুন',
+              onTap: () => SharePlus.instance.share(ShareParams(text: SettingsScreen.shareText)),
+            ),
+          ],
+        ),
+      ],
     };
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: const Text('সেটিংস')),
       body: ListenableBuilder(
         listenable: settings,
-        builder: (context, _) => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-          children: switch (section) {
-            SettingsSection.reminders => _reminders(context, settings),
-            SettingsSection.audio => _audio(context, settings),
-            SettingsSection.display => _display(context, settings),
-          },
+        builder: (context, _) => SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Jump to a heading.
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final s in SettingsSection.values)
+                    ActionChip(
+                      avatar: Icon(s.icon, size: 18, color: p.primary),
+                      label: Text(s.title, style: const TextStyle(fontSize: 14)),
+                      onPressed: () => _jump(s),
+                    ),
+                ],
+              ),
+              for (final s in SettingsSection.values) ...[
+                SectionLabel(s.title, key: _keys[s]),
+                ...body(s),
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
+
+  List<Widget> _duas(BuildContext context, AppSettings settings) => [
+    RowGroup(
+      children: [
+        NavRow(
+          icon: Icons.translate_rounded,
+          tint: context.palette.sand,
+          title: 'বাংলা উচ্চারণ দেখান',
+          subtitle: 'দোয়ার আরবির নিচে বাংলা উচ্চারণ',
+          trailing: Switch(value: settings.showUccharon, onChanged: settings.setShowUccharon),
+        ),
+      ],
+    ),
+  ];
 
   List<Widget> _reminders(BuildContext context, AppSettings settings) {
     Future<void> pickTime(
@@ -93,7 +239,7 @@ class SettingsScreen extends StatelessWidget {
       );
       if (t == null) return;
       await save(t);
-      await reschedule();
+      await SettingsScreen.reschedule();
     }
 
     return [
@@ -107,7 +253,7 @@ class SettingsScreen extends StatelessWidget {
               value: settings.remindersOn,
               onChanged: (v) async {
                 await settings.setRemindersOn(v);
-                await reschedule();
+                await SettingsScreen.reschedule();
               },
             ),
           ),
@@ -115,7 +261,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.wb_sunny_outlined,
             tint: context.palette.sand,
             title: 'সকালের সময় · আয়াত',
-            subtitle: formatTime(settings.morningTime),
+            subtitle: SettingsScreen.formatTime(settings.morningTime),
             onTap: settings.remindersOn
                 ? () => pickTime(
                     settings.morningTime,
@@ -128,7 +274,7 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.nightlight_outlined,
             tint: context.palette.lilac,
             title: settings.hadithAtNight ? 'রাতের সময় · হাদিস' : 'রাতের সময় · আয়াত',
-            subtitle: formatTime(settings.nightTime),
+            subtitle: SettingsScreen.formatTime(settings.nightTime),
             onTap: settings.remindersOn
                 ? () =>
                       pickTime(settings.nightTime, 'রাতের রিমাইন্ডারের সময়', settings.setNightTime)
@@ -137,14 +283,14 @@ class SettingsScreen extends StatelessWidget {
           NavRow(
             icon: Icons.format_quote_rounded,
             tint: context.palette.sky,
-            title: 'রাতে হাদিস দেখাও',
+            title: 'রাতে হাদিস দেখান',
             subtitle: 'বন্ধ করলে রাতেও একটি আয়াত আসবে',
             trailing: Switch(
               value: settings.hadithAtNight,
               onChanged: settings.remindersOn
                   ? (v) async {
                       await settings.setHadithAtNight(v);
-                      await reschedule();
+                      await SettingsScreen.reschedule();
                     }
                   : null,
             ),
@@ -179,17 +325,18 @@ class SettingsScreen extends StatelessWidget {
             icon: Icons.music_note_outlined,
             tint: context.palette.sand,
             title: 'রিমাইন্ডারের শব্দ',
-            subtitle: '${reminderSounds[settings.reminderSound]} · অ্যালার্মের মতো, সাইলেন্টেও',
+            subtitle:
+                '${SettingsScreen.reminderSounds[settings.reminderSound]} · অ্যালার্মের মতো, সাইলেন্টেও',
             onTap: () async {
               final v = await pickOption<String>(
                 context,
                 'রিমাইন্ডারের শব্দ',
                 settings.reminderSound,
-                reminderSounds,
+                SettingsScreen.reminderSounds,
               );
               if (v != null) {
                 await settings.setReminderSound(v);
-                await reschedule();
+                await SettingsScreen.reschedule();
               }
             },
           ),
@@ -201,7 +348,7 @@ class SettingsScreen extends StatelessWidget {
               value: settings.reminderVibrate,
               onChanged: (v) async {
                 await settings.setReminderVibrate(v);
-                await reschedule();
+                await SettingsScreen.reschedule();
               },
             ),
           ),
@@ -210,7 +357,7 @@ class SettingsScreen extends StatelessWidget {
             tint: context.palette.rose,
             title: '১ মিনিট পর পরীক্ষা করুন',
             subtitle: 'চাপ দিয়ে ফোন লক করুন — ১ মিনিট পর রিমাইন্ডার আসবে',
-            onTap: () => sendTestReminder(context),
+            onTap: () => SettingsScreen.sendTestReminder(context),
           ),
         ],
       ),
@@ -276,7 +423,6 @@ class SettingsScreen extends StatelessWidget {
   List<Widget> _display(BuildContext context, AppSettings settings) {
     final p = context.palette;
     return [
-      const SectionLabel('লেখার আকার'),
       AppCard(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +450,7 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
-      const SectionLabel('ডার্ক মোড'),
+      const SizedBox(height: 12),
       AppCard(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: RadioGroup<String>(

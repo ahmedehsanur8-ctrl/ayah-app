@@ -5,7 +5,7 @@ import '../services/permissions.dart';
 import '../theme.dart';
 
 /// Orange for things still to do.
-const warnOrange = Color(0xFFE0851B);
+const warnOrange = Brand.warn;
 
 /// Green "✓ চালু" or orange "বাকি".
 class StatusChip extends StatelessWidget {
@@ -34,7 +34,7 @@ class StatusChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             granted ? 'চালু' : 'বাকি',
-            style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 13),
+            style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 14),
           ),
         ],
       ),
@@ -79,7 +79,7 @@ class BrandStepsList extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: p.text),
                     ),
                     const SizedBox(height: 2),
-                    Text(st.how, style: TextStyle(color: p.muted, fontSize: 13, height: 1.5)),
+                    Text(st.how, style: TextStyle(color: p.muted, fontSize: 14, height: 1.5)),
                     Row(
                       children: [
                         OutlinedButton.icon(

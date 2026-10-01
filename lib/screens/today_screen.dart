@@ -14,16 +14,20 @@ import '../widgets/audio_button.dart';
 import '../widgets/item_view.dart';
 import '../widgets/share_card.dart';
 import '../widgets/ui.dart';
+import 'arabic_screens.dart';
 import 'dua_screens.dart';
 import 'favorites_screen.dart';
-import 'home_shell.dart';
 import 'prayer_screen.dart';
 import 'qibla_screen.dart';
 import 'quran_screen.dart';
 import 'reader_screen.dart';
+import 'search_screen.dart';
+import 'settings_screen.dart';
 import 'setup_screen.dart';
+import 'tasbih_screen.dart';
 
-/// আজ: greeting, next prayer, today's ayah and hadith.
+/// আজ (Home): greeting, search / প্রিয় / সেটিংস, next prayer, today's ayah and
+/// hadith, then shortcuts to prayer times, Qibla, tasbih, adhkar, Quran and Arabic.
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
 
@@ -54,6 +58,26 @@ class _TodayScreenState extends State<TodayScreen> {
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
               children: [
                 _Header(now: now),
+                const SizedBox(height: 12),
+                ActionRow(
+                  children: [
+                    LabeledAction(
+                      icon: Icons.search_rounded,
+                      label: 'খুঁজুন',
+                      onTap: () => push(context, const SearchScreen()),
+                    ),
+                    LabeledAction(
+                      icon: Icons.favorite_border_rounded,
+                      label: 'প্রিয়',
+                      onTap: () => push(context, const FavoritesScreen()),
+                    ),
+                    LabeledAction(
+                      icon: Icons.settings_outlined,
+                      label: 'সেটিংস',
+                      onTap: () => push(context, const SettingsScreen()),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 14),
                 const SetupBanner(),
                 const NextPrayerStrip(),
@@ -67,12 +91,6 @@ class _TodayScreenState extends State<TodayScreen> {
                     onNext: () => setState(() => _ayahOffset++),
                     onToday: () => setState(() => _ayahOffset = 0),
                   ),
-                const SizedBox(height: 14),
-                const _QuickButtons(),
-                const SizedBox(height: 14),
-                const QuranContinueCard(showWhenEmpty: true),
-                const SizedBox(height: 14),
-                const AdhkarCard(showAllButton: true),
                 if (hadith != null) ...[
                   SectionLabel(
                     _hadithOffset == 0 ? 'আজকের হাদিস' : 'হাদিস',
@@ -88,6 +106,14 @@ class _TodayScreenState extends State<TodayScreen> {
                     onToday: () => setState(() => _hadithOffset = 0),
                   ),
                 ],
+                const SizedBox(height: 14),
+                const _Shortcuts(),
+                const SizedBox(height: 14),
+                const AdhkarCard(showAllButton: true),
+                const SizedBox(height: 14),
+                const QuranContinueCard(showWhenEmpty: true),
+                const SizedBox(height: 14),
+                const _ArabicCard(),
               ],
             );
           },
@@ -137,7 +163,7 @@ class _Header extends StatelessWidget {
                     style: TextStyle(color: p.goldText, fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   Text(greeting(now.hour), style: titleStyle(p, size: 26)),
-                  Text(banglaDate(now), style: TextStyle(color: p.muted, fontSize: 13.5)),
+                  Text(banglaDate(now), style: TextStyle(color: p.muted, fontSize: 14)),
                 ],
               ),
             ),
@@ -207,14 +233,14 @@ class _NextPrayerStripState extends State<NextPrayerStrip> {
                       ),
                       Text(
                         'দেখতে আপনার এলাকা বেছে নিন',
-                        style: TextStyle(fontSize: 12.5, color: p.muted),
+                        style: TextStyle(fontSize: 14, color: p.muted),
                       ),
                     ],
                   )
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('পরের নামাজ', style: TextStyle(fontSize: 12, color: p.muted)),
+                      Text('পরের নামাজ', style: TextStyle(fontSize: 14, color: p.muted)),
                       Text(
                         '${next.name} · ${formatClock(next.time)}',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
@@ -225,7 +251,7 @@ class _NextPrayerStripState extends State<NextPrayerStrip> {
           if (next != null)
             Text(
               formatCountdown(next.time.difference(now)),
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: p.primary),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: p.primary),
             ),
           Icon(Icons.chevron_right_rounded, color: p.muted),
         ],
@@ -250,7 +276,7 @@ class _ReadBadge extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             'পড়া হয়েছে',
-            style: TextStyle(fontSize: 12, color: t.foreground, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 14, color: t.foreground, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -340,7 +366,7 @@ class _AyahCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   item.title,
-                  style: TextStyle(color: p.gold, fontSize: 13.5, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: p.gold, fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 14),
                 Padding(
@@ -466,57 +492,32 @@ class _GoldListenButtonState extends State<_GoldListenButton> {
   }
 }
 
-class _QuickButtons extends StatelessWidget {
-  const _QuickButtons();
+/// Big shortcut cards: prayer times, Qibla, tasbih.
+class _Shortcuts extends StatelessWidget {
+  const _Shortcuts();
 
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    Widget b(IconData icon, String label, Tint tint, VoidCallback onTap) => Expanded(
-      child: Material(
-        color: tint.background,
-        borderRadius: BorderRadius.circular(radiusM),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(radiusM),
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 64),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, color: tint.foreground),
-                  const SizedBox(height: 4),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: tint.foreground,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    return Row(
+    return ActionRow(
       children: [
-        b(Icons.sentiment_satisfied_outlined, 'মন কেমন?', p.lilac, () {
-          MoodTopicsScreen.section.value = 0;
-          HomeShell.tab.value = 2;
-        }),
-        const SizedBox(width: 10),
-        b(Icons.explore_outlined, 'কিবলা', p.sky, () => push(context, const QiblaScreen())),
-        const SizedBox(width: 10),
-        b(
-          Icons.favorite_border_rounded,
-          'প্রিয়',
-          p.rose,
-          () => push(context, const FavoritesScreen()),
+        LabeledAction(
+          icon: Icons.schedule_outlined,
+          label: 'নামাজের সময়',
+          tint: p.mint,
+          onTap: () => push(context, const PrayerScreen()),
+        ),
+        LabeledAction(
+          icon: Icons.explore_outlined,
+          label: 'কিবলা',
+          tint: p.sky,
+          onTap: () => push(context, const QiblaScreen()),
+        ),
+        LabeledAction(
+          icon: Icons.touch_app_outlined,
+          label: 'তাসবিহ',
+          tint: p.sand,
+          onTap: () => push(context, const TasbihScreen()),
         ),
       ],
     );
@@ -553,7 +554,7 @@ class _HadithCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.category,
-                  style: TextStyle(color: p.goldText, fontWeight: FontWeight.w700, fontSize: 13.5),
+                  style: TextStyle(color: p.goldText, fontWeight: FontWeight.w700, fontSize: 14),
                 ),
               ),
               ItemAudioButton(item),
@@ -587,7 +588,7 @@ class _HadithCard extends StatelessWidget {
                         style: TextStyle(
                           color: p.primary,
                           fontWeight: FontWeight.w700,
-                          fontSize: 13.5,
+                          fontSize: 14,
                         ),
                       ),
                       if (item.subtitle.isNotEmpty)
@@ -595,7 +596,7 @@ class _HadithCard extends StatelessWidget {
                           item.subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: p.muted, fontSize: 12),
+                          style: TextStyle(color: p.muted, fontSize: 14),
                         ),
                     ],
                   ),
@@ -622,6 +623,67 @@ class _HadithCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Opens সহজ আরবি.
+class _ArabicCard extends StatelessWidget {
+  const _ArabicCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Material(
+      color: p.greenCard,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        key: const ValueKey('arabic-card'),
+        onTap: () => push(context, const ArabicHomeScreen()),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text(
+                  'أ ب',
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontFamily: arabicFont, fontSize: 22, color: Brand.gold),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'সহজ আরবি',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'বাংলা থেকে কুরআন পড়তে শিখি: অক্ষর, চিহ্ন, তাজবীদ, খেলা',
+                      style: TextStyle(color: p.gold, fontSize: 14, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Brand.gold),
+            ],
+          ),
+        ),
       ),
     );
   }

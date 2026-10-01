@@ -1,6 +1,6 @@
 # Ayah Reminder: new navigation plan (Phase 2)
 
-Date: 2026-10-01. Based on `docs/ux-audit.md`. Status: **waiting for approval**, no code changed yet.
+Date: 2026-10-01. Based on `docs/ux-audit.md`. Status: **approved (option A)** and built in Phase 3 (branch `claude/ux-navigation-redesign`).
 
 ## Goals
 - Every feature is at most **2 taps from আজ (Home)**.
@@ -9,83 +9,76 @@ Date: 2026-10-01. Based on `docs/ux-audit.md`. Status: **waiting for approval**,
 - Bangla labels with an icon on every menu item. "আপনি" everywhere.
 - Bangla text at least 14px, buttons at least 48×48, colours only from the theme.
 
-## Bottom tabs (5)
+## Bottom tabs (5) — approved: option A
 
 ```
-┌────────┬─────────┬─────────┬─────────┬────────┐
-│  আজ    │  কুরআন  │  নামাজ  │  দোয়া   │  আরও   │
-│ (sun)  │ (book)  │(mosque) │ (hands) │ (grid) │
-└────────┴─────────┴─────────┴─────────┴────────┘
+┌────────┬─────────┬─────────┬─────────┬─────────┐
+│  আজ    │  কুরআন  │  দোয়া   │   মন    │  জীবনী  │
+│ (sun)  │ (book)  │ (hands) │ (smile) │ (book)  │
+└────────┴─────────┴─────────┴─────────┴─────────┘
 ```
 
 | Before | After | Why |
 |---|---|---|
-| আজ | **আজ** | Stays first: today's ayah is the heart of the app. |
+| আজ | **আজ** | Today's ayah first. Prayer, Qibla, tasbih, প্রিয়, search and settings are reached from here. |
 | কুরআন | **কুরআন** | Stays. |
-| মন | moved to Home (big card) | Mood is a "what should I read now" helper; it fits Home. বিষয় gets its own spot instead of hiding behind a switch. |
-| জীবনী | moved to আরও and a Home card | Stories are still drafts; they should not take a main tab. |
-| — | **নামাজ** (new) | Most-used daily feature. Qibla lives inside it. |
-| — | **দোয়া** (new) | Duas, adhkar and the new tasbih together. |
-| আরও | **আরও** | Now only extra features + settings + about, clearly split. |
+| মন (with a hidden বিষয় switch) | **দোয়া** (new) | Duas, adhkar and the new tasbih together. |
+| জীবনী | **মন** | Moods and বিষয় on one page: moods at the top, all topics below. No switch. |
+| আরও | **জীবনী** | Kept as a tab (owner's choice); marked as draft. |
 
-Alternative if you prefer to keep মন as a tab: আজ · কুরআন · নামাজ · মন · আরও, with
-duas as a big card on Home. Recommended choice is the table above, because duas and
-tasbih are used every day, mood is occasional.
+There is no "আরও" tab any more. Prayer times and Qibla are a big card near the top of
+Home (1 tap). Settings, প্রিয় and search are labelled buttons at the top of Home (1 tap).
+About, credits, privacy and share live at the bottom of the one সেটিংস page (2 taps).
 
 ## Full map
 
 ```
 আজ (Home)
-├─ Top bar: greeting · Bangla date · [🔍 খুঁজুন] [♡ প্রিয়] [⚙ সেটিংস]
+├─ Top: greeting · Bangla date · reminder time
+├─ Labelled buttons: [🔍 খুঁজুন] [♡ প্রিয়] [⚙ সেটিংস]
 ├─ Setup warning (only if reminders/permissions are broken)
-├─ Next prayer strip ............................ → নামাজ tab
-├─ আজকের আয়াত (big green card, Arabic 26+, শুনুন, আগের/পরের)
+├─ Next prayer card (countdown) ................ → নামাজের সময়
+├─ আজকের আয়াত (big green card, শুনুন, আগের/পরের)
 ├─ আজকের হাদিস  ← moved up, right after the ayah
-├─ Shortcut grid (2 rows × 3, big cards with icon + Bangla label)
-│    নামাজের সময় · কিবলা · তাসবিহ
-│    দোয়া · মন কেমন? · প্রিয়
-├─ সকাল/সন্ধ্যার জিকির card (changes with time of day)
-├─ কুরআন পড়া চালিয়ে যান (last read surah)
-├─ মন কেমন? row: 6 common moods as chips + "সব" ......... 1 tap to a mood
-├─ বিষয় অনুযায়ী row: common topics as chips + "সব বিষয়" .. 1 tap to a topic
-├─ সহজ আরবি card
-└─ সাহাবিদের জীবনী card (marked "খসড়া")
+├─ Shortcut cards (icon + Bangla label): নামাজের সময় · কিবলা · তাসবিহ
+├─ সকাল/সন্ধ্যার জিকির card
+├─ কুরআন পড়া চালিয়ে যান
+└─ সহজ আরবি card
 
 কুরআন
-├─ Search box (সূরা, নম্বর, "২:২৫৫", যেকোনো শব্দ)
-├─ Labelled buttons (icon + text): [বুকমার্ক] [পড়ার সেটিং] [ডাউনলোড]
+├─ Search box
+├─ Labelled buttons: [বুকমার্ক] [পড়ার সেটিং] [ডাউনলোড]
 ├─ কুরআন পড়া চালিয়ে যান
-└─ সূরা | পারা lists → reader
-
-নামাজ
-├─ Big next prayer + countdown, location (tap to change)
-├─ Today's times: ফজর, সূর্যোদয়, যোহর, আসর, মাগরিব, এশা
-├─ Big card: কিবলা দেখুন → compass screen
-└─ Button: আজান সেটিংস → opens the one সেটিংস page at "আজান ও নামাজ"
+└─ সূরা | পারা
 
 দোয়া
-├─ Search box (ভয়, ঋণ, সফর, অসুস্থ…)
+├─ Search box
 ├─ সকাল/সন্ধ্যার জিকির card
-├─ Big card: তাসবিহ → new tasbih screen
+├─ Big card: তাসবিহ
 ├─ Labelled buttons: [প্রিয় দোয়া] [দোয়ার সেটিং]
 └─ Dua sections by topic
 
-আরও
-├─ ফিচার
-│    সাহাবিদের জীবনী · সহজ আরবি · মন কেমন? · বিষয়
-│    কিবলা · তাসবিহ · প্রিয়
-├─ সেটিংস
-│    ⚙ সব সেটিংস (one page)
-│    অনুমতি ও সেটআপ (রিমাইন্ডার না এলে)
-└─ অ্যাপ সম্পর্কে
-     ডেভেলপার সম্পর্কে · কৃতজ্ঞতা ও উৎস · গোপনীয়তা নীতি · অ্যাপ শেয়ার করুন
+মন
+├─ "আপনার মন এখন কেমন?" + 16 moods
+└─ বিষয় অনুযায়ী: search + all topics (no switch)
+
+জীবনী
+└─ সাহাবিদের জীবনী (unchanged, marked as draft)
+
+নামাজের সময় (from Home)
+├─ next prayer, today's times, per-prayer azan choice
+├─ Big card: কিবলা দেখুন
+└─ Button: আজান সেটিংস → the one সেটিংস page
+
+সেটিংস (one page, from Home)
+রিমাইন্ডার · আজান ও নামাজ · কুরআন পড়া · অডিও ও ক্বারী · দোয়া ·
+লেখার আকার ও ডার্ক মোড · ডাউনলোড · অনুমতি ও সেটআপ · অ্যাপ সম্পর্কে
 ```
 
 ### New / merged screens
 
 **প্রিয় (one place for everything saved)** — one screen with 3 tabs at the top:
-`আয়াত ও হাদিস | দোয়া | কুরআন বুকমার্ক`. Opened from the Home top bar, the Home grid,
-আরও, and the old "প্রিয় দোয়া" / Quran bookmark buttons (they open the right tab).
+`আয়াত ও হাদিস | দোয়া | কুরআন বুকমার্ক`. Opened from the Home button and the old "প্রিয় দোয়া" / Quran bookmark buttons (they open the right tab).
 Nothing saved is lost; the data stays exactly where it is now.
 
 **সেটিংস (one page)** — one scrolling page with headings and a row of jump chips at the top:
@@ -117,22 +110,19 @@ screen). It reuses the Quran and Dua search that already exist.
 | Feature | Taps | Path |
 |---|---|---|
 | Today's ayah, hadith, next prayer | 0 | Home |
-| Prayer times | 1 | নামাজ tab or Home grid |
-| Qibla | 1 | Home grid (2 via নামাজ) |
-| Tasbih | 1 | Home grid (2 via দোয়া) |
+| Prayer times | 1 | Home prayer card / shortcut |
+| Qibla | 1 | Home shortcut (2 via prayer times) |
+| Tasbih | 1 | Home shortcut (2 via দোয়া) |
 | Duas / adhkar | 1 | দোয়া tab |
-| A mood | 1 | mood chip on Home |
-| A topic (বিষয়) | 1 | topic chip on Home (2 via "সব বিষয়") |
+| Moods and topics | 1 | মন tab |
 | Full Quran | 1 | কুরআন tab |
 | Quran bookmarks / downloads | 2 | কুরআন → labelled button |
-| প্রিয় (all saved items) | 1 | Home top bar or grid |
-| Search | 1 | Home top bar |
-| Settings (all) | 1 | Home top bar ⚙ (2 via আরও) |
-| Sahaba stories | 1 | Home card (2 via আরও) |
-| সহজ আরবি | 1 | Home card (2 via আরও) |
-| About / Credits / Privacy | 2 | আরও → row |
-
-Everything is 2 taps or fewer.
+| প্রিয় (all saved items) | 1 | Home button |
+| Search | 1 | Home button |
+| Settings (all) | 1 | Home button |
+| Sahaba stories | 1 | জীবনী tab |
+| সহজ আরবি | 1 | Home card |
+| About / Credits / Privacy | 2 | সেটিংস → row |
 
 ## Design rules (applied to every screen)
 
@@ -158,10 +148,21 @@ Everything is 2 taps or fewer.
 - Package name stays `com.ayahreminder.ayah_reminder`.
 
 ## Phase 3 steps (after approval)
-1. New branch from the current code, e.g. `claude/ux-navigation-redesign`.
+1. New branch `claude/ux-navigation-redesign`.
 2. Theme clean-up: text size floor, tap sizes, remove hard-coded colours, "আপনি".
-3. New tabs (আজ · কুরআন · নামাজ · দোয়া · আরও) and the new Home layout.
+3. New tabs (আজ · কুরআন · দোয়া · মন · জীবনী) and the new Home layout.
 4. New screens: তাসবিহ, merged প্রিয়, single সেটিংস page, app search.
-5. Quran labelled buttons; Prayer tab with Qibla card; new আরও layout.
+5. Quran labelled buttons; prayer page with Qibla card.
 6. Update and add tests (tabs, Home, tasbih, প্রিয়, settings page, notification links).
 7. Run `flutter analyze` and `flutter test`, fix everything, then open a PR for review.
+
+## Notes from building it (Phase 3)
+- The Quran tab's "পড়ার সেটিং" button opens the quick sheet (the same controls as
+  সেটিংস → কুরআন পড়া), so readers can change size without leaving the Quran. The quick
+  text-size control in the reader also stays. All of them change the same saved settings.
+- The morning/evening adhkar reminder switches are under সেটিংস → রিমাইন্ডার; the দোয়া
+  heading has the উচ্চারণ switch.
+- The per-prayer bell (azan / notification / off) stays on the prayer times page, next to each
+  prayer. Everything else about azan is on the সেটিংস page.
+- "আপনি" wording now also covers the সহজ আরবি lessons, including
+  `tools/build_arabic_lessons.py`, so rebuilding the lessons keeps the new wording.

@@ -454,9 +454,9 @@ class _SummaryPage extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'পরে যেকোনো সময় আরও → "অনুমতি ও সেটআপ" থেকে এগুলো দেখতে পারবেন।',
+          'পরে যেকোনো সময় সেটিংস → "অনুমতি ও সেটআপ" থেকে এগুলো দেখতে পারবেন।',
           textAlign: TextAlign.center,
-          style: TextStyle(color: p.muted, fontSize: 13),
+          style: TextStyle(color: p.muted, fontSize: 14),
         ),
       ],
     );

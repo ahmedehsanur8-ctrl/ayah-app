@@ -45,6 +45,17 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  // তাসবিহ. Saved without notifying listeners: a tap must not rebuild the app.
+  int get tasbihCount => _prefs.getInt('tasbihCount') ?? 0;
+  int get tasbihZikr => _prefs.getInt('tasbihZikr') ?? 0;
+  int get tasbihTarget => _prefs.getInt('tasbihTarget') ?? 33;
+
+  Future<void> saveTasbih({required int count, required int zikr, required int target}) async {
+    await _prefs.setInt('tasbihCount', count);
+    await _prefs.setInt('tasbihZikr', zikr);
+    await _prefs.setInt('tasbihTarget', target);
+  }
+
   /// Saved (favourite) item ids, newest first.
   List<String> get favorites => _prefs.getStringList('favorites') ?? [];
 

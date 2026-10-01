@@ -9,7 +9,7 @@ import '../theme.dart';
 import '../widgets/pattern.dart';
 import '../widgets/quran_widgets.dart';
 import '../widgets/ui.dart';
-import 'quran_bookmarks_screen.dart';
+import 'favorites_screen.dart';
 import 'quran_downloads_screen.dart';
 import 'quran_reader_screen.dart';
 
@@ -82,30 +82,7 @@ class _QuranScreenState extends State<QuranScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 8, 0),
-                child: PageTitle(
-                  'আল-কুরআন',
-                  subtitle: '১১৪টি সূরা · আরবি ও বাংলা অনুবাদ',
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'কুরআন বুকমার্ক',
-                        icon: const Icon(Icons.bookmarks_outlined),
-                        onPressed: () => push(context, const QuranBookmarksScreen()),
-                      ),
-                      IconButton(
-                        tooltip: 'পড়ার সেটিংস',
-                        icon: const Icon(Icons.text_fields_rounded),
-                        onPressed: () => showQuranSettingsSheet(context),
-                      ),
-                      IconButton(
-                        tooltip: 'কুরআন ডাউনলোড',
-                        icon: const Icon(Icons.download_for_offline_outlined),
-                        onPressed: () => push(context, const QuranDownloadsScreen()),
-                      ),
-                    ],
-                  ),
-                ),
+                child: const PageTitle('আল-কুরআন', subtitle: '১১৪টি সূরা · আরবি ও বাংলা অনুবাদ'),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
@@ -143,6 +120,31 @@ class _QuranScreenState extends State<QuranScreen> {
               if (_q.isNotEmpty)
                 Expanded(child: _results(p))
               else ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: ActionRow(
+                    children: [
+                      LabeledAction(
+                        icon: Icons.bookmarks_outlined,
+                        label: 'বুকমার্ক',
+                        tint: p.sand,
+                        onTap: () => push(context, const FavoritesScreen(initialTab: 2)),
+                      ),
+                      LabeledAction(
+                        icon: Icons.text_fields_rounded,
+                        label: 'পড়ার সেটিং',
+                        tint: p.sky,
+                        onTap: () => showQuranSettingsSheet(context),
+                      ),
+                      LabeledAction(
+                        icon: Icons.download_for_offline_outlined,
+                        label: 'ডাউনলোড',
+                        tint: p.mint,
+                        onTap: () => push(context, const QuranDownloadsScreen()),
+                      ),
+                    ],
+                  ),
+                ),
                 const Padding(
                   padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: QuranContinueCard(),
@@ -200,7 +202,7 @@ class _QuranScreenState extends State<QuranScreen> {
                 ? 'আয়াত (প্রথম ৩০০টি)'
                 : 'আয়াত (${toBanglaDigits(_ayahs.length)}টি)',
           ),
-          for (final r in _ayahs) _SearchHit(ref: r, query: _q),
+          for (final r in _ayahs) AyahSearchHit(ref: r, query: _q),
         ] else if (ref == null && surahs.isEmpty && _q.length >= 2)
           Padding(
             padding: const EdgeInsets.all(24),
@@ -213,8 +215,8 @@ class _QuranScreenState extends State<QuranScreen> {
   }
 }
 
-class _SearchHit extends StatelessWidget {
-  const _SearchHit({required this.ref, required this.query});
+class AyahSearchHit extends StatelessWidget {
+  const AyahSearchHit({super.key, required this.ref, required this.query});
 
   final AyahRef ref;
   final String query;
@@ -236,7 +238,7 @@ class _SearchHit extends StatelessWidget {
           children: [
             Text(
               ayahTitle(ref.surah, ref.ayah),
-              style: TextStyle(color: p.primary, fontWeight: FontWeight.w700, fontSize: 13.5),
+              style: TextStyle(color: p.primary, fontWeight: FontWeight.w700, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Text(
@@ -308,7 +310,7 @@ class QuranContinueCard extends StatelessWidget {
                                   has ? 'যেখানে শেষ করেছিলেন' : 'কুরআন পড়ুন',
                                   style: TextStyle(
                                     color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 12.5,
+                                    fontSize: 14,
                                   ),
                                 ),
                                 Text(
@@ -331,7 +333,7 @@ class QuranContinueCard extends StatelessWidget {
                             style: FilledButton.styleFrom(
                               backgroundColor: Brand.gold,
                               foregroundColor: Brand.greenDark,
-                              visualDensity: VisualDensity.compact,
+                              minimumSize: const Size(0, 48),
                             ),
                             child: Text(has ? 'চালিয়ে যান' : 'শুরু করুন'),
                           ),
@@ -376,7 +378,7 @@ class SurahRow extends StatelessWidget {
                   ),
                   Text(
                     '${surah.meaningBn} · ${surah.typeBn} · ${toBanglaDigits(surah.ayahCount)} আয়াত',
-                    style: TextStyle(fontSize: 12.5, color: p.muted),
+                    style: TextStyle(fontSize: 14, color: p.muted),
                   ),
                 ],
               ),
@@ -438,7 +440,7 @@ class _JuzList extends StatelessWidget {
                       ),
                       Text(
                         'শুরু: সূরা ${Quran.surah(j.surah).nameBn}, আয়াত ${toBanglaDigits(j.ayah)}',
-                        style: TextStyle(fontSize: 12.5, color: p.muted),
+                        style: TextStyle(fontSize: 14, color: p.muted),
                       ),
                     ],
                   ),

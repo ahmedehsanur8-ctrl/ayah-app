@@ -92,7 +92,7 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
                   'পরীক্ষা বোতাম চাপার পর ফোন লক করে রাখুন। এক মিনিট পর শব্দসহ পুরো স্ক্রিনে '
                   'আয়াতটি খুললে সব ঠিক আছে।',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: p.muted, fontSize: 13, height: 1.5),
+                  style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
                 ),
               ],
             ),
@@ -161,10 +161,10 @@ class _PermissionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(item.why, style: TextStyle(color: p.muted, height: 1.55, fontSize: 13.5)),
+          Text(item.why, style: TextStyle(color: p.muted, height: 1.55, fontSize: 14)),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
-            Text(subtitle!, style: TextStyle(color: p.text, fontSize: 13.5)),
+            Text(subtitle!, style: TextStyle(color: p.text, fontSize: 14)),
           ],
           if (child != null) ...[const SizedBox(height: 12), child!],
           if (onOpen != null) ...[
@@ -244,7 +244,7 @@ class _SetupBannerState extends State<SetupBanner> with WidgetsBindingObserver {
                   style: FilledButton.styleFrom(
                     backgroundColor: warnOrange,
                     foregroundColor: Colors.white,
-                    visualDensity: VisualDensity.compact,
+                    minimumSize: const Size(0, 48),
                   ),
                   child: const Text('ঠিক করুন'),
                 ),

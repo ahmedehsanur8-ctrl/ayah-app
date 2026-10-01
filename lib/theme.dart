@@ -20,6 +20,19 @@ class Brand {
   static const goldText = Color(0xFF7A5A14);
   static const cream = Color(0xFFFFFBF0);
 
+  /// Lighter greens for the always-dark splash, share card and pattern gradients.
+  static const greenBright = Color(0xFF14704F);
+  static const greenShare = Color(0xFF12684A);
+  static const greenPattern = Color(0xFF1B7A55);
+
+  /// Kaaba drawing on the Qibla compass.
+  static const kaaba = Color(0xFF1B1B1B);
+  static const kaabaBand = Color(0xFFE2BE62);
+  static const kaabaDoor = Color(0xFFB8963F);
+
+  /// Warnings (missing permissions); readable on light and dark.
+  static const warn = Color(0xFFE0851B);
+
   // Older names, still used by a few widgets.
   static const emerald = green;
   static const deepEmerald = greenDark;
@@ -94,6 +107,11 @@ class Palette extends ThemeExtension<Palette> {
   Tint get sky => tints[2];
   Tint get mint => tints[3];
   Tint get lilac => tints[4];
+
+  /// Filled heart (প্রিয়), the north letter on the compass, the lesson stars.
+  Color get heart => isDark ? const Color(0xFFF2788E) : const Color(0xFFD6455F);
+  Color get north => isDark ? const Color(0xFFF07563) : const Color(0xFFC0392B);
+  Color get star => isDark ? const Color(0xFFE9C25A) : const Color(0xFFD9A93A);
 
   // Older names, still used by a few screens.
   Color get accent => goldText;
@@ -205,7 +223,7 @@ ThemeData buildTheme(Brightness brightness) {
       titleMedium: ui.copyWith(fontSize: 16.5, color: p.text, fontWeight: FontWeight.w600),
       bodyLarge: ui.copyWith(fontSize: 16, color: p.text, height: 1.6),
       bodyMedium: ui.copyWith(fontSize: 14.5, color: p.text, height: 1.55),
-      bodySmall: ui.copyWith(fontSize: 12.5, color: p.muted, height: 1.45),
+      bodySmall: ui.copyWith(fontSize: 14, color: p.muted, height: 1.45),
       labelLarge: ui.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
     ),
     appBarTheme: AppBarTheme(
@@ -267,7 +285,7 @@ ThemeData buildTheme(Brightness brightness) {
       ),
       labelTextStyle: WidgetStateProperty.resolveWith(
         (s) => ui.copyWith(
-          fontSize: 12.5,
+          fontSize: 14,
           fontWeight: s.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
           color: s.contains(WidgetState.selected) ? p.primary : p.muted,
         ),

@@ -72,7 +72,7 @@ class _ArabicHomeScreenState extends State<ArabicHomeScreen> {
                               ),
                               Text(
                                 'আগে ভুল হওয়া ${toBanglaDigits(_progress.dueItems().length)}টি অক্ষর/শব্দ আবার দেখি',
-                                style: TextStyle(color: p.sand.foreground, fontSize: 13),
+                                style: TextStyle(color: p.sand.foreground, fontSize: 14),
                               ),
                             ],
                           ),
@@ -91,7 +91,7 @@ class _ArabicHomeScreenState extends State<ArabicHomeScreen> {
                 Text(
                   'সব পাঠ, উদাহরণ ও অনুশীলন এই অ্যাপের জন্য নতুন করে লেখা। কুরআনের শব্দ ও আয়াত অ্যাপের '
                   'Tanzil কুরআন টেক্সট থেকে নেওয়া। অগ্রগতি শুধু এই ফোনে থাকে।',
-                  style: TextStyle(color: p.muted, fontSize: 12.5, height: 1.5),
+                  style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
                 ),
               ],
             ),
@@ -138,7 +138,7 @@ class _Hero extends StatelessWidget {
                               'বাংলা থেকে আরবি',
                               style: TextStyle(
                                 color: p.gold,
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -221,7 +221,7 @@ class _Hero extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
-                Text(label, style: const TextStyle(color: Brand.gold, fontSize: 11.5)),
+                Text(label, style: const TextStyle(color: Brand.gold, fontSize: 14)),
               ],
             ),
           ),
@@ -270,7 +270,7 @@ class _LevelCard extends StatelessWidget {
                     '${toBanglaDigits(level.n)}. ${level.title}',
                     style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: p.text),
                   ),
-                  Text(level.subtitle, style: TextStyle(fontSize: 13, color: p.muted, height: 1.4)),
+                  Text(level.subtitle, style: TextStyle(fontSize: 14, color: p.muted, height: 1.4)),
                   if (level.ready) ...[
                     const SizedBox(height: 8),
                     ClipRRect(
@@ -298,7 +298,7 @@ class _LevelCard extends StatelessWidget {
                 ),
                 child: Text(
                   'শীঘ্রই আসছে',
-                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: p.muted),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: p.muted),
                 ),
               ),
           ],
@@ -400,7 +400,7 @@ class _ArabicLevelScreenState extends State<ArabicLevelScreen> {
                           '${l.subtitle} · ${toBanglaDigits(l.minutes)} মিনিট',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12.5, color: p.muted),
+                          style: TextStyle(fontSize: 14, color: p.muted),
                         ),
                       ],
                     ),
@@ -432,7 +432,7 @@ class _Stars extends StatelessWidget {
           Icon(
             k < count ? Icons.star_rounded : Icons.star_outline_rounded,
             size: size,
-            color: k < count ? const Color(0xFFD9A93A) : p.border,
+            color: k < count ? p.star : p.border,
           ),
       ],
     );
@@ -583,7 +583,7 @@ class _LessonScreenState extends State<LessonScreen> {
         const SizedBox(height: 10),
         Text(
           'সময় লাগবে প্রায় ${toBanglaDigits(_lesson.minutes)} মিনিট · ${toBanglaDigits(_gameCount)}টি অনুশীলন',
-          style: TextStyle(color: p.muted, fontSize: 13),
+          style: TextStyle(color: p.muted, fontSize: 14),
         ),
         const SizedBox(height: 18),
         FilledButton.icon(
@@ -611,7 +611,7 @@ class _LessonScreenState extends State<LessonScreen> {
         Text(
           _lesson.ayahs.isNotEmpty
               ? 'আয়াতে চাপ দিলে তিলাওয়াত শুনবে। প্রথমবার ইন্টারনেট লাগে।'
-              : 'প্রতিটিতে চাপ দিয়ে দেখো ও শোনো, তারপর নিজে জোরে বলো।',
+              : 'প্রতিটিতে চাপ দিয়ে দেখুন ও শুনুন, তারপর নিজে জোরে বলুন।',
           style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 12),
@@ -654,7 +654,7 @@ class _LessonScreenState extends State<LessonScreen> {
     final msg = switch (_stars) {
       3 => 'মাশাআল্লাহ! দারুণ হয়েছে।',
       2 => 'খুব ভালো! আরেকবার করলে তিন তারা পাবে।',
-      _ => 'শেষ করেছ! আরেকবার অনুশীলন করলে আরও সহজ লাগবে।',
+      _ => 'শেষ করেছেন! আরেকবার অনুশীলন করলে আরও সহজ লাগবে।',
     };
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 30, 16, 28),
@@ -794,7 +794,7 @@ void showItemSheet(BuildContext context, ArItem item) {
               const SizedBox(height: 8),
               Text(
                 'কুরআনে: আয়াত ${refBn(item.ref!)}',
-                style: TextStyle(color: p.goldText, fontSize: 13),
+                style: TextStyle(color: p.goldText, fontSize: 14),
               ),
             ],
             const SizedBox(height: 14),
@@ -818,7 +818,7 @@ class _FormsTable extends StatelessWidget {
       child: Text(
         t,
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 12.5, color: p.muted, fontWeight: FontWeight.w600),
+        style: TextStyle(fontSize: 14, color: p.muted, fontWeight: FontWeight.w600),
       ),
     );
     return AppCard(
@@ -880,7 +880,7 @@ class _SignCard extends StatelessWidget {
           Text(
             'উদাহরণ: আয়াত ${refBn(sign['ref'] as String)}',
             textAlign: TextAlign.center,
-            style: TextStyle(color: p.goldText, fontSize: 12.5),
+            style: TextStyle(color: p.goldText, fontSize: 14),
           ),
         ],
       ),

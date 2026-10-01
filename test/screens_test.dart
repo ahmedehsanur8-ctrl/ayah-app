@@ -9,14 +9,18 @@ import 'package:ayah_reminder/screens/qibla_screen.dart';
 import 'package:ayah_reminder/screens/reader_screen.dart';
 import 'package:ayah_reminder/screens/reading_screen.dart';
 import 'package:ayah_reminder/screens/onboarding_screen.dart';
+import 'package:ayah_reminder/screens/settings_screen.dart';
 import 'package:ayah_reminder/screens/setup_screen.dart';
 import 'package:ayah_reminder/screens/splash_screen.dart';
 import 'package:ayah_reminder/screens/stories_screen.dart';
+import 'package:ayah_reminder/screens/tasbih_screen.dart';
 import 'package:ayah_reminder/screens/quran_reader_screen.dart';
 import 'package:ayah_reminder/screens/quran_screen.dart';
+import 'package:ayah_reminder/services/duas.dart';
 import 'package:ayah_reminder/services/quran.dart';
 import 'package:ayah_reminder/services/reminders.dart';
 import 'package:ayah_reminder/theme.dart';
+import 'package:ayah_reminder/widgets/ui.dart';
 
 import 'dart:io';
 
@@ -51,6 +55,7 @@ void main() {
     await AppState.load();
     await Quran.loadMeta();
     await Quran.load();
+    await Duas.load();
     // Use the real fonts so text is measured like on a phone.
     Future<void> load(String family, List<String> files) async {
       final loader = FontLoader(family);
@@ -84,38 +89,59 @@ void main() {
       testWidgets('the five tabs', (t) async {
         await t.binding.setSurfaceSize(const Size(390, 844));
         HomeShell.tab.value = 0;
-        MoodTopicsScreen.section.value = 0;
         await t.pumpWidget(app(const HomeShell(), b));
         await t.pumpAndSettle();
+        // আজ: buttons at the top, today's ayah, then the hadith right after it.
         expect(find.textContaining('আজকের আয়াত'), findsWidgets);
         expect(find.text('আসসালামু আলাইকুম'), findsOneWidget);
         expect(find.text('শুনুন'), findsOneWidget);
+        for (final label in ['খুঁজুন', 'প্রিয়', 'সেটিংস']) {
+          expect(find.text(label), findsOneWidget, reason: label);
+        }
         await t.scrollUntilVisible(find.text('আজকের হাদিস'), 300);
         expect(find.text('আজকের হাদিস'), findsOneWidget);
         await t.drag(find.byType(Scrollable).first, const Offset(0, -250));
         await t.pumpAndSettle();
         await t.tap(find.text('পরের').last);
         await t.pump();
+        await t.scrollUntilVisible(find.text('তাসবিহ'), 300);
+        expect(find.text('নামাজের সময়'), findsOneWidget);
+        expect(find.text('কিবলা'), findsOneWidget);
+        await t.scrollUntilVisible(find.text('সহজ আরবি'), 300);
+        expect(find.text('সহজ আরবি'), findsOneWidget);
 
         await t.tap(find.text('কুরআন').last);
         await t.pumpAndSettle();
         expect(find.text('আল-কুরআন'), findsOneWidget);
         expect(find.text('আল-ফাতিহা'), findsOneWidget);
+        // Labelled buttons, not icon-only.
+        for (final label in ['বুকমার্ক', 'পড়ার সেটিং', 'ডাউনলোড']) {
+          expect(find.text(label), findsOneWidget, reason: label);
+        }
         await t.tap(find.text('পারা'));
         await t.pumpAndSettle();
         expect(find.text('পারা ১'), findsOneWidget);
 
+        await t.tap(find.text('দোয়া').last);
+        await t.pumpAndSettle();
+        expect(find.text('দোয়া ও জিকির'), findsOneWidget);
+        expect(find.text('জিকির শুরু করুন'), findsOneWidget);
+        expect(find.text('তাসবিহ'), findsOneWidget);
+        expect(find.text('প্রিয় দোয়া'), findsOneWidget);
+
+        // মন: moods and the topics on one page, no switch.
         await t.tap(find.text('মন').last);
         await t.pumpAndSettle();
-        expect(find.text('তোমার মন এখন কেমন?'), findsOneWidget);
+        expect(find.text('আপনার মন এখন কেমন?'), findsOneWidget);
         final moods = AppState.instance.data.moods;
         expect(moods.length, 16);
         expect(find.text(moods.first.name), findsOneWidget);
-
-        await t.tap(find.text('বিষয়').last);
-        await t.pumpAndSettle();
+        await t.scrollUntilVisible(
+          find.text('মনের অবস্থা'),
+          300,
+          scrollable: find.byType(Scrollable).first,
+        );
         expect(find.text('মনের অবস্থা'), findsOneWidget);
-        expect(find.text('আশা ও রহমত'), findsOneWidget);
         await t.enterText(find.byType(TextField), 'সবর');
         await t.pumpAndSettle();
         expect(find.text('সবর'), findsWidgets);
@@ -123,16 +149,91 @@ void main() {
         await t.tap(find.text('জীবনী').last);
         await t.pumpAndSettle();
         expect(find.text('সাহাবিদের জীবনী'), findsOneWidget);
-
-        await t.tap(find.text('আরও').last);
-        await t.pumpAndSettle();
-        expect(find.text('নামাজের সময়'), findsOneWidget);
-        expect(find.text('অ্যাপ সম্পর্কে'), findsOneWidget);
-        await t.tap(find.text('রিমাইন্ডার'));
-        await t.pumpAndSettle();
-        expect(find.text('সকাল ৯:০০'), findsOneWidget);
-        expect(find.text('রাত ৯:০০'), findsOneWidget);
         HomeShell.tab.value = 0;
+      });
+
+      testWidgets('home buttons open search, প্রিয় and the one settings page', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        HomeShell.tab.value = 0;
+        await t.pumpWidget(app(const HomeShell(), b));
+        await t.pumpAndSettle();
+
+        await t.tap(find.text('সেটিংস'));
+        await t.pumpAndSettle();
+        expect(find.text('রাত ৯:০০'), findsOneWidget);
+        expect(find.text('সকাল ৯:০০'), findsOneWidget);
+        // Every heading is on the same page.
+        for (final s in SettingsSection.values) {
+          await t.scrollUntilVisible(
+            find.byWidgetPredicate((w) => w is SectionLabel && w.text == s.title),
+            300,
+            scrollable: find.byType(Scrollable).first,
+          );
+        }
+        expect(find.text('ডেভেলপার সম্পর্কে'), findsOneWidget);
+        await t.pageBack();
+        await t.pumpAndSettle();
+
+        await t.tap(find.text('প্রিয়'));
+        await t.pumpAndSettle();
+        expect(find.text('আয়াত ও হাদিস'), findsOneWidget);
+        await t.tap(find.text('বুকমার্ক'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('দোয়া'));
+        await t.pumpAndSettle();
+        await t.pageBack();
+        await t.pumpAndSettle();
+
+        await t.tap(find.text('খুঁজুন'));
+        await t.pumpAndSettle();
+        expect(find.text('সব ফিচার'), findsOneWidget);
+        await t.enterText(find.byType(TextField), 'কিবলা');
+        await t.pump(const Duration(milliseconds: 400));
+        await t.pumpAndSettle();
+        expect(find.widgetWithText(NavRow, 'কিবলা'), findsOneWidget);
+        await t.enterText(find.byType(TextField), 'ফাতিহা');
+        await t.pump(const Duration(milliseconds: 400));
+        await t.pumpAndSettle();
+        expect(find.text('আল-ফাতিহা'), findsWidgets);
+        await t.enterText(find.byType(TextField), 'সফর');
+        await t.pump(const Duration(milliseconds: 400));
+        await t.pumpAndSettle();
+        expect(find.text('দোয়া'), findsWidgets);
+      });
+
+      testWidgets('settings opens at the asked heading', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        await t.pumpWidget(app(const SettingsScreen(section: SettingsSection.about), b));
+        await t.pumpAndSettle();
+        expect(find.text('গোপনীয়তা নীতি').hitTestable(), findsOneWidget);
+        await t.pumpWidget(app(SettingsScreen(key: UniqueKey(), section: SettingsSection.azan), b));
+        await t.pumpAndSettle();
+        expect(find.text('হিসাবের পদ্ধতি').hitTestable(), findsOneWidget);
+      });
+
+      testWidgets('tasbih counts, remembers and resets', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        await t.pumpWidget(app(const TasbihScreen(), b));
+        await t.pumpAndSettle();
+        if (find.text('আবার শুরু').evaluate().isNotEmpty &&
+            AppState.instance.settings.tasbihCount > 0) {
+          await t.tap(find.text('আবার শুরু'));
+          await t.pump();
+        }
+        expect(find.text('সুবহানাল্লাহ'), findsWidgets);
+        for (var i = 0; i < 33; i++) {
+          await t.tap(find.byKey(const ValueKey('tasbih-tap')));
+          await t.pump();
+        }
+        expect(find.textContaining('৩৩ বার পূর্ণ হয়েছে'), findsOneWidget);
+        expect(find.text('মোট ৩৩ বার · ১ রাউন্ড পূর্ণ'), findsOneWidget);
+        expect(AppState.instance.settings.tasbihCount, 33);
+        await t.pumpWidget(app(TasbihScreen(key: UniqueKey()), b));
+        await t.pumpAndSettle();
+        expect(find.text('মোট ৩৩ বার · ১ রাউন্ড পূর্ণ'), findsOneWidget);
+        await t.tap(find.text('আবার শুরু'));
+        await t.pump();
+        expect(find.text('মোট ০ বার · ০ রাউন্ড পূর্ণ'), findsOneWidget);
       });
 
       testWidgets('mood page and reader with player', (t) async {
@@ -206,6 +307,8 @@ void main() {
         for (final n in ['ফজর', 'সূর্যোদয়', 'যোহর', 'আসর', 'মাগরিব', 'ইশা']) {
           expect(find.text(n), findsWidgets, reason: n);
         }
+        await t.scrollUntilVisible(find.text('কিবলা দেখুন'), 300);
+        expect(find.text('আজান সেটিংস'), findsOneWidget);
         await t.pumpWidget(app(const QiblaScreen(), b));
         await t.pump(const Duration(milliseconds: 200));
         expect(find.textContaining('কিবলার দিক'), findsOneWidget);

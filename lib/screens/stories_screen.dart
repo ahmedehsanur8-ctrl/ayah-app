@@ -103,7 +103,7 @@ class _ContinueCard extends StatelessWidget {
                   children: [
                     Text(
                       'শুনছিলেন',
-                      style: TextStyle(color: p.gold, fontSize: 12.5, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: p.gold, fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                     Text(
                       story.companion,
@@ -126,7 +126,7 @@ class _ContinueCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${_mmss(position)} / ${_mmss(length)}',
-                      style: TextStyle(color: dim, fontSize: 12),
+                      style: TextStyle(color: dim, fontSize: 14),
                     ),
                   ],
                 ),
@@ -178,7 +178,7 @@ class _StoryCard extends StatelessWidget {
                   story.companion,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
                 ),
-                Text(story.title, style: TextStyle(color: p.muted, fontSize: 13.5)),
+                Text(story.title, style: TextStyle(color: p.muted, fontSize: 14)),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -198,7 +198,7 @@ class _StoryCard extends StatelessWidget {
                       Text(
                         story.hasAudio ? 'অডিও আছে' : 'শীঘ্রই অডিও',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 14,
                           color: tint.foreground,
                           fontWeight: FontWeight.w600,
                         ),
@@ -272,7 +272,7 @@ class _StoryScreenState extends State<StoryScreen> {
                     final max = dur.inMilliseconds.toDouble();
                     return Row(
                       children: [
-                        Text(_mmss(pos), style: TextStyle(fontSize: 12, color: p.muted)),
+                        Text(_mmss(pos), style: TextStyle(fontSize: 14, color: p.muted)),
                         Expanded(
                           child: Slider(
                             value: max <= 0 ? 0 : pos.inMilliseconds.clamp(0, max).toDouble(),
@@ -282,7 +282,7 @@ class _StoryScreenState extends State<StoryScreen> {
                                 : (v) => audio.seek(Duration(milliseconds: v.round())),
                           ),
                         ),
-                        Text(_mmss(dur), style: TextStyle(fontSize: 12, color: p.muted)),
+                        Text(_mmss(dur), style: TextStyle(fontSize: 14, color: p.muted)),
                       ],
                     );
                   },
@@ -294,7 +294,7 @@ class _StoryScreenState extends State<StoryScreen> {
             s.hasAudio
                 ? 'কণ্ঠ: ElevenLabs · যেখানে থেমেছিলেন সেখান থেকে চলবে'
                 : 'এই জীবনীটি এখন ফোনের বাংলা কণ্ঠে শোনা যাবে।',
-            style: TextStyle(color: p.muted, fontSize: 12),
+            style: TextStyle(color: p.muted, fontSize: 14),
           ),
           const SizedBox(height: 18),
           BanglaText(s.body, size: 17),
@@ -337,7 +337,7 @@ class _StoryScreenState extends State<StoryScreen> {
               ),
               child: Text(
                 'খসড়া — একজন আলেমের যাচাই প্রয়োজন (draft - needs scholar review)',
-                style: TextStyle(fontSize: 12.5, color: p.rose.foreground),
+                style: TextStyle(fontSize: 14, color: p.rose.foreground),
               ),
             ),
           ],

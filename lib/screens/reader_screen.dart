@@ -149,7 +149,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         ),
                         Text(
                           '${toBanglaDigits(_index + 1)} / ${toBanglaDigits(n)}',
-                          style: TextStyle(fontSize: 12.5, color: p.muted),
+                          style: TextStyle(fontSize: 14, color: p.muted),
                         ),
                       ],
                     ),
@@ -265,7 +265,7 @@ class _ReaderPage extends StatelessWidget {
                   icon: Icon(
                     fav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                     size: 20,
-                    color: fav ? const Color(0xFFD6455F) : null,
+                    color: fav ? p.heart : null,
                   ),
                   label: const Text('প্রিয়'),
                 );
@@ -303,7 +303,7 @@ class GradeCheckBadge extends StatelessWidget {
             Flexible(
               child: Text(
                 'গ্রেড: আলেমের যাচাই প্রয়োজন (grade needs scholar check)',
-                style: TextStyle(fontSize: 12.5, color: t.foreground, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 14, color: t.foreground, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -332,7 +332,7 @@ Future<void> showNoteSheet(BuildContext context, ContentItem item) {
             style: titleStyle(p, size: 18),
           ),
           const SizedBox(height: 4),
-          Text(item.title, style: TextStyle(color: p.muted, fontSize: 13)),
+          Text(item.title, style: TextStyle(color: p.muted, fontSize: 14)),
           const SizedBox(height: 14),
           BanglaText(item.note.trim(), size: 16),
         ],
@@ -471,7 +471,7 @@ class _Player extends StatelessWidget {
                             fontSize: 14.5,
                           ),
                         ),
-                        if (then != null) Text(then, style: TextStyle(color: dim, fontSize: 12)),
+                        if (then != null) Text(then, style: TextStyle(color: dim, fontSize: 14)),
                       ],
                     ),
                   ),
@@ -483,7 +483,7 @@ class _Player extends StatelessWidget {
                         autoNext ? Icons.playlist_play_rounded : Icons.playlist_remove_rounded,
                         size: 20,
                       ),
-                      label: Text(autoNext ? 'পরপর' : 'একটি', style: const TextStyle(fontSize: 13)),
+                      label: Text(autoNext ? 'পরপর' : 'একটি', style: const TextStyle(fontSize: 14)),
                     ),
                 ],
               ),
@@ -499,7 +499,7 @@ class _Player extends StatelessWidget {
                         backgroundColor: Colors.white24,
                       ),
                       const SizedBox(height: 6),
-                      Text('বাংলা অর্থ পড়া হচ্ছে…', style: TextStyle(color: dim, fontSize: 12)),
+                      Text('বাংলা অর্থ পড়া হচ্ছে…', style: TextStyle(color: dim, fontSize: 14)),
                     ],
                   ),
                 )
@@ -535,9 +535,9 @@ class _Player extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Text('${_mmss(pos)}$verse', style: TextStyle(color: dim, fontSize: 12)),
+                            Text('${_mmss(pos)}$verse', style: TextStyle(color: dim, fontSize: 14)),
                             const Spacer(),
-                            Text(_mmss(dur), style: TextStyle(color: dim, fontSize: 12)),
+                            Text(_mmss(dur), style: TextStyle(color: dim, fontSize: 14)),
                           ],
                         ),
                       ],

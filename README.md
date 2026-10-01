@@ -3,10 +3,12 @@
 A calm Android app that shows one Quran ayah every morning (default 9:00 AM) and one hadith
 every night (default 9:00 PM, Bangladesh time), in Arabic and Bangla, with a full-screen reminder.
 
-Tabs: **আজ** (greeting, next prayer, today's ayah and hadith), **মন** (16 moods, each with
-ayahs, full surahs and hadiths, from `mood-content.md`), **বিষয়** (topics with search; ayahs
-and hadiths together), **জীবনী** (Sahaba life stories) and **আরও** (prayer times, Qibla,
-favourites, settings, about, and **সহজ আরবি**). One reader with a player (speed, repeat, play all), share as an
+Tabs: **আজ** (search, প্রিয়, সেটিংস; next prayer; today's ayah and hadith; shortcuts to prayer
+times, Qibla and tasbih; adhkar; continue Quran; **সহজ আরবি**), **কুরআন** (full Quran),
+**দোয়া** (duas, morning/evening adhkar and a tasbih counter), **মন** (16 moods, each with ayahs,
+full surahs and hadiths, from `mood-content.md`, then all topics with search) and **জীবনী**
+(Sahaba life stories). Everything saved (ayahs, hadiths, duas, Quran bookmarks) is on one
+প্রিয় page, and every setting is on one সেটিংস page. See `docs/ux-plan.md`. One reader with a player (speed, repeat, play all), share as an
 image, favourites, light/dark mode, and Bangla labels throughout. Reminders open a full-screen
 reading page with a 12-second countdown.
 
@@ -27,11 +29,11 @@ icons are Material Icons (Apache 2.0) and fonts are under the SIL Open Font Lice
 
 ## সহজ আরবি (Learn Arabic from Bangla)
 
-In আরও → সহজ আরবি. Level 1 (পড়তে শিখি) has 22 short lessons: letters in groups, similar
+On the আজ (Home) screen → সহজ আরবি card. Level 1 (পড়তে শিখি) has 22 short lessons: letters in groups, similar
 sounds, letter shapes, joining, the marks (যবর, যের, পেশ, তানবীন, সুকুন, শাদ্দাহ, মাদ্দ), আল,
 Quran words, qalqalah/ghunnah, stop signs, Surah Al-Fatiha and the last three surahs. Each lesson
-has a Bangla explanation, big tap-to-hear letters and 3–4 games (শুনে বেছে নাও, মিলাও, সাজাও,
-লিখে দেখো). Stars, a daily streak, one-by-one unlocking and a spaced-repetition review are saved
+has a Bangla explanation, big tap-to-hear letters and 3–4 games (শুনে বেছে নিন, মেলান, সাজান,
+লিখে দেখুন). Stars, a daily streak, one-by-one unlocking and a spaced-repetition review are saved
 on the phone. Levels 2–4 show as "শীঘ্রই আসছে".
 
 * All lesson text is original and lives in `tools/build_arabic_lessons.py`, which writes
