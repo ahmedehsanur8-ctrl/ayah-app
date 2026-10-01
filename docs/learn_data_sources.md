@@ -17,6 +17,10 @@ The content DB `assets/learn/learn_content.db` is built by `tools/learn/build_le
 - **Live check:** tanzil.net is blocked from the build computer used here, so the GitHub
   workflow runs the build with `--check-tanzil`. It downloads the live text and fails if
   it differs from the bundled copy.
+- **First run, 1 Oct 2026:** tanzil.net's HTTPS certificate **had expired**, so the live
+  check could not run. Verification is never switched off, so the build used the bundled
+  copy. That copy was downloaded from Tanzil on 28 Sep 2026 (`assets/quran/meta.json`,
+  `generatedAt`) by the "Quran data" workflow.
 
 ## Word grammar (morphology): Quranic Arabic Corpus v0.4
 
@@ -36,8 +40,16 @@ The content DB `assets/learn/learn_content.db` is built by `tools/learn/build_le
 - The build pins the file's SHA-256. On GitHub the workflow tries the official site
   first and accepts it only if it has the same checksum, so a different file can never
   slip in.
-- The official download page may ask for acceptance of terms before downloading, in which
-  case the workflow logs it and uses the mirror.
+- **Result on GitHub, 1 Oct 2026:**
+  - `https://corpus.quran.com/download/` answers (HTTP 200), but the file is behind a
+    **download form** that the page submits with JavaScript (`document.downloadForm.submit()`).
+  - The direct address returns that HTML page (9,187 bytes), not the corpus file.
+  - So the official file cannot be fetched automatically to compare checksums. The build
+    uses the mirror, and the pinned checksum guarantees it is always the same file.
+- **To compare byte for byte:** download the file once by hand from corpus.quran.com/download
+  (accept the terms) and run
+  `python3 tools/learn/build_learn_db.py --qac path/to/quranic-corpus-morphology-0.4.txt`.
+  It stops with an error if the official file differs from the mirror's checksum.
 
 **Terms of use (from the file itself):**
 - Verbatim copies only; **changing the file is not allowed**. The build does not change
