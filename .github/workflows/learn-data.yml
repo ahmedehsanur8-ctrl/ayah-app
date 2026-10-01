@@ -33,7 +33,9 @@ jobs:
         continue-on-error: true
         run: |
           curl -sSL --max-time 60 -o qac-page.html -w 'HTTP %{http_code}, %{size_download} bytes\n' https://corpus.quran.com/download/ || true
-          grep -io 'quranic-corpus-morphology[^"<]*' qac-page.html | sort -u || true
+          # The page's visible text and links, to compare with the mirror.
+          sed -e 's/<[^>]*>/ /g' qac-page.html | tr -s ' \t' ' ' | grep -v '^ *$' | head -80 || true
+          grep -o 'href="[^"]*"' qac-page.html | sort -u | head -40 || true
 
       - name: Build learn_content.db
         run: python3 tools/learn/build_learn_db.py --check-tanzil

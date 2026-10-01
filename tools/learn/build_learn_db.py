@@ -107,7 +107,9 @@ def load_qac(path):
                 log(f'  QAC: {url} -> {e.__class__.__name__}: {e}')
                 continue
             if hashlib.sha256(d).hexdigest() != QAC_SHA256:
-                log(f'  QAC: {url} -> different file (sha256 mismatch), skipped')
+                head = d[:300].decode('utf-8', 'replace').replace('\n', ' ')
+                log(f'  QAC: {url} -> different file ({len(d)} bytes, sha256 mismatch), '
+                    f'skipped. It starts: {head!r}')
                 continue
             data, source = d, url
             break
