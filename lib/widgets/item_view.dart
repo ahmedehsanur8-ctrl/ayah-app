@@ -115,7 +115,7 @@ class CategoryChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: headingFont,
-                fontSize: 13,
+                fontSize: 14,
                 color: fg,
                 fontWeight: FontWeight.w600,
               ),
@@ -210,7 +210,7 @@ class FavoriteButton extends StatelessWidget {
             child: Icon(
               fav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               key: ValueKey(fav),
-              color: fav ? const Color(0xFFE0506B) : (color ?? context.palette.muted),
+              color: fav ? context.palette.heart : (color ?? context.palette.muted),
             ),
           ),
         );

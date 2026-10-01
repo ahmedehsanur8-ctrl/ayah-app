@@ -205,7 +205,7 @@ void main() {
 
     setUp(() => ArabicAudio.files = {});
 
-    testWidgets('শুনে বেছে নাও without recordings shows the Bangla sound', (t) async {
+    testWidgets('শুনে বেছে নিন without recordings shows the Bangla sound', (t) async {
       GameResult? done;
       final its = items(['L02', 'L03', 'L04', 'L01']);
       await t.pumpWidget(
@@ -219,7 +219,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('শুনে বেছে নাও'), findsOneWidget);
+      expect(find.text('শুনে বেছে নিন'), findsOneWidget);
       expect(find.text('অডিও শীঘ্রই'), findsOneWidget);
       for (var k = 0; k < 4; k++) {
         final prompt = t.widget<Text>(find.byKey(const ValueKey('listen-prompt'))).data!;
@@ -260,7 +260,7 @@ void main() {
       expect(done!.wrong.length, 1);
     });
 
-    testWidgets('মিলাও pairs Arabic with its meaning', (t) async {
+    testWidgets('মেলান pairs Arabic with its meaning', (t) async {
       GameResult? done;
       final its = items(['W_baab', 'W_walad', 'W_kataba']);
       await t.pumpWidget(game(MatchGame(items: its, right: 'meaning', onDone: (r) => done = r)));
@@ -278,7 +278,7 @@ void main() {
       expect(done!.wrong, {'W_baab'});
     });
 
-    testWidgets('সাজাও builds a word from its letters, right to left', (t) async {
+    testWidgets('সাজান builds a word from its letters, right to left', (t) async {
       GameResult? done;
       final w = ArabicCourse.item('W_khalaqa')!;
       final parts = ['خَ', 'لَ', 'قَ'];
@@ -288,7 +288,7 @@ void main() {
             puzzles: [
               {'item': w.id, 'parts': parts},
             ],
-            hint: 'সাজাও',
+            hint: 'সাজান',
             onDone: (r) => done = r,
             random: math.Random(2),
           ),
@@ -303,7 +303,7 @@ void main() {
       expect(done!.mistakes, 0);
     });
 
-    testWidgets('সাজাও: a wrong order is a mistake and sends tiles back', (t) async {
+    testWidgets('সাজান: a wrong order is a mistake and sends tiles back', (t) async {
       GameResult? done;
       await t.pumpWidget(
         game(
@@ -390,14 +390,14 @@ void main() {
       expect(scoreTrace(mask, half, box).coverage, lessThan(0.5));
     });
 
-    testWidgets('লিখে দেখো shows the board and the letter name', (t) async {
+    testWidgets('লিখে দেখুন shows the board and the letter name', (t) async {
       await t.pumpWidget(game(TraceGame(items: items(['L02']), onDone: (_) {})));
-      expect(find.text('লিখে দেখো'), findsOneWidget);
+      expect(find.text('লিখে দেখুন'), findsOneWidget);
       expect(find.byKey(const ValueKey('trace-board')), findsOneWidget);
       expect(find.text('বা'), findsOneWidget);
       await t.tap(find.text('হয়ে গেছে'));
       await t.pump();
-      expect(find.text('আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানো।'), findsOneWidget);
+      expect(find.text('আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানুন।'), findsOneWidget);
     });
   });
 
@@ -441,7 +441,7 @@ void main() {
         await t.scrollUntilVisible(find.text('অনুশীলন শুরু করি'), 200);
         await t.tap(find.text('অনুশীলন শুরু করি'));
         await t.pumpAndSettle();
-        expect(find.text('শুনে বেছে নাও'), findsOneWidget);
+        expect(find.text('শুনে বেছে নিন'), findsOneWidget);
         expect(t.takeException(), isNull);
       });
 
@@ -472,7 +472,7 @@ void main() {
         expect(find.text('আজকের রিভিশন'), findsOneWidget);
         await t.tap(find.text('আজকের রিভিশন'));
         await t.pumpAndSettle();
-        expect(find.text('শুনে বেছে নাও'), findsOneWidget);
+        expect(find.text('শুনে বেছে নিন'), findsOneWidget);
       });
     });
   }

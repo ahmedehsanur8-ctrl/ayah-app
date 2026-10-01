@@ -61,7 +61,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           gradient: RadialGradient(
             center: Alignment(0, -0.2),
             radius: 1.1,
-            colors: [Color(0xFF14704F), Brand.deepEmerald, Brand.night],
+            colors: [Brand.greenBright, Brand.deepEmerald, Brand.night],
           ),
         ),
         child: Stack(

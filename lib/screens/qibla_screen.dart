@@ -172,7 +172,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('কিবলার দিক', style: TextStyle(color: p.muted, fontSize: 12.5)),
+                    Text('কিবলার দিক', style: TextStyle(color: p.muted, fontSize: 14)),
                     Text(
                       '$qDeg° · ${directionName(q)}',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
@@ -184,7 +184,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('ফোনের দিক', style: TextStyle(color: p.muted, fontSize: 12.5)),
+                    Text('ফোনের দিক', style: TextStyle(color: p.muted, fontSize: 14)),
                     Text(
                       '${toBanglaDigits(heading.round())}° · ${directionName(heading)}',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
@@ -212,7 +212,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                       ? 'কম্পাস ঠিক করতে হবে: ফোনটি বাতাসে ইংরেজি ৮ অক্ষরের মতো করে কয়েকবার ঘোরান।'
                       : 'দিক ঠিক না মনে হলে ফোনটি বাতাসে ইংরেজি ৮ অক্ষরের মতো করে কয়েকবার ঘোরান। '
                             'ফোন সমতলে রাখুন, চুম্বক বা লোহার জিনিস থেকে দূরে থাকুন।',
-                  style: TextStyle(color: p.text, fontSize: 13.5, height: 1.55),
+                  style: TextStyle(color: p.text, fontSize: 14, height: 1.55),
                 ),
               ),
             ],
@@ -284,7 +284,7 @@ class _CompassPainter extends CustomPainter {
             fontFamily: banglaFont,
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: e.key == 0 ? const Color(0xFFC0392B) : p.text,
+            color: e.key == 0 ? p.north : p.text,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -328,15 +328,25 @@ class _CompassPainter extends CustomPainter {
     final rect = Rect.fromCenter(center: centre, width: s, height: s);
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(4)),
-      Paint()..color = const Color(0xFF1B1B1B),
+      Paint()..color = Brand.kaaba,
     );
+    // Outline, so the black cube shows on the dark dial too.
+    if (palette.isDark) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+        Paint()
+          ..color = palette.gold
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    }
     canvas.drawRect(
       Rect.fromLTWH(rect.left, rect.top + s * 0.22, s, s * 0.13),
-      Paint()..color = const Color(0xFFE2BE62),
+      Paint()..color = Brand.kaabaBand,
     );
     canvas.drawRect(
       Rect.fromLTWH(centre.dx + s * 0.12, rect.top + s * 0.5, s * 0.2, s * 0.5),
-      Paint()..color = const Color(0xFFB8963F),
+      Paint()..color = Brand.kaabaDoor,
     );
   }
 

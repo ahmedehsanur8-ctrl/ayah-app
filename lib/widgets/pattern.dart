@@ -119,7 +119,7 @@ class _LogoPainter extends CustomPainter {
           ..shader = const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1B7A55), Brand.deepEmerald],
+            colors: [Brand.greenPattern, Brand.deepEmerald],
           ).createShader(rect),
       );
     }
