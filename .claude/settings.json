@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "flutter-claude-code": {
+      "source": {
+        "source": "github",
+        "repo": "cleydson/flutter-claude-code"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "flutter-all@flutter-claude-code": true
+  }
+}
