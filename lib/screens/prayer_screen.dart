@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
+import '../models/content.dart';
 import '../services/location.dart';
 import '../services/prayer.dart';
 import '../services/settings.dart';
 import '../theme.dart';
 import '../utils/bangla.dart';
 import '../widgets/ui.dart';
+import 'azan_settings_screen.dart';
 import 'settings_screen.dart' show pickOption;
 
 /// নামাজের সময় ও আজান.
@@ -132,19 +134,11 @@ class _PrayerScreenState extends State<PrayerScreen> {
                       next != null && next.key == list[i].key && _sameDay(next.time, list[i].time),
                   onBell: list[i].isSunrise
                       ? null
-                      : () async {
-                          final key = list[i].key;
-                          final v = await pickOption<String>(
-                            context,
-                            '${list[i].name} · কীভাবে জানাবে',
-                            _s.azanSound(key),
-                            Prayers.azanSounds,
-                          );
-                          if (v != null) {
-                            await _s.setAzanSound(key, v);
-                            await _changed();
-                          }
-                        },
+                      : () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => AzanPrayerScreen(prayer: list[i].key),
+                          ),
+                        ),
                 ),
               ],
             ],
@@ -152,11 +146,12 @@ class _PrayerScreenState extends State<PrayerScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'ডান পাশের চিহ্নে চাপ দিয়ে প্রতি ওয়াক্তের জন্য বেছে নিন: আজান, শুধু নোটিফিকেশন বা বন্ধ। '
+          'কোনো ওয়াক্তে চাপ দিয়ে বেছে নিন: আজানের শব্দ (মসজিদে নববী, মসজিদুল হারাম, '
+          'শুধু নোটিফিকেশন বা বন্ধ), সময় আগে-পিছে করা বা নিজের সময়, আর আগের ও ইকামতের রিমাইন্ডার। '
           'আজান বাজার সময় "থামান" বোতাম বা ফোনের ভলিউম বোতাম চাপলে থেমে যাবে।',
           style: TextStyle(color: p.muted, fontSize: 12.5, height: 1.5),
         ),
-        const SectionLabel('সেটিংস'),
+        const SectionLabel('আজানের সেটিংস'),
         RowGroup(
           children: [
             NavRow(
@@ -204,12 +199,26 @@ class _PrayerScreenState extends State<PrayerScreen> {
             NavRow(
               icon: Icons.volume_up_outlined,
               tint: p.sky,
-              title: 'সাইলেন্ট মোডেও আজান বাজবে',
+              title: 'সাইলেন্ট মোডেও বাজবে',
               subtitle: 'অ্যালার্মের মতো বাজবে, ফোন সাইলেন্ট থাকলেও',
               trailing: Switch(
                 value: _s.azanInSilent,
                 onChanged: (v) async {
                   await _s.setAzanInSilent(v);
+                  await _changed();
+                },
+              ),
+            ),
+            const _VolumeRow(),
+            NavRow(
+              icon: Icons.vibration_rounded,
+              tint: p.mint,
+              title: 'কম্পন',
+              subtitle: 'আজান ও রিমাইন্ডারের সময় ফোন কাঁপবে',
+              trailing: Switch(
+                value: _s.azanVibrate,
+                onChanged: (v) async {
+                  await _s.setAzanVibrate(v);
                   await _changed();
                 },
               ),
@@ -231,22 +240,14 @@ class _PrayerScreenState extends State<PrayerScreen> {
               icon: Icons.play_circle_outline_rounded,
               tint: p.rose,
               title: 'আজান শুনে দেখুন',
-              subtitle: 'এখনই পুরো আজান বাজবে ("থামান" বা ভলিউম বোতামে থামবে)',
-              onTap: () => Prayers.playNow(),
+              subtitle: 'মসজিদে নববী ও মসজিদুল হারাম, ফজরসহ',
+              onTap: () => showListenSheet(context),
             ),
-            if (Prayers.azanBundled)
-              NavRow(
-                icon: Icons.wb_twilight_outlined,
-                tint: p.sand,
-                title: 'ফজরের আজান শুনে দেখুন',
-                subtitle: '"আস-সালাতু খাইরুম মিনান নাউম" সহ',
-                onTap: () => Prayers.playNow(fajr: true),
-              ),
           ],
         ),
         const SizedBox(height: 10),
         Text(
-          'নামাজের সময় ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না। প্রতিবার অ্যাপ খুললে '
+          'নামাজের সময় ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না। কোনো সেটিং বদলালে বা অ্যাপ খুললে '
           'পরের ৩০ দিনের আজান নতুন করে ঠিক করা হয়, ফোন রিস্টার্ট হলেও থাকে। '
           'আজান ঠিকমতো না বাজলে আরও → "অনুমতি ও সেটআপ" দেখুন। স্থানীয় মসজিদের সময়ের সাথে '
           '১–২ মিনিট পার্থক্য হতে পারে।',
@@ -272,7 +273,7 @@ class _PrayerRow extends StatelessWidget {
     final p = context.palette;
     final s = AppState.instance.settings;
     final mode = prayer.isSunrise ? 'off' : s.azanSound(prayer.key);
-    return Container(
+    final row = Container(
       color: isNext ? p.pill : null,
       constraints: const BoxConstraints(minHeight: 60),
       padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
@@ -285,13 +286,23 @@ class _PrayerRow extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              prayer.name,
-              style: TextStyle(
-                fontSize: 16.5,
-                fontWeight: isNext ? FontWeight.w700 : FontWeight.w500,
-                color: prayer.isSunrise ? p.muted : p.text,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  prayer.name,
+                  style: TextStyle(
+                    fontSize: 16.5,
+                    fontWeight: isNext ? FontWeight.w700 : FontWeight.w500,
+                    color: prayer.isSunrise ? p.muted : p.text,
+                  ),
+                ),
+                if (!prayer.isSunrise && Prayers.isAdjusted(s, prayer.key))
+                  Text(
+                    adjustedTimeText(s, prayer),
+                    style: TextStyle(fontSize: 13, color: p.primary, fontWeight: FontWeight.w600),
+                  ),
+              ],
             ),
           ),
           Text(
@@ -319,8 +330,98 @@ class _PrayerRow extends StatelessWidget {
         ],
       ),
     );
+    return onBell == null ? row : InkWell(onTap: onBell, child: row);
   }
 }
+
+/// Azan volume (for all prayers); "শুনে দেখুন" plays at the chosen volume.
+class _VolumeRow extends StatefulWidget {
+  const _VolumeRow();
+
+  @override
+  State<_VolumeRow> createState() => _VolumeRowState();
+}
+
+class _VolumeRowState extends State<_VolumeRow> {
+  double? _drag;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final s = AppState.instance.settings;
+    final v = _drag ?? s.azanVolume;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 4),
+      child: Row(
+        children: [
+          IconBubble(Icons.volume_up_outlined, tint: p.sky, size: 38),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'আজানের ভলিউম · ${toBanglaDigits((v * 100).round())}%',
+                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: p.text),
+                ),
+                Slider(
+                  min: 0.1,
+                  max: 1,
+                  divisions: 9,
+                  value: v,
+                  label: '${toBanglaDigits((v * 100).round())}%',
+                  onChanged: (x) => setState(() => _drag = x),
+                  onChangeEnd: (x) async {
+                    setState(() => _drag = null);
+                    await s.setAzanVolume(x);
+                    await Prayers.schedule(s);
+                  },
+                ),
+                Text(
+                  'ফোনের অ্যালার্ম ভলিউমের তুলনায়',
+                  style: TextStyle(color: p.muted, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "শুনে দেখুন": each sound, with the Fajr recording too.
+Future<void> showListenSheet(BuildContext context) => showModalBottomSheet<void>(
+  context: context,
+  builder: (sheet) => SafeArea(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          child: Text('আজান শুনে দেখুন', style: titleStyle(sheet.palette, size: 18)),
+        ),
+        for (final (sound, fajr) in const [
+          ('nabawi', false),
+          ('nabawi', true),
+          ('haram', false),
+          ('haram', true),
+        ])
+          ListTile(
+            leading: const Icon(Icons.play_circle_outline_rounded),
+            title: Text('${Prayers.azanSounds[sound]}${fajr ? ' · ফজর' : ''}'),
+            onTap: () => Prayers.playNow(sound: sound, fajr: fajr),
+          ),
+        ListTile(
+          leading: const Icon(Icons.stop_circle_outlined),
+          title: const Text('থামান'),
+          onTap: Prayers.stop,
+        ),
+        const SizedBox(height: 8),
+      ],
+    ),
+  ),
+);
 
 /// Shown until a location is chosen.
 class ChooseLocationView extends StatelessWidget {

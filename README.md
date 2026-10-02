@@ -12,8 +12,10 @@ reading page with a 12-second countdown.
 
 Prayer times are calculated on the phone with the [adhan](https://pub.dev/packages/adhan)
 library (default: University of Islamic Sciences, Karachi; Asr Hanafi), from the phone's
-approximate location or a city picked by hand. The azan notification uses a CC BY-SA 4.0
-recording from Wikimedia Commons (`res/raw/azan.mp3`, details in `assets/azan_license.json`).
+approximate location or a city picked by hand. Each prayer has its own azan settings (sound,
+time adjustment or a fixed time, reminder before, iqamah reminder); see `docs/AZAN.md`. The
+azan uses Wikimedia Commons recordings at their original quality (`res/raw/azan.mp3`,
+`res/raw/azan_fajr.webm`, details in `assets/azan_license.json`).
 The Qibla compass uses the phone's rotation sensor. The location never leaves the phone
 (see `docs/PRIVACY.md` and `docs/DATA_SAFETY.md`).
 

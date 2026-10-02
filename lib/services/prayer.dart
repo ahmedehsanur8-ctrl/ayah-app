@@ -204,6 +204,12 @@ class Prayers {
       }
     }
     events.sort((a, b) => (a['t'] as int).compareTo(b['t'] as int));
+    // Android rings one event at a time and then sets the next one *after* it,
+    // so two events at the same moment would lose one: keep every time unique.
+    for (var i = 1; i < events.length; i++) {
+      final prev = events[i - 1]['t'] as int;
+      if ((events[i]['t'] as int) <= prev) events[i]['t'] = prev + 1000;
+    }
     return jsonEncode(events);
   }
 

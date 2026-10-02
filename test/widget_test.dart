@@ -196,8 +196,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final s = await AppSettings.load();
     await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
-    await s.setAzanMode('asr', 'notify');
-    await s.setAzanMode('isha', 'off');
+    await s.setAzanSound('asr', 'notify');
+    await s.setAzanSound('isha', 'off');
     Prayers.azanBundled = true;
     final now = DateTime(2026, 3, 21, 0, 1);
     final events = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
@@ -211,6 +211,75 @@ void main() {
           .every((e) => e['fajr'] == true && e['mode'] == 'azan'),
       isTrue,
     );
+    expect(s.azanInSilent, isTrue);
+  });
+
+  test('azan: sound, adjustment, fixed time, reminders before and iqamah', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = await AppSettings.load();
+    await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+    Prayers.azanBundled = true;
+    // Older setting carries over: "azan" -> Masjid an-Nabawi.
+    expect(s.azanSound('asr'), 'nabawi');
+    await s.setAzanSound('dhuhr', 'haram');
+    await s.setAzanSound('isha', 'off');
+    await s.setAzanOffset('asr', 10);
+    await s.setAzanOffset('maghrib', 99); // clamped to +30
+    expect(s.azanOffset('maghrib'), 30);
+    await s.setAzanFixedMinutes('dhuhr', 13 * 60 + 30); // 1:30 pm every day
+    await s.setAzanBefore('fajr', 15);
+    await s.setIqamahAfter('asr', 20);
+
+    final day = DateTime(2026, 3, 21);
+    final today = {for (final p in Prayers.forDay(s, day)) p.key: p};
+    expect(Prayers.azanTime(s, today['asr']!), today['asr']!.time.add(const Duration(minutes: 10)));
+    expect(Prayers.azanTime(s, today['dhuhr']!), DateTime(2026, 3, 21, 13, 30));
+    expect(Prayers.azanTime(s, today['fajr']!), today['fajr']!.time);
+    expect(Prayers.isAdjusted(s, 'asr'), isTrue);
+    expect(Prayers.isAdjusted(s, 'fajr'), isFalse);
+
+    final now = DateTime(2026, 3, 21, 0, 1);
+    final events = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
+    List<Map<String, dynamic>> on(String key, String mode) => [
+      for (final e in events)
+        if (e['key'] == key && e['mode'] == mode) e,
+    ];
+    int first(String key, String mode) => on(key, mode).first['t'] as int;
+    final ms = Duration.millisecondsPerMinute;
+    // Isha off: no azan; Dhuhr plays Masjid al-Haram at 1:30.
+    expect(on('isha', 'azan'), isEmpty);
+    expect(on('dhuhr', 'azan').every((e) => e['sound'] == 'haram'), isTrue);
+    expect(first('dhuhr', 'azan'), DateTime(2026, 3, 21, 13, 30).millisecondsSinceEpoch);
+    expect(first('asr', 'azan'), Prayers.azanTime(s, today['asr']!).millisecondsSinceEpoch);
+    // Reminder 15 minutes before Fajr, iqamah 20 minutes after the moved Asr azan.
+    final fajrBefore = on('fajr', 'before').first;
+    expect(fajrBefore['mins'], 15);
+    expect(fajrBefore['azan'] - fajrBefore['t'], 15 * ms);
+    final asrIqamah = on('asr', 'iqamah').first;
+    expect(asrIqamah['t'] - asrIqamah['azan'], 20 * ms);
+    expect(asrIqamah['azan'], first('asr', 'azan'));
+    // Sorted by time, all in the future.
+    for (var i = 1; i < events.length; i++) {
+      expect(events[i]['t'] as int, greaterThan(events[i - 1]['t'] as int));
+    }
+    expect(events.every((e) => (e['t'] as int) > now.millisecondsSinceEpoch), isTrue);
+
+    // Two events at the same moment both stay (one second apart): the Dhuhr
+    // azan at 1:30 and a reminder 10 minutes before an Asr azan fixed at 1:40.
+    await s.setAzanFixedMinutes('asr', 13 * 60 + 40);
+    await s.setAzanBefore('asr', 10);
+    final clash = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
+    final at = DateTime(2026, 3, 21, 13, 30).millisecondsSinceEpoch;
+    final dhuhr = clash.firstWhere((e) => e['key'] == 'dhuhr' && e['mode'] == 'azan');
+    final asrBefore = clash.firstWhere((e) => e['key'] == 'asr' && e['mode'] == 'before');
+    expect({dhuhr['t'], asrBefore['t']}, {at, at + 1000});
+    await s.setAzanFixedMinutes('asr', null);
+
+    // Turning the fixed time off goes back to the calculated time.
+    await s.setAzanFixedMinutes('dhuhr', null);
+    expect(Prayers.azanTime(s, today['dhuhr']!), today['dhuhr']!.time);
+    expect(s.azanVolume, 1.0);
+    expect(s.azanVibrate, isTrue);
     expect(s.azanInSilent, isTrue);
   });
 }
