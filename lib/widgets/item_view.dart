@@ -255,9 +255,15 @@ class ShareButton extends StatelessWidget {
 
 /// The full text of an item: Arabic, Bangla, reference and note.
 class ItemBody extends StatelessWidget {
-  const ItemBody(this.item, {super.key});
+  const ItemBody(this.item, {super.key, this.arabic, this.afterMeaning});
 
   final ContentItem item;
+
+  /// Shown instead of the plain Arabic (the reminder screen in learning mode).
+  final Widget? arabic;
+
+  /// Shown right under the Bangla meaning (the reminder's "এই আয়াত বুঝুন").
+  final Widget? afterMeaning;
 
   @override
   Widget build(BuildContext context) {
@@ -265,9 +271,10 @@ class ItemBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ArabicText(item.arabic, size: item.isAyah ? 31 : 25),
+        arabic ?? ArabicText(item.arabic, size: item.isAyah ? 31 : 25),
         const OrnamentDivider(),
         BanglaText(item.bangla, size: 18),
+        ?afterMeaning,
         const SizedBox(height: 16),
         Row(
           children: [

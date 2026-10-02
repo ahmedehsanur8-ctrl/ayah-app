@@ -8,6 +8,8 @@ import 'package:ayah_reminder/features/learn/srs/srs_service.dart';
 import 'package:ayah_reminder/features/learn/state/learn_controller.dart';
 import 'package:ayah_reminder/features/learn/ui/screens/learn_screens.dart';
 import 'package:ayah_reminder/features/learn/ui/screens/lesson_screen.dart';
+import 'package:ayah_reminder/screens/reading_screen.dart';
+import 'package:ayah_reminder/features/learn/ui/widgets/learn_widgets.dart';
 import 'package:ayah_reminder/features/learn/ui/widgets/word_sheet.dart';
 import 'package:ayah_reminder/services/quran.dart';
 import 'package:ayah_reminder/theme.dart';
@@ -360,6 +362,52 @@ void main() {
         await settle(t);
         expect(find.text('Quranic Arabic Corpus (morphology v0.4)'), findsOneWidget);
         expect(find.text('FSRS (package:fsrs)'), findsOneWidget);
+      });
+
+      testWidgets('reminder screen: one button for ayahs; learning mode marks known words', (
+        t,
+      ) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        final data = AppState.instance.data;
+        final ayah = data.items.firstWhere((i) => i.isAyah && i.surah > 0 && i.ayahStart > 0);
+        final hadith = data.items.firstWhere((i) => !i.isAyah);
+        await AppState.instance.settings.setLearnModeOn(false);
+
+        await t.pumpWidget(app(ReadingScreen(key: UniqueKey(), item: hadith), b));
+        await t.pump(const Duration(seconds: 1));
+        expect(find.text('এই আয়াত বুঝুন'), findsNothing);
+
+        await t.pumpWidget(app(ReadingScreen(key: UniqueKey(), item: ayah), b));
+        await t.pump(const Duration(seconds: 1));
+        expect(find.text('এই আয়াত বুঝুন'), findsOneWidget);
+        expect(find.textContaining('শব্দের'), findsNothing, reason: 'learning mode off');
+
+        // Learning mode on, with one word of the ayah known.
+        final learn = Learn.instance;
+        final words = (await t.runAsync(
+          () => content.ayahWords(ayah.surah, ayah.ayahStart, ayah.ayahEnd),
+        ))!;
+        final first = words.firstWhere((w) => w.lemmaId != null);
+        await t.runAsync(() async {
+          await learn.setLearningMode(true);
+          await learn.addWord(first.lemmaId!);
+        });
+        expect(AppState.instance.settings.learnModeOn, isTrue);
+        await t.pumpWidget(app(ReadingScreen(key: UniqueKey(), item: ayah), b));
+        await settle(t);
+        final counted = words.where((w) => w.lemmaId != null).toList();
+        final known = counted.where((w) => w.lemmaId == first.lemmaId).length;
+        expect(find.text(knownLine(known, counted.length)), findsOneWidget);
+
+        await t.ensureVisible(find.text('এই আয়াত বুঝুন'));
+        await t.pump();
+        await t.tap(find.text('এই আয়াত বুঝুন'));
+        await settle(t);
+        expect(find.byType(LearnAyahScreen), findsOneWidget);
+        await t.runAsync(() => learn.setLearningMode(false));
+        // Let the 12-second countdown and timers finish.
+        await t.pumpWidget(const SizedBox());
+        await t.pump(const Duration(seconds: 13));
       });
 
       testWidgets('every lesson opens on a small phone at 1.3× text', (t) async {

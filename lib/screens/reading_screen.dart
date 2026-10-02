@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../app_state.dart';
+import '../features/learn/ui/reminder_learning.dart';
 import '../models/content.dart';
 import '../services/audio.dart';
 import '../services/reminders.dart';
@@ -167,7 +168,11 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
                                   ),
                                 ),
                                 const SizedBox(height: 18),
-                                ItemBody(widget.item),
+                                ItemBody(
+                                  widget.item,
+                                  arabic: ReminderLearningAyah.forItem(widget.item),
+                                  afterMeaning: UnderstandAyahButton.forItem(widget.item),
+                                ),
                               ],
                             ),
                           ),

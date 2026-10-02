@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../../app_state.dart';
 import '../data/content_repository.dart';
 import '../data/progress_repository.dart';
 import '../domain/models.dart';
@@ -147,6 +148,7 @@ class Learn extends ChangeNotifier {
     await p.addActivity(today, seconds: seconds, lessons: 1, wordsAdded: ratings.length);
     if (!settings.containsKey('learning_mode_on')) {
       await p.setSetting('learning_mode_on', '1');
+      await _mirrorLearningMode(true);
     }
     await refresh();
   }
@@ -188,7 +190,20 @@ class Learn extends ChangeNotifier {
     await refresh();
   }
 
-  Future<void> setLearningMode(bool on) => setSetting('learning_mode_on', on ? '1' : '0');
+  Future<void> setLearningMode(bool on) async {
+    await _mirrorLearningMode(on);
+    await setSetting('learning_mode_on', on ? '1' : '0');
+  }
+
+  /// Keeps the quick copy in the app settings in step (see AppSettings.learnModeOn).
+  static Future<void> _mirrorLearningMode(bool on) async {
+    try {
+      await AppState.instance.settings.setLearnModeOn(on);
+    } catch (_) {
+      // AppState not loaded (some tests).
+    }
+  }
+
   Future<void> setDailyGoal(int min) => setSetting('daily_goal_min', '$min');
   Future<void> setShowTranslit(bool on) => setSetting('show_translit', on ? '1' : '0');
 

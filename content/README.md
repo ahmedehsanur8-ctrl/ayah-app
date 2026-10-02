@@ -18,9 +18,22 @@ word shows a small "খসড়া" badge.
 2. Open **`REVIEW_TEXTS.csv`**. It holds the lesson titles, goals, the short Bangla
    explanation in each lesson, and the one-line idea for each root (মূল অক্ষর). Check
    them in the same way.
-3. Send both files back. The corrections then go into `lemmas_bn.csv`, `roots_bn.csv`
-   and `lessons/*.json`, and `reviewed_by` changes from `DRAFT` to the teacher's name
-   and date.
+3. Send both files back. Then run:
+   `python3 tools/learn/apply_review.py --reviewer "Teacher's name" --date YYYY-MM-DD --sheet REVIEW_SHEET.csv --texts REVIEW_TEXTS.csv`
+   and `python3 tools/learn/build_learn_db.py`.
+
+Rules for the teacher's answers (decided by the app owner):
+
+| Teacher wrote | Result |
+|---|---|
+| *yes* | Approved as written |
+| A correction | The teacher's text replaces the draft and counts as approved (no second round) |
+| *no*, nothing, or only a comment | Stays DRAFT and keeps the "খসড়া" badge |
+
+- Approved items get the teacher's name and date in `reviewed_by` / `reviewed_on`.
+- A lesson leaves DRAFT when its title, goal and explanation are all approved.
+- Every changed text is listed in **`CHANGELOG.md`** (old text → new text, with the
+  teacher's comment).
 
 Meanings are short and literal on purpose: no tafsir, no rulings.
 

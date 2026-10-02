@@ -125,6 +125,12 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// কুরআন বুঝি learning mode, mirrored here (the learn DB holds the real setting)
+  /// so the reminder screen knows at once whether to mark known words.
+  bool get learnModeOn => _prefs.getBool('learnModeOn') ?? false;
+
+  Future<void> setLearnModeOn(bool v) => _prefs.setBool('learnModeOn', v);
+
   /// Show the Bangla pronunciation under the Arabic.
   bool get showUccharon => _prefs.getBool('showUccharon') ?? true;
 
