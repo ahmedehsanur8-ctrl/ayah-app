@@ -108,12 +108,31 @@ class _LessonScreenState extends State<LessonScreen> {
               if (lesson.isDraft) const DraftBadge(),
             ],
           ),
+          // Emerald step progress with "ধাপ ২/৭".
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(6),
-            child: LinearProgressIndicator(
-              value: (_page + 1) / steps.length,
-              minHeight: 6,
-              backgroundColor: p.surfaceSoft,
+            preferredSize: const Size.fromHeight(30),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: (_page + 1) / steps.length,
+                        minHeight: 8,
+                        backgroundColor: p.pill,
+                        color: p.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'ধাপ ${toBanglaDigits(_page + 1)}/${toBanglaDigits(steps.length)}',
+                    style: TextStyle(color: p.muted, fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -433,10 +452,12 @@ class _WordCardState extends State<_WordCard> {
     final canTranslit = widget.level == 1 && Learn.instance.showTranslit && l.translit != null;
     return AppCard(
       onTap: () => showWordSheet(context, widget.word, lemmaId: l.id),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ArabicWord(widget.word, size: 40, highlight: widget.word.spanOf(l.id)),
+          FocusWordCard(word: widget.word, size: 40, highlight: widget.word.spanOf(l.id)),
+          const SizedBox(height: 8),
           Row(
             children: [
               Expanded(child: LessonText(l.meaning ?? '—', size: 20, weight: FontWeight.w700)),
@@ -652,8 +673,7 @@ class _ChoiceItemState extends State<_ChoiceItem> {
           LessonText('“${d.meaning(target)}”', size: 22, weight: FontWeight.w700),
         ] else ...[
           LessonText('এর অর্থ কী?', size: 16, color: context.palette.muted),
-          if (word != null)
-            AppCard(child: ArabicWord(word, size: 40, highlight: word.spanOf(target))),
+          if (word != null) FocusWordCard(word: word, size: 40, highlight: word.spanOf(target)),
         ],
         const SizedBox(height: 10),
         for (final o in options)
@@ -792,9 +812,7 @@ class _SplitItemState extends State<_SplitItem> {
           size: 16,
           color: context.palette.muted,
         ),
-        AppCard(
-          child: ArabicWord(w, size: 44, highlight: target == null ? null : w.spanOf(target)),
-        ),
+        FocusWordCard(word: w, highlight: target == null ? null : w.spanOf(target)),
         const SizedBox(height: 10),
         if (!done)
           for (final o in options)
@@ -996,7 +1014,7 @@ class _RecallPageState extends State<_RecallPage> {
           'মনে করি',
           'অর্থটা মনে মনে বলুন, তারপর দেখুন। ${toBanglaDigits(_i + 1)} / ${toBanglaDigits(ids.length)}',
         ),
-        AppCard(child: ArabicWord(w, size: 44, highlight: w.spanOf(id))),
+        FocusWordCard(word: w, highlight: w.spanOf(id)),
         const SizedBox(height: 12),
         if (!_shown)
           OutlinedButton(

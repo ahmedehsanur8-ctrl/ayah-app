@@ -1336,8 +1336,8 @@ class _TraceGameState extends State<TraceGame> {
                       letter: item.ar,
                       strokes: _strokes,
                       guide: p.isDark
-                          ? Brand.gold.withValues(alpha: 0.33)
-                          : Brand.green.withValues(alpha: 0.2),
+                          ? p.gold.withValues(alpha: 0.33)
+                          : p.primary.withValues(alpha: 0.2),
                       ink: p.primary,
                     ),
                   ),

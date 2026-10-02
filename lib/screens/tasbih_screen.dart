@@ -97,7 +97,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
                   itemCount: TasbihZikr.all.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (context, i) => ChoiceChip(
-                    label: Text(TasbihZikr.all[i].bangla, style: const TextStyle(fontSize: 14)),
+                    label: Text(TasbihZikr.all[i].bangla),
                     selected: i == _zikr,
                     onSelected: (_) {
                       setState(() {
@@ -143,7 +143,7 @@ class _TasbihScreenState extends State<TasbihScreen> {
                     Text(
                       z.meaning,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 15, color: p.muted),
+                      style: TextStyle(fontSize: 16, color: p.muted),
                     ),
                   ],
                 ),
@@ -152,41 +152,61 @@ class _TasbihScreenState extends State<TasbihScreen> {
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, c) {
-                    final size = (c.maxWidth < c.maxHeight ? c.maxWidth : c.maxHeight) - 8;
+                    final size = ((c.maxWidth < c.maxHeight ? c.maxWidth : c.maxHeight) - 8).clamp(
+                      160.0,
+                      320.0,
+                    );
+                    // Night circle with a gold ring that fills toward the target.
                     return Center(
                       child: Semantics(
                         button: true,
                         label: 'গণনা করতে চাপ দিন',
-                        child: Material(
-                          color: p.greenCard,
-                          shape: const CircleBorder(),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            key: const ValueKey('tasbih-tap'),
-                            onTap: _tap,
-                            child: SizedBox.square(
-                              dimension: size.clamp(160.0, 320.0),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  FittedBox(
-                                    child: Text(
-                                      toBanglaDigits(inRound),
-                                      style: const TextStyle(
-                                        fontSize: 64,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    _target == 0 ? 'চাপ দিন' : '/ ${toBanglaDigits(_target)}',
-                                    style: TextStyle(color: p.gold, fontSize: 18),
-                                  ),
-                                ],
+                        value: toBanglaDigits(_count),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox.square(
+                              dimension: size,
+                              child: CircularProgressIndicator(
+                                value: _target == 0 ? 0 : inRound / _target,
+                                strokeWidth: 7,
+                                color: p.gold,
+                                backgroundColor: p.border,
+                                semanticsLabel: 'লক্ষ্যের অগ্রগতি',
                               ),
                             ),
-                          ),
+                            Material(
+                              color: p.night,
+                              shape: const CircleBorder(),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                key: const ValueKey('tasbih-tap'),
+                                onTap: _tap,
+                                child: SizedBox.square(
+                                  dimension: size - 20,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      FittedBox(
+                                        child: Text(
+                                          toBanglaDigits(inRound),
+                                          style: TextStyle(
+                                            fontSize: 64,
+                                            fontWeight: FontWeight.w700,
+                                            color: p.onNight,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        _target == 0 ? 'চাপ দিন' : '/ ${toBanglaDigits(_target)}',
+                                        style: TextStyle(color: p.gold, fontSize: 18),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -197,9 +217,9 @@ class _TasbihScreenState extends State<TasbihScreen> {
               Text(
                 _target == 0
                     ? 'মোট ${toBanglaDigits(_count)} বার'
-                    : 'মোট ${toBanglaDigits(_count)} বার · ${toBanglaDigits(rounds)} রাউন্ড পূর্ণ',
+                    : 'মোট ${toBanglaDigits(_count)} বার, ${toBanglaDigits(rounds)} রাউন্ড পূর্ণ',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: p.muted, fontSize: 15),
+                style: TextStyle(color: p.muted, fontSize: 16),
               ),
             ],
           ),

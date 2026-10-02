@@ -4,6 +4,7 @@ import '../../../../models/content.dart';
 import '../../../../screens/settings_screen.dart';
 import '../../../../services/quran.dart';
 import '../../../../theme.dart';
+import '../../../../widgets/night.dart';
 import '../../../../widgets/ui.dart';
 import '../../domain/models.dart';
 import '../../srs/srs_service.dart';
@@ -257,46 +258,46 @@ class _ContinueCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final l = next;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [p.greenCard, p.greenCardDark]),
-        borderRadius: BorderRadius.circular(radiusL),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Material(
+      color: p.night,
+      borderRadius: BorderRadius.circular(radiusL),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
         children: [
-          Text(
-            l == null ? 'সব পাঠ শেষ' : 'পরের পাঠ · স্তর ${toBanglaDigits(l.level)}',
-            style: TextStyle(color: p.gold, fontSize: 14, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            l == null
-                ? 'মাশাআল্লাহ! এখন রিভিউ চালিয়ে যান।'
-                : '${toBanglaDigits(l.ord)}. ${l.title}',
-            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
-          ),
-          if (l != null) ...[
-            Text(
-              '${l.objective} · ${toBanglaDigits(l.minutes)} মিনিট',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 15),
+          const GirihLayer(cell: 44, opacity: 0.16),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l == null ? 'সব পাঠ শেষ' : 'পরের পাঠ · স্তর ${toBanglaDigits(l.level)}',
+                  style: TextStyle(color: p.gold, fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l == null
+                      ? 'মাশাআল্লাহ! এখন রিভিউ চালিয়ে যান।'
+                      : '${toBanglaDigits(l.ord)}. ${l.title}',
+                  style: nightTitleStyle(p, size: 20),
+                ),
+                if (l != null) ...[
+                  Text(
+                    '${l.objective}, ${toBanglaDigits(l.minutes)} মিনিট',
+                    style: TextStyle(color: p.onNightMuted, fontSize: 15),
+                  ),
+                  const SizedBox(height: 12),
+                  GoldButton(
+                    onPressed: () => push(context, LessonScreen(lesson: l)),
+                    icon: Icons.play_arrow_rounded,
+                    label: l.ord == 1 && Learn.instance.lessonsDone == 0
+                        ? 'শুরু করুন'
+                        : 'চালিয়ে যান',
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: () => push(context, LessonScreen(lesson: l)),
-              style: FilledButton.styleFrom(
-                backgroundColor: p.gold,
-                foregroundColor: Brand.greenDark,
-                minimumSize: const Size(0, 52),
-              ),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: Text(
-                l.ord == 1 && Learn.instance.lessonsDone == 0 ? 'শুরু করুন' : 'চালিয়ে যান',
-                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
+          ),
         ],
       ),
     );

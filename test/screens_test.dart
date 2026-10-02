@@ -237,14 +237,14 @@ void main() {
           await t.pump();
         }
         expect(find.textContaining('৩৩ বার পূর্ণ হয়েছে'), findsOneWidget);
-        expect(find.text('মোট ৩৩ বার · ১ রাউন্ড পূর্ণ'), findsOneWidget);
+        expect(find.text('মোট ৩৩ বার, ১ রাউন্ড পূর্ণ'), findsOneWidget);
         expect(AppState.instance.settings.tasbihCount, 33);
         await t.pumpWidget(app(TasbihScreen(key: UniqueKey()), b));
         await t.pumpAndSettle();
-        expect(find.text('মোট ৩৩ বার · ১ রাউন্ড পূর্ণ'), findsOneWidget);
+        expect(find.text('মোট ৩৩ বার, ১ রাউন্ড পূর্ণ'), findsOneWidget);
         await t.tap(find.text('আবার শুরু'));
         await t.pump();
-        expect(find.text('মোট ০ বার · ০ রাউন্ড পূর্ণ'), findsOneWidget);
+        expect(find.text('মোট ০ বার, ০ রাউন্ড পূর্ণ'), findsOneWidget);
       });
 
       testWidgets('mood page and reader with player', (t) async {

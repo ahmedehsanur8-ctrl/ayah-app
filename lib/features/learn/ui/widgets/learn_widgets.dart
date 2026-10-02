@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../widgets/night.dart';
+
 import '../../../../app_state.dart';
 import '../../../../models/content.dart';
 import '../../../../theme.dart';
@@ -17,6 +19,7 @@ class ArabicWord extends StatelessWidget {
     this.highlight,
     this.known = false,
     this.color,
+    this.onNight = false,
   });
 
   final QuranWord word;
@@ -24,6 +27,9 @@ class ArabicWord extends StatelessWidget {
   final (int, int)? highlight;
   final bool known;
   final Color? color;
+
+  /// On a night card: warm white letters, the taught part in gold.
+  final bool onNight;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +39,7 @@ class ArabicWord extends StatelessWidget {
       fontFamily: arabicFont,
       fontSize: size * scale,
       height: 1.9,
-      color: color ?? p.arabic,
+      color: color ?? (onNight ? p.arabicOnNight : p.arabic),
       decoration: known ? TextDecoration.underline : null,
       decorationColor: p.primary,
       decorationThickness: 2,
@@ -48,7 +54,7 @@ class ArabicWord extends StatelessWidget {
               TextSpan(text: t.substring(0, h.$1)),
               TextSpan(
                 text: t.substring(h.$1, h.$2),
-                style: TextStyle(color: p.primary, fontWeight: FontWeight.w700),
+                style: TextStyle(color: onNight ? p.gold : p.primary, fontWeight: FontWeight.w700),
               ),
               TextSpan(text: t.substring(h.$2)),
             ],
@@ -60,6 +66,41 @@ class ArabicWord extends StatelessWidget {
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Text.rich(span, textAlign: TextAlign.center),
+      ),
+    );
+  }
+}
+
+/// The focus word, big, on a navy card with the girih pattern; the part being
+/// taught is gold.
+class FocusWordCard extends StatelessWidget {
+  const FocusWordCard({super.key, required this.word, this.highlight, this.size = 44, this.onTap});
+
+  final QuranWord word;
+  final (int, int)? highlight;
+  final double size;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Material(
+      color: p.night,
+      borderRadius: BorderRadius.circular(radiusM),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          children: [
+            const GirihLayer(cell: 44, opacity: 0.16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Center(
+                child: ArabicWord(word, size: size, highlight: highlight, onNight: true),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

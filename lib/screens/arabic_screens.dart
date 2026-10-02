@@ -6,7 +6,7 @@ import '../services/arabic.dart';
 import '../services/quran.dart';
 import '../theme.dart';
 import '../widgets/arabic_games.dart';
-import '../widgets/pattern.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 
 // ------------------------------------------------------------------ home
@@ -114,16 +114,10 @@ class _Hero extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radiusL),
       child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [p.greenCard, p.greenCardDark],
-          ),
-        ),
+        color: p.night,
         child: Stack(
           children: [
-            const PatternLayer(color: Brand.gold, opacity: 0.07),
+            const GirihLayer(),
             Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
@@ -144,17 +138,14 @@ class _Hero extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              'কুরআন পড়তে শিখি',
-                              style: titleStyle(p, size: 22).copyWith(color: Colors.white),
-                            ),
+                            Text('কুরআন পড়তে শিখি', style: nightTitleStyle(p, size: 22)),
                           ],
                         ),
                       ),
-                      const Text(
+                      Text(
                         'أ ب ت',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(fontFamily: arabicFont, fontSize: 30, color: Brand.gold),
+                        style: TextStyle(fontFamily: arabicFont, fontSize: 30, color: p.gold),
                       ),
                     ],
                   ),
@@ -162,14 +153,16 @@ class _Hero extends StatelessWidget {
                   Row(
                     children: [
                       _stat(
-                        Icons.local_fire_department_rounded,
+                        p,
+                        Icons.local_fire_department_outlined,
                         '${toBanglaDigits(streak)} দিন',
                         'টানা',
                       ),
                       const SizedBox(width: 10),
-                      _stat(Icons.star_rounded, toBanglaDigits(pr.totalStars), 'তারা'),
+                      _stat(p, Icons.star_outline_rounded, toBanglaDigits(pr.totalStars), 'তারা'),
                       const SizedBox(width: 10),
                       _stat(
+                        p,
                         Icons.check_circle_outline_rounded,
                         '${toBanglaDigits(done)}/${toBanglaDigits(total)}',
                         'পাঠ',
@@ -179,8 +172,8 @@ class _Hero extends StatelessWidget {
                   const SizedBox(height: 14),
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: Brand.gold,
-                      foregroundColor: Brand.greenDark,
+                      backgroundColor: p.gold,
+                      foregroundColor: p.night,
                     ),
                     onPressed: () => push(context, LessonScreen(index: pr.nextIndex)),
                     icon: const Icon(Icons.play_arrow_rounded),
@@ -198,16 +191,13 @@ class _Hero extends StatelessWidget {
     );
   }
 
-  Widget _stat(IconData icon, String value, String label) => Expanded(
+  Widget _stat(Palette p, IconData icon, String value, String label) => Expanded(
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: p.nightLine, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
-          Icon(icon, color: Brand.gold, size: 20),
+          Icon(icon, color: p.gold, size: 20),
           const SizedBox(width: 6),
           Expanded(
             child: Column(
@@ -216,13 +206,9 @@ class _Hero extends StatelessWidget {
                 Text(
                   value,
                   maxLines: 1,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: p.onNight, fontWeight: FontWeight.w700, fontSize: 14),
                 ),
-                Text(label, style: const TextStyle(color: Brand.gold, fontSize: 14)),
+                Text(label, style: TextStyle(color: p.gold, fontSize: 14)),
               ],
             ),
           ),
@@ -411,7 +397,7 @@ class _ArabicLevelScreenState extends State<ArabicLevelScreen> {
                             toBanglaDigits(l.n),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: stars > 0 ? Brand.gold : p.primary,
+                              color: stars > 0 ? p.goldText : p.primary,
                             ),
                           )
                         : Icon(Icons.lock_outline_rounded, size: 18, color: p.muted),

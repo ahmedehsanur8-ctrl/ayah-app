@@ -5,8 +5,10 @@
 import 'dart:io';
 
 import 'package:ayah_reminder/app_state.dart';
+import 'package:ayah_reminder/features/learn/state/learn_controller.dart';
 import 'package:ayah_reminder/features/learn/ui/screens/learn_screens.dart';
-import 'package:ayah_reminder/screens/arabic_screens.dart';
+import 'package:ayah_reminder/features/learn/ui/screens/lesson_screen.dart';
+import 'package:ayah_reminder/screens/arabic_screens.dart' hide LessonScreen;
 import 'package:ayah_reminder/screens/dua_screens.dart';
 import 'package:ayah_reminder/screens/favorites_screen.dart';
 import 'package:ayah_reminder/screens/home_shell.dart';
@@ -53,6 +55,7 @@ final shots = <String, Widget Function()>{
   'duas': () => const DuaHomeScreen(),
   'tasbih': () => const TasbihScreen(),
   'learn': () => const LearnDashboardScreen(),
+  'lesson': () => LessonScreen(lesson: Learn.instance.lessons.first),
   'arabic': () => const ArabicHomeScreen(),
   'mood': () => const MoodScreen(),
   'stories': () => const StoriesScreen(),
@@ -60,6 +63,15 @@ final shots = <String, Widget Function()>{
   'saved': () => const FavoritesScreen(),
   'settings': () => const SettingsScreen(),
   'setup': () => const SetupScreen(),
+};
+
+/// Steps to take before a picture (e.g. move to the word step of a lesson).
+final before = <String, Future<void> Function(WidgetTester)>{
+  'lesson': (t) async {
+    await t.tap(find.text('পরের ধাপ'));
+    await settleLearn(t, 12);
+    await t.pump(const Duration(milliseconds: 600));
+  },
 };
 
 void main() {
@@ -100,6 +112,7 @@ void main() {
         await t.pumpWidget(themedApp(e.value(), b));
         await settleLearn(t, 12);
         await t.pump(const Duration(milliseconds: 600));
+        await before[e.key]?.call(t);
         await expectLater(
           find.byType(MaterialApp),
           matchesGoldenFile('../docs/redesign/${e.key}-$mode.png'),
