@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
+import '../services/fasting.dart';
 import '../services/location.dart';
 import '../services/prayer.dart';
 import '../services/settings.dart';
@@ -14,6 +15,7 @@ import '../widgets/night.dart';
 import '../widgets/ui.dart';
 import 'azan_settings_screen.dart';
 import 'qibla_screen.dart';
+import 'sehri_screens.dart';
 import 'settings_screen.dart';
 
 /// নামাজের সময় ও আজান.
@@ -96,7 +98,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
                       onTap: () => showLocationSheet(context),
                     ),
                     Text(
-                      '${banglaDate(now)} · ${hijriDate(now)}',
+                      '${banglaDate(now)} · ${Fasting.hijriText(_s, now)}',
                       style: TextStyle(color: p.onNightMuted, fontSize: 14),
                     ),
                   ],
@@ -180,6 +182,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
                 'আজান বাজার সময় "থামান" বোতাম বা ফোনের ভলিউম বোতাম চাপলে থেমে যাবে।',
                 style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
               ),
+              const SehriIftarCard(),
               const SizedBox(height: 14),
               ActionRow(
                 children: [

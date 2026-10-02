@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import '../app_state.dart';
 import '../models/content.dart';
 import 'duas.dart';
+import 'fasting.dart';
 import 'reminders.dart';
 import 'settings.dart';
 
@@ -170,6 +171,8 @@ class Prayers {
   /// The prayer times the Android side should act on, as JSON: the azan (or
   /// notification), the reminder before it and the iqamah reminder after it.
   static String eventsJson(AppSettings s, DateTime now) {
+    // The master azan switch pauses azan and prayer reminders, not sehri/iftar.
+    final prayersOn = s.azanEnabled;
     final events = <Map<String, Object>>[];
     void add(DateTime t, PrayerTime p, String mode, {String sound = '', int mins = 0}) {
       if (!t.isAfter(now)) return;
@@ -189,7 +192,7 @@ class Prayers {
     for (var d = 0; d < daysAhead; d++) {
       final day = DateTime(now.year, now.month, now.day + d);
       for (final p in forDay(s, day)) {
-        if (p.isSunrise) continue;
+        if (p.isSunrise || !prayersOn) continue;
         final at = azanTime(s, p);
         final sound = s.azanSound(p.key);
         if (sound == 'nabawi' || sound == 'haram') {
@@ -202,6 +205,7 @@ class Prayers {
         final iqamah = s.iqamahAfter(p.key);
         if (iqamah > 0) add(at.add(Duration(minutes: iqamah)), p, 'iqamah', mins: iqamah);
       }
+      _fastingEvents(s, day, now, events);
     }
     events.sort((a, b) => (a['t'] as int).compareTo(b['t'] as int));
     // Android rings one event at a time and then sets the next one *after* it,
@@ -213,9 +217,66 @@ class Prayers {
     return jsonEncode(events);
   }
 
+  /// Sehri wake-up alarm, iftar reminder and the iftar notification with the
+  /// dua, on fasting days (Ramadan or a day marked "রোজা রাখছি").
+  static void _fastingEvents(
+    AppSettings s,
+    DateTime day,
+    DateTime now,
+    List<Map<String, Object>> events,
+  ) {
+    if (!Fasting.isFastingDay(s, day)) return;
+    final f = Fasting.forDay(s, day);
+    if (f == null) return;
+    void add(DateTime t, String key, String name, String mode, DateTime at, {int mins = 0}) {
+      if (!t.isAfter(now)) return;
+      final dua = mode == 'iftar' ? Duas.byId(Fasting.iftarDuaId) : null;
+      events.add({
+        't': t.millisecondsSinceEpoch,
+        'key': key,
+        'name': name,
+        'mode': mode,
+        'sound': '',
+        'fajr': false,
+        'mins': mins,
+        'azan': at.millisecondsSinceEpoch,
+        if (dua != null) 'duaAr': dua.arabic,
+        if (dua != null) 'duaBn': dua.bangla,
+        if (dua != null) 'duaUc': dua.uccharon,
+        if (dua != null) 'duaRef': dua.source,
+      });
+    }
+
+    if (s.sehriAlarm > 0) {
+      add(
+        f.sehriEnd.subtract(Duration(minutes: s.sehriAlarm)),
+        'sehri',
+        'সেহরি',
+        'sehri',
+        f.sehriEnd,
+        mins: s.sehriAlarm,
+      );
+    }
+    if (s.iftarBefore > 0) {
+      add(
+        f.iftar.subtract(Duration(minutes: s.iftarBefore)),
+        'iftar',
+        'ইফতার',
+        'iftar_before',
+        f.iftar,
+        mins: s.iftarBefore,
+      );
+    }
+    if (s.iftarNotify) add(f.iftar, 'iftar', 'ইফতার', 'iftar', f.iftar);
+  }
+
   /// Hands the next [daysAhead] days of prayer times to Android, which sets an
   /// alarm for the next one (and the one after that when it rings).
   static Future<void> schedule(AppSettings s) async {
+    // The iftar notification shows the dua from assets/duas.json.
+    try {
+      await Duas.load();
+    } catch (_) {}
     // Remove notifications planned by older versions of the app.
     for (var i = 0; i < 80; i++) {
       try {
@@ -224,7 +285,7 @@ class Prayers {
     }
     try {
       await _channel.invokeMethod('schedule', {
-        'events': s.hasLocation && s.azanEnabled ? eventsJson(s, DateTime.now()) : '[]',
+        'events': s.hasLocation ? eventsJson(s, DateTime.now()) : '[]',
         'inSilent': s.azanInSilent,
         'fullScreen': s.azanFullScreen,
         'volume': s.azanVolume,

@@ -8,6 +8,7 @@ import 'package:ayah_reminder/models/surah_names.dart';
 import 'package:ayah_reminder/models/topics.dart';
 import 'package:ayah_reminder/services/audio.dart';
 import 'package:ayah_reminder/services/bangla_tts.dart';
+import 'package:ayah_reminder/services/fasting.dart';
 import 'package:ayah_reminder/services/prayer.dart';
 import 'package:ayah_reminder/services/rotation.dart';
 import 'package:ayah_reminder/services/settings.dart';
@@ -318,5 +319,115 @@ void main() {
         );
       }
     }
+  });
+
+  test('sehri = Fajr minus precaution, iftar = Maghrib', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = await AppSettings.load();
+    await s.setLocation(23.8103, 90.4125, 'ঢাকা', 'city');
+    final day = DateTime(2026, 3, 1);
+    final t = {for (final p in Prayers.forDay(s, day)) p.key: p.time};
+    var f = Fasting.forDay(s, day)!;
+    expect(f.sehriEnd, t['fajr']);
+    expect(f.iftar, t['maghrib']);
+    for (final m in Fasting.precautions) {
+      await s.setSehriPrecaution(m);
+      f = Fasting.forDay(s, day)!;
+      expect(f.sehriEnd, t['fajr']!.subtract(Duration(minutes: m)), reason: '$m');
+      expect(f.iftar, t['maghrib']);
+    }
+  });
+
+  test('Ramadan detection follows the Hijri adjustment', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = await AppSettings.load();
+    // Calculated: 1 Ramadan 1447 = 18 Feb 2026, 1 Shawwal = 20 Mar 2026.
+    expect(Fasting.isRamadan(s, DateTime(2026, 2, 17)), isFalse);
+    expect(Fasting.isRamadan(s, DateTime(2026, 2, 18)), isTrue);
+    expect(Fasting.hijri(s, DateTime(2026, 2, 18)), (1447, 9, 1));
+    expect(Fasting.isRamadan(s, DateTime(2026, 3, 19)), isTrue);
+    expect(Fasting.isRamadan(s, DateTime(2026, 3, 20)), isFalse);
+    // Moon seen a day later in Bangladesh: -1 day moves Ramadan one day later.
+    await s.setHijriOffset(-1);
+    expect(Fasting.isRamadan(s, DateTime(2026, 2, 18)), isFalse);
+    expect(Fasting.isRamadan(s, DateTime(2026, 2, 19)), isTrue);
+    expect(Fasting.hijri(s, DateTime(2026, 2, 19)).$3, 1);
+    expect(Fasting.isRamadan(s, DateTime(2026, 3, 20)), isTrue);
+    await s.setHijriOffset(2);
+    expect(Fasting.isRamadan(s, DateTime(2026, 2, 16)), isTrue);
+    await s.setHijriOffset(9); // clamped
+    expect(s.hijriOffset, 2);
+  });
+
+  test('home display, nafl day, alarms and the Ramadan timetable', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = await AppSettings.load();
+    await s.setLocation(23.8103, 90.4125, 'ঢাকা', 'city');
+    Prayers.azanBundled = true;
+    final ramadan = DateTime(2026, 3, 1, 9);
+    final shawwal = DateTime(2026, 4, 10, 9);
+    // Default: only in Ramadan.
+    expect(s.sehriShowMode, 'ramadan');
+    expect(Fasting.showOnHome(s, ramadan), isTrue);
+    expect(Fasting.showOnHome(s, shawwal), isFalse);
+    // A nafl fast marked for today shows it and counts as a fasting day.
+    await Fasting.setNafl(s, shawwal, true);
+    expect(Fasting.naflOn(s, shawwal), isTrue);
+    expect(Fasting.showOnHome(s, shawwal), isTrue);
+    expect(Fasting.isFastingDay(s, shawwal), isTrue);
+    expect(Fasting.isFastingDay(s, shawwal.add(const Duration(days: 1))), isFalse);
+    // After iftar the switch is for tomorrow.
+    final night = DateTime(2026, 4, 10, 22);
+    expect(Fasting.naflIsTomorrow(s, night), isTrue);
+    await s.setSehriShowMode('off');
+    expect(Fasting.showOnHome(s, ramadan), isFalse);
+    await s.setSehriShowMode('always');
+    expect(Fasting.showOnHome(s, DateTime(2026, 6, 1, 9)), isTrue);
+
+    // Alarms on fasting days only.
+    await s.setSehriPrecaution(5);
+    await s.setSehriAlarm(45);
+    await s.setIftarBefore(10);
+    final now = DateTime(2026, 3, 1, 0, 1);
+    final events = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
+    final sehri = events.where((e) => e['mode'] == 'sehri').toList();
+    final before = events.where((e) => e['mode'] == 'iftar_before').toList();
+    final iftar = events.where((e) => e['mode'] == 'iftar').toList();
+    // Ramadan days in the 30-day window (1 – 19 March), alarms still ahead of now.
+    int count(DateTime Function(FastingDay) at) => [
+      for (var d = 0; d < Prayers.daysAhead; d++)
+        if (Fasting.isRamadan(s, DateTime(2026, 3, 1 + d)))
+          if (at(Fasting.forDay(s, DateTime(2026, 3, 1 + d))!).isAfter(now)) d,
+    ].length;
+    expect(sehri.length, count((f) => f.sehriEnd.subtract(const Duration(minutes: 45))));
+    expect(sehri.length, inInclusiveRange(18, 19));
+    expect(before.length, count((f) => f.iftar.subtract(const Duration(minutes: 10))));
+    expect(iftar.length, 19);
+    final f = Fasting.forDay(s, DateTime(2026, 3, 1))!;
+    final firstSehri = sehri.firstWhere(
+      (e) => e['azan'] == f.sehriEnd.millisecondsSinceEpoch,
+      orElse: () => sehri.first,
+    );
+    expect(firstSehri['azan'] - firstSehri['t'], 45 * Duration.millisecondsPerMinute);
+    // Events at the same moment (iftar = Maghrib azan) are kept one second apart.
+    expect(
+      (before.first['t'] as int) -
+          f.iftar.subtract(const Duration(minutes: 10)).millisecondsSinceEpoch,
+      inInclusiveRange(0, 2000),
+    );
+    expect((iftar.first['t'] as int) - f.iftar.millisecondsSinceEpoch, inInclusiveRange(0, 2000));
+    expect(iftar.first['azan'], f.iftar.millisecondsSinceEpoch);
+    // The azan switch pauses azan, not sehri/iftar.
+    await s.setAzanEnabled(false);
+    final paused = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
+    expect(paused.where((e) => e['mode'] == 'azan'), isEmpty);
+    expect(paused.where((e) => e['mode'] == 'sehri').length, sehri.length);
+
+    // Timetable: the whole Ramadan, 1 to 30, with today inside.
+    final table = Fasting.ramadanTimetable(s, ramadan);
+    expect(table.first.hijriDay, 1);
+    expect(table.first.date, DateTime(2026, 2, 18));
+    expect(table.length, 30);
+    expect(Fasting.ramadanTimetable(s, shawwal), isEmpty);
   });
 }

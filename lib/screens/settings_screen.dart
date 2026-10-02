@@ -17,6 +17,7 @@ import '../features/learn/ui/learn_settings.dart';
 import 'about_screen.dart';
 import 'credits_screen.dart';
 import 'prayer_screen.dart' show AzanSettings;
+import 'sehri_screens.dart';
 import 'privacy_screen.dart';
 import 'quran_downloads_screen.dart';
 import 'reader_screen.dart' show speedLabel;
@@ -26,6 +27,7 @@ import 'setup_screen.dart';
 enum SettingsSection {
   reminders('রিমাইন্ডার', Icons.notifications_none_rounded),
   azan('আজান ও নামাজ', Icons.mosque_outlined),
+  sehri('সেহরি ও ইফতার', Icons.dark_mode_outlined),
   quran('কুরআন পড়া', Icons.menu_book_outlined),
   audio('অডিও ও ক্বারী', Icons.mic_none_rounded),
   duas('দোয়া', Icons.front_hand_outlined),
@@ -119,6 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     List<Widget> body(SettingsSection s) => switch (s) {
       SettingsSection.reminders => _reminders(context, settings),
       SettingsSection.azan => const [AzanSettings()],
+      SettingsSection.sehri => const [SehriIftarSettings()],
       SettingsSection.quran => [AppCard(child: const QuranReadingSettings(embedded: true))],
       SettingsSection.audio => _audio(context, settings),
       SettingsSection.duas => _duas(context, settings),

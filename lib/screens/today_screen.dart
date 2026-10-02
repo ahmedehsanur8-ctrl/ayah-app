@@ -8,6 +8,7 @@ import '../models/content.dart';
 import '../services/audio.dart';
 import '../services/prayer.dart';
 import '../services/reminders.dart';
+import '../services/fasting.dart';
 import '../services/rotation.dart';
 import '../theme.dart';
 import '../utils/bangla.dart';
@@ -27,6 +28,7 @@ import 'qibla_screen.dart';
 import 'quran_screen.dart';
 import 'reader_screen.dart';
 import 'search_screen.dart';
+import 'sehri_screens.dart';
 import 'settings_screen.dart';
 import 'setup_screen.dart';
 import 'tasbih_screen.dart';
@@ -189,7 +191,7 @@ class _HomeHeader extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: Text(
-              '${banglaDate(now)} · ${hijriDate(now)}',
+              '${banglaDate(now)} · ${Fasting.hijriText(AppState.instance.settings, now)}',
               style: TextStyle(color: p.onNightMuted, fontSize: 14, height: 1.5),
             ),
           ),
@@ -333,6 +335,7 @@ class _NextPrayerHeroState extends State<NextPrayerHero> {
                 ],
               ],
             ),
+            const HomeSehriIftar(),
           ],
         ),
       ),

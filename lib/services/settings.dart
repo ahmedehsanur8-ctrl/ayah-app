@@ -328,6 +328,65 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ------------------------------------------------------------ sehri & iftar
+
+  /// Sehri ends this many minutes before Fajr (0, 3, 5 or 10).
+  int get sehriPrecaution => _prefs.getInt('sehriPrecaution') ?? 0;
+
+  Future<void> setSehriPrecaution(int v) async {
+    await _prefs.setInt('sehriPrecaution', v);
+    notifyListeners();
+  }
+
+  /// Sehri and iftar on the home screen: 'always', 'ramadan' (Ramadan and days
+  /// marked "রোজা রাখছি") or 'off'.
+  String get sehriShowMode => _prefs.getString('sehriShowMode') ?? 'ramadan';
+
+  Future<void> setSehriShowMode(String v) async {
+    await _prefs.setString('sehriShowMode', v);
+    notifyListeners();
+  }
+
+  /// A nafl fast: the date (yyyy-mm-dd) the user marked "রোজা রাখছি".
+  String get naflFastDay => _prefs.getString('naflFastDay') ?? '';
+
+  Future<void> setNaflFastDay(String v) async {
+    await _prefs.setString('naflFastDay', v);
+    notifyListeners();
+  }
+
+  /// Sehri wake-up alarm, minutes before sehri ends (0 = off; 30, 45, 60, 90).
+  int get sehriAlarm => _prefs.getInt('sehriAlarm') ?? 0;
+
+  Future<void> setSehriAlarm(int v) async {
+    await _prefs.setInt('sehriAlarm', v);
+    notifyListeners();
+  }
+
+  /// Iftar reminder, minutes before iftar (0 = off; 5 or 10).
+  int get iftarBefore => _prefs.getInt('iftarBefore') ?? 0;
+
+  Future<void> setIftarBefore(int v) async {
+    await _prefs.setInt('iftarBefore', v);
+    notifyListeners();
+  }
+
+  /// A notification at iftar time with the iftar dua.
+  bool get iftarNotify => _prefs.getBool('iftarNotify') ?? true;
+
+  Future<void> setIftarNotify(bool v) async {
+    await _prefs.setBool('iftarNotify', v);
+    notifyListeners();
+  }
+
+  /// Days added to the calculated Hijri date (-2 … +2) to match local moon sighting.
+  int get hijriOffset => _prefs.getInt('hijriOffset') ?? 0;
+
+  Future<void> setHijriOffset(int v) async {
+    await _prefs.setInt('hijriOffset', v.clamp(-2, 2));
+    notifyListeners();
+  }
+
   /// Play the azan on the alarm stream, so it is heard in silent mode too.
   bool get azanInSilent => _prefs.getBool('azanInSilent') ?? true;
 
