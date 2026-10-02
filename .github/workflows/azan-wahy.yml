@@ -28,5 +28,5 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tools/data/wahy_probe.json tools/data/wahy_files.json android/app/src/main/res/raw 2>/dev/null || true
+          for f in tools/data/wahy_probe.json tools/data/wahy_files.json android/app/src/main/res/raw; do [ -e "$f" ] && git add "$f"; done
           if git diff --cached --quiet; then echo "Nothing new."; else git commit -m "Azan audio: Wahy Project probe / files" && git pull --rebase origin "${GITHUB_REF_NAME}" && git push; fi
