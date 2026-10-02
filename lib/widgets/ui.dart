@@ -118,7 +118,7 @@ class IconBubble extends StatelessWidget {
     height: size,
     decoration: BoxDecoration(
       color: tint.background,
-      borderRadius: BorderRadius.circular(size * 0.36),
+      borderRadius: BorderRadius.circular(size * 0.3),
     ),
     child: Icon(icon, color: tint.foreground, size: size * 0.52),
   );
@@ -223,7 +223,7 @@ class NavRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: p.text),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: p.text),
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty)
                       Text(subtitle!, style: TextStyle(fontSize: 14, color: p.muted, height: 1.4)),
@@ -256,7 +256,7 @@ class RowGroup extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) Divider(height: 1, indent: 64, color: p.border),
+            if (i > 0) Divider(height: 1, indent: 66, color: p.border),
             children[i],
           ],
         ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/night.dart';
+
 import 'dua_screens.dart';
 import 'mood_screen.dart';
 import 'quran_screen.dart';
@@ -44,7 +46,7 @@ class _HomeShellState extends State<HomeShell> {
         },
         child: Scaffold(
           body: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
+            duration: reduceMotion(context) ? Duration.zero : const Duration(milliseconds: 200),
             switchInCurve: Curves.easeOut,
             transitionBuilder: (child, a) => FadeTransition(opacity: a, child: child),
             child: KeyedSubtree(key: ValueKey(tab), child: _pages[tab]),
@@ -55,27 +57,27 @@ class _HomeShellState extends State<HomeShell> {
             destinations: const [
               NavigationDestination(
                 icon: Icon(Icons.wb_sunny_outlined),
-                selectedIcon: Icon(Icons.wb_sunny_rounded),
+                selectedIcon: Icon(Icons.wb_sunny_outlined),
                 label: 'আজ',
               ),
               NavigationDestination(
                 icon: Icon(Icons.menu_book_outlined),
-                selectedIcon: Icon(Icons.menu_book_rounded),
+                selectedIcon: Icon(Icons.menu_book_outlined),
                 label: 'কুরআন',
               ),
               NavigationDestination(
                 icon: Icon(Icons.front_hand_outlined),
-                selectedIcon: Icon(Icons.front_hand_rounded),
+                selectedIcon: Icon(Icons.front_hand_outlined),
                 label: 'দোয়া',
               ),
               NavigationDestination(
                 icon: Icon(Icons.sentiment_satisfied_outlined),
-                selectedIcon: Icon(Icons.sentiment_satisfied_rounded),
+                selectedIcon: Icon(Icons.sentiment_satisfied_outlined),
                 label: 'মন',
               ),
               NavigationDestination(
                 icon: Icon(Icons.auto_stories_outlined),
-                selectedIcon: Icon(Icons.auto_stories_rounded),
+                selectedIcon: Icon(Icons.auto_stories_outlined),
                 label: 'জীবনী',
               ),
             ],

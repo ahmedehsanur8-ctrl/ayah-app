@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:ayah_reminder/models/content.dart';
 import 'package:ayah_reminder/models/story.dart';
@@ -10,6 +11,8 @@ import 'package:ayah_reminder/services/bangla_tts.dart';
 import 'package:ayah_reminder/services/prayer.dart';
 import 'package:ayah_reminder/services/rotation.dart';
 import 'package:ayah_reminder/services/settings.dart';
+import 'package:ayah_reminder/theme.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -281,5 +284,39 @@ void main() {
     expect(s.azanVolume, 1.0);
     expect(s.azanVibrate, isTrue);
     expect(s.azanInSilent, isTrue);
+  });
+
+  test('Night & Gold: every text colour is at least 4.5:1 in light and dark', () {
+    double ratio(Color a, Color b) {
+      final la = a.computeLuminance(), lb = b.computeLuminance();
+      return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+    }
+
+    for (final p in [Palette.light, Palette.dark]) {
+      final pairs = <String, (Color, Color)>{
+        'ink on ground': (p.text, p.background),
+        'ink on surface': (p.text, p.surface),
+        'muted on ground': (p.muted, p.background),
+        'muted on surface': (p.muted, p.surface),
+        'muted on soft emerald': (p.muted, p.pill),
+        'emerald on surface': (p.primary, p.surface),
+        'emerald on ground': (p.primary, p.background),
+        'emerald on soft emerald': (p.primary, p.pill),
+        'gold text on surface': (p.goldText, p.surface),
+        'gold text on ground': (p.goldText, p.background),
+        'gold on night': (p.gold, p.night),
+        'white on night': (p.onNight, p.night),
+        'soft white on night': (Color.alphaBlend(p.onNightMuted, p.night), p.night),
+        'white on emerald button': (p.onPrimary, p.action),
+        'navy on gold button': (p.night, p.gold),
+      };
+      for (final e in pairs.entries) {
+        expect(
+          ratio(e.value.$1, e.value.$2),
+          greaterThanOrEqualTo(4.5),
+          reason: '${p.isDark ? 'dark' : 'light'}: ${e.key}',
+        );
+      }
+    }
   });
 }
