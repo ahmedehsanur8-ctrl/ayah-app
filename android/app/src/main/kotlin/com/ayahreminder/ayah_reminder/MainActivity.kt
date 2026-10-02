@@ -116,6 +116,8 @@ class MainActivity : AudioServiceActivity() {
                             call.argument<String>("events") ?: "[]",
                             call.argument<Boolean>("inSilent") ?: true,
                             call.argument<Boolean>("fullScreen") ?: true,
+                            call.argument<Double>("volume") ?: 1.0,
+                            call.argument<Boolean>("vibrate") ?: true,
                         )
                         AzanScheduler.scheduleNext(this)
                         result.success(true)
@@ -126,6 +128,8 @@ class MainActivity : AudioServiceActivity() {
                             call.argument<String>("name") ?: "",
                             call.argument<Boolean>("fajr") ?: false,
                             System.currentTimeMillis(),
+                            call.argument<String>("sound") ?: "nabawi",
+                            (call.argument<Double>("volume") ?: -1.0).toFloat(),
                         )
                         result.success(true)
                     }
@@ -133,9 +137,6 @@ class MainActivity : AudioServiceActivity() {
                         AzanService.stop(this); result.success(true)
                     }
                     "isPlaying" -> result.success(AzanService.isPlaying)
-                    "hasFajrSound" -> result.success(
-                        resources.getIdentifier("azan_fajr", "raw", packageName) != 0
-                    )
                     else -> result.notImplemented()
                 }
             }

@@ -137,11 +137,11 @@ class _PrayerScreenState extends State<PrayerScreen> {
                           final v = await pickOption<String>(
                             context,
                             '${list[i].name} · কীভাবে জানাবে',
-                            _s.azanMode(key),
-                            azanModeNames,
+                            _s.azanSound(key),
+                            Prayers.azanSounds,
                           );
                           if (v != null) {
-                            await _s.setAzanMode(key, v);
+                            await _s.setAzanSound(key, v);
                             await _changed();
                           }
                         },
@@ -234,7 +234,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
               subtitle: 'এখনই পুরো আজান বাজবে ("থামান" বা ভলিউম বোতামে থামবে)',
               onTap: () => Prayers.playNow(),
             ),
-            if (Prayers.fajrBundled)
+            if (Prayers.azanBundled)
               NavRow(
                 icon: Icons.wb_twilight_outlined,
                 tint: p.sand,
@@ -271,7 +271,7 @@ class _PrayerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final s = AppState.instance.settings;
-    final mode = prayer.isSunrise ? 'off' : s.azanMode(prayer.key);
+    final mode = prayer.isSunrise ? 'off' : s.azanSound(prayer.key);
     return Container(
       color: isNext ? p.pill : null,
       constraints: const BoxConstraints(minHeight: 60),
@@ -307,10 +307,10 @@ class _PrayerRow extends StatelessWidget {
             child: onBell == null
                 ? null
                 : IconButton(
-                    tooltip: azanModeNames[mode],
+                    tooltip: Prayers.azanSounds[mode],
                     onPressed: onBell,
                     icon: Icon(switch (mode) {
-                      'azan' => Icons.volume_up_outlined,
+                      'nabawi' || 'haram' => Icons.volume_up_outlined,
                       'notify' => Icons.notifications_none_rounded,
                       _ => Icons.notifications_off_outlined,
                     }, color: mode == 'off' ? p.muted : p.primary),
@@ -359,9 +359,6 @@ class ChooseLocationView extends StatelessWidget {
     );
   }
 }
-
-/// The three choices for each prayer.
-const azanModeNames = {'azan': 'আজান', 'notify': 'শুধু নোটিফিকেশন', 'off': 'বন্ধ'};
 
 /// Explains, asks for location permission and saves the location.
 /// With [explain] false the dialog is skipped (the page already explains).
