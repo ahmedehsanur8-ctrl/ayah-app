@@ -232,6 +232,16 @@ jobs:
             dist/*.apk
             dist/*.aab
 
+      # The APK alone, for installing on a phone: one file, stored without
+      # extra compression (an APK is already compressed), so phone unzip apps
+      # open it easily and there is no 97 MB App Bundle to unpack as well.
+      - name: Upload APK only (for phones)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AyahReminder-${{ env.VERSION_NAME }}-APK-only
+          path: dist/*.apk
+          compression-level: 0
+
       - name: Check the release tag is new
         id: tag
         if: (github.ref == 'refs/heads/main' || inputs.publish_release) && !inputs.install_test
