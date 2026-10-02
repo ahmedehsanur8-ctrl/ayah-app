@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
@@ -71,21 +72,29 @@ class _QuranScreenState extends State<QuranScreen> {
     });
   }
 
+  /// সূরা or পারা list.
+  bool _juz = false;
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final searching = _q.isNotEmpty;
     return Scaffold(
-      body: SafeArea(
-        child: DefaultTabController(
-          length: 2,
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 8, 0),
-                child: const PageTitle('আল-কুরআন', subtitle: '১১৪টি সূরা · আরবি ও বাংলা অনুবাদ'),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: CustomScrollView(
+          slivers: [
+            const SliverToBoxAdapter(
+              child: NightHeader(
+                title: 'আল-কুরআন',
+                subtitle: '১১৪টি সূরা · আরবি ও বাংলা অনুবাদ',
+                lip: true,
+                child: _LastReadCard(),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: TextField(
                   controller: _query,
                   onChanged: _onQuery,
@@ -103,63 +112,67 @@ class _QuranScreenState extends State<QuranScreen> {
                               _onQuery('');
                             },
                           ),
-                    filled: true,
-                    fillColor: p.surface,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(radiusM),
-                      borderSide: BorderSide(color: p.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(radiusM),
-                      borderSide: BorderSide(color: p.border),
-                    ),
                   ),
                 ),
               ),
-              if (_q.isNotEmpty)
-                Expanded(child: _results(p))
-              else ...[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            ),
+            if (searching)
+              SliverToBoxAdapter(child: _results(p))
+            else ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                   child: ActionRow(
                     children: [
                       LabeledAction(
                         icon: Icons.bookmarks_outlined,
                         label: 'বুকমার্ক',
-                        tint: p.sand,
+                        tint: p.iconTint,
                         onTap: () => push(context, const FavoritesScreen(initialTab: 2)),
                       ),
                       LabeledAction(
                         icon: Icons.text_fields_rounded,
                         label: 'পড়ার সেটিং',
-                        tint: p.sky,
+                        tint: p.iconTint,
                         onTap: () => showQuranSettingsSheet(context),
                       ),
                       LabeledAction(
                         icon: Icons.download_for_offline_outlined,
                         label: 'ডাউনলোড',
-                        tint: p.mint,
+                        tint: p.iconTint,
                         onTap: () => push(context, const QuranDownloadsScreen()),
                       ),
                     ],
                   ),
                 ),
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: QuranContinueCard(),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                  child: SegmentedButton<bool>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(value: false, label: Text('সূরা')),
+                      ButtonSegment(value: true, label: Text('পারা')),
+                    ],
+                    selected: {_juz},
+                    onSelectionChanged: (v) => setState(() => _juz = v.first),
+                  ),
                 ),
-                TabBar(
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-                  tabs: const [
-                    Tab(text: 'সূরা'),
-                    Tab(text: 'পারা'),
-                  ],
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                sliver: DecoratedSliver(
+                  decoration: BoxDecoration(
+                    color: p.surface,
+                    borderRadius: BorderRadius.circular(radiusM),
+                    border: Border.all(color: p.border),
+                  ),
+                  sliver: _juz ? const _JuzList() : const _SurahList(),
                 ),
-                const Expanded(child: TabBarView(children: [_SurahList(), _JuzList()])),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -168,49 +181,52 @@ class _QuranScreenState extends State<QuranScreen> {
   Widget _results(Palette p) {
     final ref = Quran.parseRef(_q);
     final surahs = Quran.searchSurahs(_q);
-    return ListView(
+    return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      children: [
-        if (ref != null)
-          AppCard(
-            onTap: () => openQuran(context, ref.surah, ref.ayah),
-            child: Row(
-              children: [
-                Icon(Icons.north_east_rounded, color: p.primary),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '${ayahTitle(ref.surah, ref.ayah)} খুলুন',
-                    style: TextStyle(fontWeight: FontWeight.w700, color: p.text),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (ref != null)
+            AppCard(
+              onTap: () => openQuran(context, ref.surah, ref.ayah),
+              child: Row(
+                children: [
+                  Icon(Icons.north_east_rounded, color: p.primary),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${ayahTitle(ref.surah, ref.ayah)} খুলুন',
+                      style: TextStyle(fontWeight: FontWeight.w700, color: p.text),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        if (surahs.isNotEmpty) ...[
-          const SectionLabel('সূরা'),
-          RowGroup(children: [for (final s in surahs.take(20)) SurahRow(surah: s)]),
+          if (surahs.isNotEmpty) ...[
+            const SectionLabel('সূরা'),
+            RowGroup(children: [for (final s in surahs.take(20)) SurahRow(surah: s)]),
+          ],
+          if (_searching)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_ayahs.isNotEmpty) ...[
+            SectionLabel(
+              _ayahs.length >= 300
+                  ? 'আয়াত (প্রথম ৩০০টি)'
+                  : 'আয়াত (${toBanglaDigits(_ayahs.length)}টি)',
+            ),
+            for (final r in _ayahs) AyahSearchHit(ref: r, query: _q),
+          ] else if (ref == null && surahs.isEmpty && _q.length >= 2)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Text('কিছু পাওয়া যায়নি', style: TextStyle(color: p.muted)),
+              ),
+            ),
         ],
-        if (_searching)
-          const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else if (_ayahs.isNotEmpty) ...[
-          SectionLabel(
-            _ayahs.length >= 300
-                ? 'আয়াত (প্রথম ৩০০টি)'
-                : 'আয়াত (${toBanglaDigits(_ayahs.length)}টি)',
-          ),
-          for (final r in _ayahs) AyahSearchHit(ref: r, query: _q),
-        ] else if (ref == null && surahs.isEmpty && _q.length >= 2)
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: Text('কিছু পাওয়া যায়নি', style: TextStyle(color: p.muted)),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
@@ -344,6 +360,58 @@ class QuranContinueCard extends StatelessWidget {
   }
 }
 
+/// "শেষ পড়েছেন" inside the Quran header, with the gold "চালিয়ে যান" button.
+class _LastReadCard extends StatelessWidget {
+  const _LastReadCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final prefs = AppState.instance.settings.quran;
+    return ListenableBuilder(
+      listenable: prefs,
+      builder: (context, _) {
+        final p = context.palette;
+        final has = prefs.hasLastRead && Quran.isValid(prefs.lastSurah, prefs.lastAyah);
+        final s = has ? Quran.surah(prefs.lastSurah) : null;
+        void open() =>
+            has ? openQuran(context, prefs.lastSurah, prefs.lastAyah) : openQuran(context, 1);
+        return Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+          decoration: BoxDecoration(
+            color: p.nightLine,
+            borderRadius: BorderRadius.circular(radiusM),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.bookmark_outline_rounded, color: p.gold, size: 26),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      has ? 'শেষ পড়েছেন' : 'কুরআন পড়ুন',
+                      style: TextStyle(color: p.onNightMuted, fontSize: 14),
+                    ),
+                    Text(
+                      has
+                          ? 'সূরা ${s!.nameBn} · আয়াত ${toBanglaDigits(prefs.lastAyah)}'
+                          : 'সূরা আল-ফাতিহা থেকে শুরু',
+                      style: TextStyle(color: p.onNight, fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              GoldButton(onPressed: open, label: has ? 'চালিয়ে যান' : 'শুরু করুন'),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Number, Bangla + Arabic name, meaning, মাক্কী/মাদানী and ayah count.
 class SurahRow extends StatelessWidget {
   const SurahRow({super.key, required this.surah});
@@ -359,7 +427,7 @@ class SurahRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         child: Row(
           children: [
-            AyahBadge(surah.n, size: 40),
+            StarBadge(toBanglaDigits(surah.n), size: 44),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -367,10 +435,10 @@ class SurahRow extends StatelessWidget {
                 children: [
                   Text(
                     surah.nameBn,
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
+                    style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: p.text),
                   ),
                   Text(
-                    '${surah.meaningBn} · ${surah.typeBn} · ${toBanglaDigits(surah.ayahCount)} আয়াত',
+                    '${surah.meaningBn}, ${toBanglaDigits(surah.ayahCount)} আয়াত, ${surah.typeBn}',
                     style: TextStyle(fontSize: 14, color: p.muted),
                   ),
                 ],
@@ -379,7 +447,7 @@ class SurahRow extends StatelessWidget {
             Text(
               surah.nameAr,
               textDirection: TextDirection.rtl,
-              style: TextStyle(fontFamily: arabicFont, fontSize: 21, color: p.goldText),
+              style: TextStyle(fontFamily: arabicFont, fontSize: 22, color: p.primary),
             ),
           ],
         ),
@@ -394,10 +462,9 @@ class _SurahList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 24),
+    return SliverList.separated(
       itemCount: Quran.surahs.length,
-      separatorBuilder: (_, _) => Divider(height: 1, indent: 66, color: p.border),
+      separatorBuilder: (_, _) => Divider(height: 1, indent: 70, color: p.border),
       itemBuilder: (context, i) => SurahRow(surah: Quran.surahs[i]),
     );
   }
@@ -409,10 +476,9 @@ class _JuzList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return ListView.separated(
-      padding: const EdgeInsets.only(bottom: 24),
+    return SliverList.separated(
       itemCount: Quran.juz.length,
-      separatorBuilder: (_, _) => Divider(height: 1, indent: 66, color: p.border),
+      separatorBuilder: (_, _) => Divider(height: 1, indent: 70, color: p.border),
       itemBuilder: (context, i) {
         final j = Quran.juz[i];
         return InkWell(
@@ -421,7 +487,7 @@ class _JuzList extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
-                AyahBadge(j.n, size: 40),
+                StarBadge(toBanglaDigits(j.n), size: 44),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -441,7 +507,7 @@ class _JuzList extends StatelessWidget {
                 Text(
                   j.nameAr,
                   textDirection: TextDirection.rtl,
-                  style: TextStyle(fontFamily: arabicFont, fontSize: 19, color: p.goldText),
+                  style: TextStyle(fontFamily: arabicFont, fontSize: 20, color: p.primary),
                 ),
               ],
             ),

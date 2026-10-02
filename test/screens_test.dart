@@ -517,7 +517,8 @@ void main() {
         // Quran tab: continue card and search by reference and by word.
         await t.pumpWidget(app(const QuranScreen(), b));
         await t.pumpAndSettle();
-        expect(find.text('যেখানে শেষ করেছিলেন'), findsOneWidget);
+        expect(find.text('শেষ পড়েছেন'), findsOneWidget);
+        expect(find.text('চালিয়ে যান'), findsOneWidget);
         await t.enterText(find.byType(TextField), '২:২৫৫');
         await t.pump(const Duration(milliseconds: 400));
         await t.pumpAndSettle();

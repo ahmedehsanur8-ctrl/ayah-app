@@ -419,7 +419,11 @@ void main() {
               child: app(LessonScreen(key: ValueKey(l.id), lesson: l), b),
             ),
           );
-          await settle(t, 6);
+          // The lesson loads from the database; wait for it (bounded) rather
+          // than a fixed number of rounds, which raced on a busy machine.
+          for (var i = 0; i < 10 && find.text('পরের ধাপ').evaluate().isEmpty; i++) {
+            await settle(t, 3);
+          }
           expect(find.text('পরের ধাপ'), findsOneWidget, reason: l.id);
         }
       });

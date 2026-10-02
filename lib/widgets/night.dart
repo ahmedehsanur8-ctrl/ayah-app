@@ -180,7 +180,7 @@ class NightAppBar extends StatelessWidget implements PreferredSizeWidget {
       iconTheme: IconThemeData(color: p.onNight),
       actionsIconTheme: IconThemeData(color: p.onNight),
       toolbarHeight: 64,
-      flexibleSpace: const GirihLayer(cell: 44, opacity: 0.16),
+      flexibleSpace: const Stack(children: [GirihLayer(cell: 44, opacity: 0.16)]),
       leading: Navigator.of(context).canPop() ? const NightBackButton() : null,
       titleSpacing: Navigator.of(context).canPop() ? 0 : 16,
       title: Column(
@@ -306,14 +306,15 @@ class StarBadge extends StatelessWidget {
         painter: _OctagramPainter(p.gold, size / 26, null),
         child: Center(
           child: Padding(
-            padding: EdgeInsets.all(size * (label.length > 2 ? 0.2 : 0.16)),
+            // Three digits (১১৪, ২৫৫) get a smaller number and more room.
+            padding: EdgeInsets.all(size * (label.length > 2 ? 0.25 : 0.16)),
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
                 label,
                 maxLines: 1,
                 style: TextStyle(
-                  fontSize: size * (label.length > 2 ? 0.3 : 0.36),
+                  fontSize: size * (label.length > 2 ? 0.25 : 0.36),
                   fontWeight: FontWeight.w700,
                   height: 1.1,
                   color: onNight ? p.gold : p.goldText,

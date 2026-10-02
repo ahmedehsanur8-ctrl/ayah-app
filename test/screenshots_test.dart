@@ -15,6 +15,7 @@ import 'package:ayah_reminder/screens/prayer_screen.dart';
 import 'package:ayah_reminder/screens/qibla_screen.dart';
 import 'package:ayah_reminder/screens/quran_reader_screen.dart';
 import 'package:ayah_reminder/screens/quran_screen.dart';
+import 'package:ayah_reminder/widgets/quran_widgets.dart';
 import 'package:ayah_reminder/screens/search_screen.dart';
 import 'package:ayah_reminder/screens/settings_screen.dart';
 import 'package:ayah_reminder/screens/setup_screen.dart';
@@ -38,6 +39,17 @@ final shots = <String, Widget Function()>{
   'qibla-facing': () => const QiblaScreen(),
   'quran': () => const QuranScreen(),
   'reader': () => const QuranReaderScreen(surah: 1),
+  'reader-playing': () => Scaffold(
+    appBar: const NightAppBar(title: 'সূরা আল-ফাতিহা', subtitle: 'সূচনা, ৭ আয়াত'),
+    body: ListView(
+      children: const [
+        AyahTile(surah: 1, ayah: 1),
+        AyahTile(surah: 1, ayah: 2, playing: true),
+        AyahTile(surah: 1, ayah: 3),
+      ],
+    ),
+    bottomNavigationBar: QuranPlayerBar(surah: 1, startAyah: () => 2),
+  ),
   'duas': () => const DuaHomeScreen(),
   'tasbih': () => const TasbihScreen(),
   'learn': () => const LearnDashboardScreen(),
@@ -143,7 +155,6 @@ class _Gallery extends StatelessWidget {
                     ),
                     OutlinedButton(onPressed: () {}, child: const Text('পরে')),
                     const StarBadge('২৫৫'),
-                    const OctagramIcon(size: 24),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -164,7 +175,7 @@ class _Gallery extends StatelessWidget {
                     ListRow(
                       leading: const StarBadge('১'),
                       title: 'আল-ফাতিহা',
-                      subtitle: 'সূচনা · ৭ আয়াত · মাক্কী',
+                      subtitle: 'সূচনা, ৭ আয়াত, মাক্কী',
                       onTap: () {},
                     ),
                   ],

@@ -763,10 +763,10 @@ class _LearnCardState extends State<_LearnCard> {
                         ),
                         Text(
                           started
-                              ? '${toBanglaDigits(done)}/${toBanglaDigits(total)} পাঠ · '
+                              ? '${toBanglaDigits(done)}/${toBanglaDigits(total)} পাঠ, '
                                     '${toBanglaDigits(learn.known.length)}টি শব্দ'
-                                    '${learn.streak > 0 ? ' · ${toBanglaDigits(learn.streak)} দিন টানা' : ''}'
-                              : 'আয়াতের শব্দ চিনে অর্থ বুঝি · প্রতিদিন কয়েক মিনিট',
+                                    '${learn.streak > 0 ? ', ${toBanglaDigits(learn.streak)} দিন টানা' : ''}'
+                              : 'আয়াতের শব্দ চিনে অর্থ বুঝি, প্রতিদিন কয়েক মিনিট',
                           style: TextStyle(fontSize: 14, height: 1.4, color: p.muted),
                         ),
                       ],
