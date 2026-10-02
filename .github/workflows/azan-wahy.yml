@@ -1,0 +1,32 @@
+# Checks The Wahy Project adhan download links (tools/azan_wahy.py probe) and,
+# when tools/azan_wahy_choice.txt names files, bundles them byte for byte.
+name: Azan audio (Wahy Project)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/azan_wahy.py
+      - tools/azan_wahy_choice.txt
+      - .github/workflows/azan-wahy.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wahy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffprobe
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Probe download links
+        run: python3 tools/azan_wahy.py probe
+      - name: Fetch chosen files (unchanged)
+        run: python3 tools/azan_wahy.py fetch
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/data/wahy_probe.json tools/data/wahy_files.json android/app/src/main/res/raw 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Nothing new."; else git commit -m "Azan audio: Wahy Project probe / files" && git pull --rebase origin "${GITHUB_REF_NAME}" && git push; fi
