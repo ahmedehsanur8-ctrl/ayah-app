@@ -21,6 +21,8 @@ The content DB `assets/learn/learn_content.db` is built by `tools/learn/build_le
   check could not run. Verification is never switched off, so the build used the bundled
   copy. That copy was downloaded from Tanzil on 28 Sep 2026 (`assets/quran/meta.json`,
   `generatedAt`) by the "Quran data" workflow.
+- **Later run, 2 Oct 2026:** the certificate worked again and the check passed: the bundled
+  text is **identical to the live tanzil.net download** (`tools/data/learn_report.txt`).
 
 ## Word grammar (morphology): Quranic Arabic Corpus v0.4
 
