@@ -129,5 +129,54 @@ def cmd_fetch():
         json.dumps(record, indent=1) + "\n", encoding="utf-8")
 
 
+def cmd_wayback():
+    """Looks for Internet Archive copies of the dead Dropbox links, and checks the
+    two zips against the MD5 / SHA-1 published on the page."""
+    published = {
+        "Adhan-Makkah.zip": ("34be7b255992f8a7109c646a967cdbc6",
+                             "6ee0a10992795d6a8c42648dbfd2346f60a4347e"),
+        "Adhan-Madinah.zip": ("93a737d3b68b154c4d6c020652918f7c",
+                              "0d056d84184d3fda400f4e91adac7eaa3d525136"),
+    }
+    probe = json.loads(PROBE.read_text(encoding="utf-8"))
+    urls = sorted({f["url"] for f in probe.get("files", [])})
+    out = []
+    for url in urls:
+        entry = {"url": url}
+        variants = [url, url.replace("http://", "https://"),
+                    url.replace("dl.dropbox.com/u/", "dl.dropboxusercontent.com/u/")]
+        for v in variants:
+            try:
+                q = "https://archive.org/wayback/available?url=" + urllib.parse.quote(v, safe="")
+                _, _, _, body = get(q, 60)
+                snap = json.loads(body).get("archived_snapshots", {}).get("closest")
+                if snap and snap.get("available"):
+                    entry["snapshot"] = snap
+                    break
+            except Exception as e:  # noqa: BLE001
+                entry["error"] = repr(e)
+        snap = entry.get("snapshot")
+        if snap:
+            raw = re.sub(r"/web/(\d+)/", r"/web/\1id_/", snap["url"])
+            try:
+                status, final, ctype, body = get(raw, 300)
+                entry.update(status=status, type=ctype, **describe(body))
+                name = Path(urllib.parse.urlparse(url).path).name
+                if name in published:
+                    md5, sha1 = published[name]
+                    entry["matches_published"] = (entry["md5"] == md5
+                                                  and hashlib.sha1(body).hexdigest() == sha1)
+                tmp = Path("/tmp") / name
+                tmp.write_bytes(body)
+                if name.endswith(".mp3"):
+                    entry["media"] = duration(tmp)
+            except Exception as e:  # noqa: BLE001
+                entry["download_error"] = repr(e)
+        out.append(entry)
+        print(json.dumps({k: v for k, v in entry.items() if k != "media"}), flush=True)
+    (ROOT / "tools" / "data" / "wahy_wayback.json").write_text(
+        json.dumps(out, indent=1) + "\n", encoding="utf-8")
+
+
 if __name__ == "__main__":
-    {"probe": cmd_probe, "fetch": cmd_fetch}[sys.argv[1]]()
+    {"probe": cmd_probe, "fetch": cmd_fetch, "wayback": cmd_wayback}[sys.argv[1]]()
