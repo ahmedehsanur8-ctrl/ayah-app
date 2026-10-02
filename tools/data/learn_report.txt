@@ -1,5 +1,5 @@
 কুরআন বুঝি content DB (tools/learn/build_learn_db.py)
-Tanzil text: not checked (run with --check-tanzil)
+Tanzil text: identical to the live tanzil.net download
 QAC source: https://raw.githubusercontent.com/cltk/arabic_morphology_quranic-corpus/master/quranic-corpus-morphology-0.4.txt (sha256 a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46)
 Words (Tanzil = corpus, every ayah): 77429
 Tanzil tokens joined into one corpus word (4): 2:181 بَعْدَ مَا; 8:6 بَعْدَ مَا; 13:37 بَعْدَ مَا; 37:130 إِلْ يَاسِينَ
