@@ -62,7 +62,7 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
       body: st == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
               children: [
                 _Summary(missing: st.missingForReminders),
                 const SizedBox(height: 14),

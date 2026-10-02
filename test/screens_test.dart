@@ -2,6 +2,7 @@ import 'package:ayah_reminder/app_state.dart';
 import 'package:ayah_reminder/screens/about_screen.dart';
 import 'package:ayah_reminder/screens/azan_settings_screen.dart';
 import 'package:ayah_reminder/screens/collection_screen.dart';
+import 'package:ayah_reminder/screens/dua_screens.dart';
 import 'package:ayah_reminder/screens/credits_screen.dart';
 import 'package:ayah_reminder/screens/home_shell.dart';
 import 'package:ayah_reminder/screens/prayer_screen.dart';
@@ -421,6 +422,48 @@ void main() {
         expect(find.textContaining('আজানের ভলিউম'), findsOneWidget);
         expect(find.text('কম্পন'), findsOneWidget);
         expect(find.text('সাইলেন্ট মোডেও বাজবে'), findsOneWidget);
+      });
+
+      testWidgets('main screens fit a small phone at 1.5× text (no overflow)', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        final s = AppState.instance.settings;
+        if (!s.hasLocation) await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+        final screens = <Widget>[
+          const HomeShell(),
+          const PrayerScreen(),
+          const QiblaScreen(),
+          const QuranScreen(),
+          const QuranReaderScreen(surah: 2),
+          const DuaHomeScreen(),
+          const TasbihScreen(),
+          const StoriesScreen(),
+          const SettingsScreen(),
+        ];
+        for (final w in screens) {
+          HomeShell.tab.value = 0;
+          await t.pumpWidget(
+            MediaQuery(
+              data: const MediaQueryData(size: Size(360, 740), textScaler: TextScaler.linear(1.5)),
+              child: app(w, b),
+            ),
+          );
+          await t.pump(const Duration(milliseconds: 500));
+          // Any overflow is reported as an error and fails the test.
+          expect(t.takeException(), isNull, reason: w.runtimeType.toString());
+        }
+        // Each tab of the bottom bar too.
+        for (final tab in [HomeShell.quran, HomeShell.duas, HomeShell.mood, HomeShell.stories]) {
+          HomeShell.tab.value = tab;
+          await t.pumpWidget(
+            MediaQuery(
+              data: const MediaQueryData(size: Size(360, 740), textScaler: TextScaler.linear(1.5)),
+              child: app(const HomeShell(), b),
+            ),
+          );
+          await t.pump(const Duration(milliseconds: 500));
+          expect(t.takeException(), isNull, reason: 'tab $tab');
+        }
+        HomeShell.tab.value = 0;
       });
 
       testWidgets('stories list and a story page', (t) async {

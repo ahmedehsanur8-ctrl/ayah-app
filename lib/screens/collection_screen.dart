@@ -91,7 +91,7 @@ class CollectionScreen extends StatelessWidget {
                             const Text(
                               'সব শুনুন',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Brand.onNight,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -99,7 +99,7 @@ class CollectionScreen extends StatelessWidget {
                             Text(
                               counts,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.78),
+                                color: Brand.onNight.withValues(alpha: 0.78),
                                 fontSize: 14,
                               ),
                             ),

@@ -100,7 +100,7 @@ class CategoryChip extends StatelessWidget {
     final p = context.palette;
     final style = CategoryStyle.of(item.categoryId);
     final fg = onDark ? Brand.lightGold : style.foreground(p);
-    final bg = onDark ? Colors.white.withValues(alpha: 0.12) : style.background(p);
+    final bg = onDark ? Brand.onNight.withValues(alpha: 0.12) : style.background(p);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(30)),
@@ -297,9 +297,13 @@ class ItemBody extends StatelessWidget {
           ],
         ),
         if (item.placeholder)
-          const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: BanglaText('কিছু লেখা ডাউনলোড করা যায়নি।', size: 13, color: Colors.red),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: BanglaText(
+              'কিছু লেখা ডাউনলোড করা যায়নি।',
+              size: 14,
+              color: context.palette.heart,
+            ),
           ),
         if (item.note.trim().isNotEmpty) ...[const SizedBox(height: 18), NoteBox(item)],
       ],

@@ -50,6 +50,13 @@ import java.util.Locale
  * stream, with a "থামান" notification and an optional full-screen page
  * ([AzanActivity]). [AzanBootReceiver] sets the alarm again after a restart.
  */
+/** "Night & Gold" colours for the native screens (same values as lib/theme.dart). */
+object NightGold {
+    val NIGHT = Color.parseColor("#14213D")
+    val GOLD = Color.parseColor("#D4AF37")
+    val EMERALD = Color.parseColor("#0B6B55")
+}
+
 object AzanStore {
     private const val PREFS = "azan_schedule"
 
@@ -247,7 +254,7 @@ object AzanNotifications {
             .setContentIntent(open)
             .setAutoCancel(true)
             .setCategory(Notification.CATEGORY_REMINDER)
-            .setColor(Color.parseColor("#14553F"))
+            .setColor(NightGold.EMERALD)
             .build()
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         try {
@@ -470,7 +477,7 @@ class AzanService : Service() {
             .setContentText("আজান চলছে · ${AzanNotifications.clock(time)}")
             .setCategory(Notification.CATEGORY_ALARM)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setColor(Color.parseColor("#14553F"))
+            .setColor(NightGold.EMERALD)
             .setOngoing(true)
             .setContentIntent(page)
             .setDeleteIntent(stop)
@@ -537,11 +544,11 @@ class AzanActivity : Activity() {
         }
         val name = intent.getStringExtra("name") ?: ""
         val time = intent.getLongExtra("time", 0L)
-        val gold = Color.parseColor("#F1DDA8")
+        val gold = NightGold.GOLD
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#0E3B2C"))
+            setBackgroundColor(NightGold.NIGHT)
             setPadding(dp(24f).toInt(), dp(24f).toInt(), dp(24f).toInt(), dp(24f).toInt())
         }
         fun text(s: String, size: Float, color: Int, bold: Boolean = false) = TextView(this).apply {
@@ -557,7 +564,7 @@ class AzanActivity : Activity() {
         val stop = Button(this).apply {
             text = "থামান"
             textSize = 24f
-            setTextColor(Color.parseColor("#0E3B2C"))
+            setTextColor(NightGold.NIGHT)
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(gold)

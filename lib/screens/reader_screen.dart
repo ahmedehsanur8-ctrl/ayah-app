@@ -241,9 +241,13 @@ class _ReaderPage extends StatelessWidget {
         ),
         if (item.gradeCheck) ...[const SizedBox(height: 10), const GradeCheckBadge()],
         if (item.placeholder)
-          const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: BanglaText('কিছু লেখা ডাউনলোড করা যায়নি।', size: 13, color: Colors.red),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: BanglaText(
+              'কিছু লেখা ডাউনলোড করা যায়নি।',
+              size: 14,
+              color: context.palette.heart,
+            ),
           ),
         const SizedBox(height: 18),
         Wrap(
@@ -430,8 +434,8 @@ class _Player extends StatelessWidget {
     final speaking = status == AudioStatus.speaking;
     final who = item.isAyah ? Reciter.byId(settings.reciterId).name : 'ফোনের বাংলা কণ্ঠ';
     final then = item.isAyah && settings.readBanglaAfterArabic ? 'তারপর বাংলা অর্থ' : null;
-    const onGreen = Colors.white;
-    final dim = Colors.white.withValues(alpha: 0.72);
+    const onGreen = Brand.onNight;
+    final dim = Brand.onNight.withValues(alpha: 0.72);
 
     return Container(
       decoration: BoxDecoration(
@@ -496,7 +500,7 @@ class _Player extends StatelessWidget {
                       LinearProgressIndicator(
                         minHeight: 3,
                         color: p.gold,
-                        backgroundColor: Colors.white24,
+                        backgroundColor: Brand.onNight.withValues(alpha: 0.24),
                       ),
                       const SizedBox(height: 6),
                       Text('বাংলা অর্থ পড়া হচ্ছে…', style: TextStyle(color: dim, fontSize: 14)),
@@ -519,7 +523,7 @@ class _Player extends StatelessWidget {
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 3,
                             activeTrackColor: p.gold,
-                            inactiveTrackColor: Colors.white24,
+                            inactiveTrackColor: Brand.onNight.withValues(alpha: 0.24),
                             thumbColor: p.gold,
                             overlayShape: SliderComponentShape.noOverlay,
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
@@ -562,7 +566,7 @@ class _Player extends StatelessWidget {
                     icon: Icon(
                       Icons.skip_previous_rounded,
                       size: 30,
-                      color: hasPrev ? onGreen : Colors.white30,
+                      color: hasPrev ? onGreen : Brand.onNight.withValues(alpha: 0.3),
                     ),
                   ),
                   SizedBox.square(
@@ -596,7 +600,7 @@ class _Player extends StatelessWidget {
                     icon: Icon(
                       Icons.skip_next_rounded,
                       size: 30,
-                      color: hasNext ? onGreen : Colors.white30,
+                      color: hasNext ? onGreen : Brand.onNight.withValues(alpha: 0.3),
                     ),
                   ),
                   ListenableBuilder(

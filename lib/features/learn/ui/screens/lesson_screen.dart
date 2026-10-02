@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../models/content.dart';
 import '../../../../services/quran.dart';
@@ -101,7 +102,13 @@ class _LessonScreenState extends State<LessonScreen> {
         if (await _confirmExit() && context.mounted) Navigator.of(context).pop();
       },
       child: Scaffold(
+        // A light header here, so the emerald step bar stays easy to see.
         appBar: AppBar(
+          backgroundColor: p.background,
+          foregroundColor: p.text,
+          iconTheme: IconThemeData(color: p.text),
+          systemOverlayStyle: p.isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+          titleTextStyle: titleStyle(p, size: 20),
           title: Row(
             children: [
               Expanded(child: Text(lesson.title, overflow: TextOverflow.ellipsis)),

@@ -5,6 +5,7 @@ import '../models/content.dart';
 import '../models/topics.dart';
 import '../theme.dart';
 import '../widgets/category_style.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 import 'collection_screen.dart';
 import 'reader_screen.dart';
@@ -179,28 +180,17 @@ class _Grid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-        childAspectRatio: 0.86,
-      ),
-      itemCount: topics.length,
-      itemBuilder: (context, i) {
-        final t = topics[i];
-        final style = CategoryStyle.of(t.id);
-        return GridTile3(
-          icon: style.icon,
-          tint: style.tintOf(p),
-          title: t.name,
-          subtitle: counts(t),
-          onTap: () => onTap(t),
-        );
-      },
+    // Clean rows with dividers (no grid of tinted tiles).
+    return ListSection(
+      children: [
+        for (final t in topics)
+          ListRow(
+            icon: CategoryStyle.of(t.id).icon,
+            title: t.name,
+            subtitle: counts(t),
+            onTap: () => onTap(t),
+          ),
+      ],
     );
   }
 }

@@ -185,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListenableBuilder(
         listenable: settings,
         builder: (context, _) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

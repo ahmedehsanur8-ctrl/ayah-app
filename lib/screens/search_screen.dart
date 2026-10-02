@@ -156,7 +156,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('খুঁজুন')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
         children: [
           TextField(
             controller: _query,

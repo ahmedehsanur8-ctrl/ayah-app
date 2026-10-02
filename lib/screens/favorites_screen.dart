@@ -26,8 +26,6 @@ class FavoritesScreen extends StatelessWidget {
         appBar: AppBar(
           title: const Text('প্রিয়'),
           bottom: const TabBar(
-            labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-            unselectedLabelStyle: TextStyle(fontSize: 15),
             tabs: [
               Tab(text: 'আয়াত ও হাদিস'),
               Tab(text: 'দোয়া'),

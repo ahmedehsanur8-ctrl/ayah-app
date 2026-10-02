@@ -1104,18 +1104,18 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
                                 value: d.total == 0 ? 0.0 : _count / d.total,
                                 strokeWidth: 5,
                                 color: p.gold,
-                                backgroundColor: Colors.white12,
+                                backgroundColor: Brand.onNight.withValues(alpha: 0.12),
                               ),
                             ),
                             Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (complete)
-                                  const Icon(Icons.check_rounded, color: Colors.white, size: 30),
+                                  const Icon(Icons.check_rounded, color: Brand.onNight, size: 30),
                                 Text(
                                   circleText,
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: Brand.onNight,
                                     fontSize: 30,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1124,7 +1124,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
                                   Text(
                                     'চাপ দিন',
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.75),
+                                      color: Brand.onNight.withValues(alpha: 0.75),
                                       fontSize: 14,
                                     ),
                                   ),

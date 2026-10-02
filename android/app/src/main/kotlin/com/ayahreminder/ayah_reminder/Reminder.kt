@@ -257,7 +257,7 @@ class ReminderService : Service() {
             .setStyle(Notification.BigTextStyle().bigText(e.optString("body")))
             .setCategory(Notification.CATEGORY_ALARM)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setColor(Color.parseColor("#14553F"))
+            .setColor(NightGold.EMERALD)
             .setOngoing(true)
             .setAutoCancel(true)
             .setContentIntent(open)

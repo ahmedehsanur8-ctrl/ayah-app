@@ -252,7 +252,7 @@ class _WelcomePage extends StatelessWidget {
                     fontFamily: headingFont,
                     fontWeight: FontWeight.w700,
                     fontSize: 24,
-                    color: Colors.white,
+                    color: Brand.onNight,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -260,7 +260,7 @@ class _WelcomePage extends StatelessWidget {
                   'প্রতিদিন কুরআনের একটি আয়াত ও একটি হাদিস, ঠিক সময়ে অ্যালার্মের মতো মনে করিয়ে দেবে।',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Brand.onNight.withValues(alpha: 0.85),
                     fontSize: 15.5,
                     height: 1.6,
                   ),

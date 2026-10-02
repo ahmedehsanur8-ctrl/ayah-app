@@ -78,6 +78,10 @@ class _TasbihScreenState extends State<TasbihScreen> {
         actions: [
           TextButton.icon(
             onPressed: _count == 0 ? null : _reset,
+            style: TextButton.styleFrom(
+              foregroundColor: p.gold,
+              disabledForegroundColor: p.onNight.withValues(alpha: 0.5),
+            ),
             icon: const Icon(Icons.restart_alt_rounded),
             label: const Text('আবার শুরু'),
           ),

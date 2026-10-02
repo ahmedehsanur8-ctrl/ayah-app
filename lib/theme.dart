@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Big titles.
 const titleFont = 'NotoSerifBengali';
@@ -265,14 +266,30 @@ ThemeData buildTheme(Brightness brightness) {
       labelLarge: ui.copyWith(fontSize: 16, fontWeight: FontWeight.w600),
       labelMedium: ui.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
     ),
+    // Every sub-page gets the compact night header (white text, gold accents).
     appBarTheme: AppBarTheme(
-      backgroundColor: p.background,
-      foregroundColor: p.text,
+      backgroundColor: p.night,
+      foregroundColor: p.onNight,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleTextStyle: titleStyle(p, size: 21),
+      systemOverlayStyle: SystemUiOverlayStyle.light,
+      iconTheme: IconThemeData(color: p.onNight),
+      actionsIconTheme: IconThemeData(color: p.onNight),
+      titleTextStyle: titleStyle(
+        p,
+        size: 20,
+      ).copyWith(color: p.onNight, fontWeight: FontWeight.w700),
+    ),
+    // The only tab bar sits in a night app bar (প্রিয়).
+    tabBarTheme: TabBarThemeData(
+      labelColor: p.onNight,
+      unselectedLabelColor: p.onNightMuted,
+      indicatorColor: p.gold,
+      dividerColor: Colors.transparent,
+      labelStyle: ui.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+      unselectedLabelStyle: ui.copyWith(fontSize: 16),
     ),
     cardTheme: CardThemeData(
       color: p.surface,

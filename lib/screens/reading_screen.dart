@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../features/learn/ui/reminder_learning.dart';
@@ -7,6 +8,7 @@ import '../services/audio.dart';
 import '../services/reminders.dart';
 import '../theme.dart';
 import '../widgets/item_view.dart';
+import '../widgets/night.dart';
 import '../widgets/pattern.dart';
 import 'home_shell.dart';
 import 'onboarding_screen.dart';
@@ -35,6 +37,13 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
     ..forward();
 
   bool get _ready => _countdown.isCompleted;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // No entrance movement when the phone asks for reduced motion.
+    if (reduceMotion(context) && !_enter.isCompleted) _enter.value = 1;
+  }
 
   @override
   void initState() {
@@ -116,82 +125,106 @@ class _ReadingScreenState extends State<ReadingScreen> with TickerProviderStateM
               colors: [p.readingTop, p.readingBottom],
             ),
           ),
-          child: Stack(
+          child: Column(
             children: [
-              PatternLayer(color: p.pattern, opacity: p.isDark ? 0.06 : 0.05, cell: 60),
-              SafeArea(
-                child: Column(
+              // Compact night bar.
+              AnnotatedRegion<SystemUiOverlayStyle>(
+                value: SystemUiOverlayStyle.light,
+                child: Material(
+                  color: p.night,
+                  child: Stack(
+                    children: [
+                      const GirihLayer(cell: 44, opacity: 0.16),
+                      SafeArea(
+                        bottom: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+                          child: Row(
+                            children: [
+                              if (canLeave)
+                                NightIconButton(
+                                  tooltip: 'বন্ধ করুন',
+                                  icon: Icons.close_rounded,
+                                  onPressed: () => Navigator.of(context).maybePop(),
+                                )
+                              else
+                                const SizedBox(width: 48),
+                              Expanded(
+                                child: Text(
+                                  heading,
+                                  textAlign: TextAlign.center,
+                                  style: nightTitleStyle(p, size: 19),
+                                ),
+                              ),
+                              FavoriteButton(widget.item, color: p.onNight),
+                              ShareButton(widget.item, color: p.onNight),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Stack(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
-                      child: Row(
+                    PatternLayer(color: p.pattern, opacity: p.isDark ? 0.06 : 0.05, cell: 60),
+                    SafeArea(
+                      top: false,
+                      child: Column(
                         children: [
-                          if (canLeave)
-                            IconButton(
-                              tooltip: 'বন্ধ করুন',
-                              icon: Icon(Icons.close_rounded, color: p.text),
-                              onPressed: () => Navigator.of(context).maybePop(),
-                            )
-                          else
-                            const SizedBox(width: 48),
                           Expanded(
-                            child: Text(
-                              heading,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.titleMedium,
+                            child: FadeTransition(
+                              opacity: CurvedAnimation(parent: _enter, curve: Curves.easeOut),
+                              child: SlideTransition(
+                                position: Tween(
+                                  begin: const Offset(0, 0.04),
+                                  end: Offset.zero,
+                                ).animate(CurvedAnimation(parent: _enter, curve: Curves.easeOut)),
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.fromLTRB(22, 10, 22, 20),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                                    children: [
+                                      Center(child: CategoryChip(widget.item)),
+                                      const SizedBox(height: 14),
+                                      Center(
+                                        child: ItemAudioButton(
+                                          widget.item,
+                                          label: widget.item.isAyah
+                                              ? 'তিলাওয়াত শুনুন'
+                                              : 'হাদিস শুনুন',
+                                        ),
+                                      ),
+                                      const SizedBox(height: 18),
+                                      ItemBody(
+                                        widget.item,
+                                        arabic: ReminderLearningAyah.forItem(widget.item),
+                                        afterMeaning: UnderstandAyahButton.forItem(widget.item),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                          FavoriteButton(widget.item),
-                          ShareButton(widget.item),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(20, 4, 20, widget.fromReminder ? 4 : 18),
+                            child: _CountdownButton(controller: _countdown, onPressed: _done),
+                          ),
+                          if (widget.fromReminder)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
+                              child: TextButton.icon(
+                                onPressed: _snooze,
+                                icon: const Icon(Icons.snooze_rounded),
+                                label: const Text('১০ মিনিট পরে'),
+                              ),
+                            ),
                         ],
                       ),
                     ),
-                    Expanded(
-                      child: FadeTransition(
-                        opacity: CurvedAnimation(parent: _enter, curve: Curves.easeOut),
-                        child: SlideTransition(
-                          position: Tween(
-                            begin: const Offset(0, 0.04),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(parent: _enter, curve: Curves.easeOut)),
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(22, 10, 22, 20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Center(child: CategoryChip(widget.item)),
-                                const SizedBox(height: 14),
-                                Center(
-                                  child: ItemAudioButton(
-                                    widget.item,
-                                    label: widget.item.isAyah ? 'তিলাওয়াত শুনুন' : 'হাদিস শুনুন',
-                                  ),
-                                ),
-                                const SizedBox(height: 18),
-                                ItemBody(
-                                  widget.item,
-                                  arabic: ReminderLearningAyah.forItem(widget.item),
-                                  afterMeaning: UnderstandAyahButton.forItem(widget.item),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(20, 4, 20, widget.fromReminder ? 4 : 18),
-                      child: _CountdownButton(controller: _countdown, onPressed: _done),
-                    ),
-                    if (widget.fromReminder)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: TextButton.icon(
-                          onPressed: _snooze,
-                          icon: const Icon(Icons.snooze_rounded),
-                          label: const Text('১০ মিনিট পরে'),
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -218,19 +251,19 @@ class _CountdownButton extends StatelessWidget {
       builder: (context, _) {
         final ready = controller.isCompleted;
         final left = (ReadingScreen.countdownSeconds * (1 - controller.value)).ceil().clamp(0, 99);
-        final fg = ready ? (p.isDark ? Brand.night : Colors.white) : p.text;
+        final fg = ready ? p.onPrimary : p.text;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeOut,
           height: 62,
           decoration: BoxDecoration(
-            color: ready ? p.primary : p.surface,
+            color: ready ? p.action : p.surface,
             borderRadius: BorderRadius.circular(31),
-            border: Border.all(color: ready ? p.primary : p.border),
+            border: Border.all(color: ready ? p.action : p.border),
             boxShadow: ready
                 ? [
                     BoxShadow(
-                      color: p.primary.withValues(alpha: 0.35),
+                      color: p.action.withValues(alpha: 0.35),
                       blurRadius: 18,
                       offset: const Offset(0, 6),
                     ),
@@ -258,7 +291,7 @@ class _CountdownButton extends StatelessWidget {
                               strokeWidth: 3.5,
                               strokeCap: StrokeCap.round,
                               backgroundColor: p.border,
-                              color: ready ? Colors.transparent : p.accent,
+                              color: ready ? Colors.transparent : p.gold,
                             ),
                           ),
                           AnimatedSwitcher(

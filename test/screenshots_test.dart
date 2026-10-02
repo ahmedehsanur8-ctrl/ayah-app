@@ -15,6 +15,7 @@ import 'package:ayah_reminder/screens/home_shell.dart';
 import 'package:ayah_reminder/screens/mood_screen.dart';
 import 'package:ayah_reminder/screens/prayer_screen.dart';
 import 'package:ayah_reminder/screens/qibla_screen.dart';
+import 'package:ayah_reminder/screens/reading_screen.dart';
 import 'package:ayah_reminder/screens/quran_reader_screen.dart';
 import 'package:ayah_reminder/screens/quran_screen.dart';
 import 'package:ayah_reminder/widgets/quran_widgets.dart';
@@ -63,6 +64,7 @@ final shots = <String, Widget Function()>{
   'saved': () => const FavoritesScreen(),
   'settings': () => const SettingsScreen(),
   'setup': () => const SetupScreen(),
+  'reminder': () => ReadingScreen(item: AppState.instance.rotation.morning(0)!, fromReminder: true),
 };
 
 /// Steps to take before a picture (e.g. move to the word step of a lesson).

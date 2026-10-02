@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
 import '../theme.dart';
 import '../widgets/category_style.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 import 'collection_screen.dart';
 import 'topics_screen.dart';
@@ -31,47 +33,46 @@ class MoodScreen extends StatelessWidget {
     final p = context.palette;
     final moods = AppState.instance.data.moods;
     return Scaffold(
-      body: SafeArea(
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+          padding: EdgeInsets.zero,
           children: [
-            const PageTitle(
-              'আপনার মন এখন কেমন?',
+            const NightHeader(
+              title: 'আপনার মন এখন কেমন?',
               subtitle: 'যেমন লাগছে সেটি বেছে নিন — তার জন্য কুরআনের আয়াত ও হাদিস।',
+              lip: true,
             ),
-            if (moods.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text(
-                  'মনের অবস্থার তালিকা শীঘ্রই আসছে।',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: p.muted),
-                ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.92,
-                ),
-                itemCount: moods.length,
-                itemBuilder: (context, i) {
-                  final m = moods[i];
-                  final style = CategoryStyle.of(m.id);
-                  return GridTile3(
-                    icon: style.icon,
-                    tint: style.tintOf(p),
-                    title: m.name,
-                    onTap: () => open(context, m),
-                  );
-                },
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (moods.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Text(
+                        'মনের অবস্থার তালিকা শীঘ্রই আসছে।',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: p.muted),
+                      ),
+                    )
+                  else
+                    ListSection(
+                      children: [
+                        for (final m in moods)
+                          ListRow(
+                            icon: CategoryStyle.of(m.id).icon,
+                            title: m.name,
+                            onTap: () => open(context, m),
+                          ),
+                      ],
+                    ),
+                  const SectionLabel('বিষয় অনুযায়ী আয়াত ও হাদিস'),
+                  const TopicsSection(),
+                ],
               ),
-            const SectionLabel('বিষয় অনুযায়ী আয়াত ও হাদিস'),
-            const TopicsSection(),
+            ),
           ],
         ),
       ),
