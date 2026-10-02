@@ -53,13 +53,26 @@ import java.util.Locale
 object AzanStore {
     private const val PREFS = "azan_schedule"
 
-    fun save(context: Context, events: String, inSilent: Boolean, fullScreen: Boolean) {
+    fun save(
+        context: Context, events: String, inSilent: Boolean, fullScreen: Boolean,
+        volume: Double, vibrate: Boolean,
+    ) {
+        // commit (not apply): the alarm is set right after, and a restart must find the new list.
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString("events", events)
             .putBoolean("inSilent", inSilent)
             .putBoolean("fullScreen", fullScreen)
-            .apply()
+            .putFloat("volume", volume.toFloat())
+            .putBoolean("vibrate", vibrate)
+            .commit()
     }
+
+    /** Azan volume, 0.1 – 1.0 of the alarm volume. */
+    fun volume(context: Context) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getFloat("volume", 1f).coerceIn(0.1f, 1f)
+
+    fun vibrate(context: Context) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("vibrate", true)
 
     fun events(context: Context): JSONArray = try {
         JSONArray(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("events", "[]"))
@@ -83,7 +96,10 @@ object AzanScheduler {
             i.putExtra("key", e.optString("key"))
                 .putExtra("name", e.optString("name"))
                 .putExtra("mode", e.optString("mode"))
+                .putExtra("sound", e.optString("sound"))
                 .putExtra("fajr", e.optBoolean("fajr"))
+                .putExtra("mins", e.optInt("mins"))
+                .putExtra("azan", e.optLong("azan"))
                 .putExtra("time", e.optLong("t"))
         }
         return PendingIntent.getBroadcast(
@@ -106,16 +122,16 @@ object AzanScheduler {
         val t = e.optLong("t")
         val exact = Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()
         try {
-            if (exact && e.optString("mode") == "azan") {
+            if (exact) {
                 // An alarm clock is the most reliable way to wake the phone on time,
-                // also on phones that stop background work (Oppo, Xiaomi, …).
+                // also on phones that stop background work (Oppo/ColorOS, Xiaomi, …).
+                // It is used for every event (also reminders), so the chain of
+                // "ring, then set the next one" is never broken by a dropped alarm.
                 val show = PendingIntent.getActivity(
                     context, REQUEST + 1, Intent(context, MainActivity::class.java),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 am.setAlarmClock(AlarmManager.AlarmClockInfo(t, show), pi)
-            } else if (exact) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi)
             } else {
                 am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, t, pi)
             }
@@ -133,10 +149,16 @@ class AzanAlarmReceiver : BroadcastReceiver() {
         val late = System.currentTimeMillis() - time
         // Don't start an azan that is more than 15 minutes late (phone was off, etc.).
         if (time > 0 && late < 15 * 60 * 1000L) {
-            if (intent.getStringExtra("mode") == "azan") {
-                AzanService.start(context, name, intent.getBooleanExtra("fajr", false), time)
-            } else {
-                AzanNotifications.showPrayerTime(context, name, time)
+            val azanAt = intent.getLongExtra("azan", time)
+            val mins = intent.getIntExtra("mins", 0)
+            when (intent.getStringExtra("mode")) {
+                "azan" -> AzanService.start(
+                    context, name, intent.getBooleanExtra("fajr", false), time,
+                    intent.getStringExtra("sound") ?: "nabawi",
+                )
+                "before" -> AzanNotifications.showBefore(context, name, mins, azanAt)
+                "iqamah" -> AzanNotifications.showIqamah(context, name, mins, azanAt)
+                else -> AzanNotifications.showPrayerTime(context, name, time)
             }
         }
         AzanScheduler.scheduleNext(context, maxOf(time, System.currentTimeMillis()))
@@ -153,9 +175,13 @@ class AzanBootReceiver : BroadcastReceiver() {
 
 object AzanNotifications {
     const val PLAYING_CHANNEL = "azan_playing"
-    const val NOTIFY_CHANNEL = "azan_notify"
+    private const val OLD_NOTIFY_CHANNEL = "azan_notify"
+    const val NOTIFY_CHANNEL = "prayer_alert"
+    const val QUIET_CHANNEL = "prayer_alert_quiet"
     const val PLAYING_ID = 7100
     private const val NOTIFY_ID = 7101
+    private const val BEFORE_ID = 7105
+    private const val IQAMAH_ID = 7106
 
     fun ensureChannels(context: Context) {
         if (Build.VERSION.SDK_INT < 26) return
@@ -165,33 +191,59 @@ object AzanNotifications {
         playing.setSound(null, null) // the service plays the azan itself
         playing.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         nm.createNotificationChannel(playing)
-        val notify = NotificationChannel(NOTIFY_CHANNEL, "নামাজের সময় (শুধু নোটিফিকেশন)", NotificationManager.IMPORTANCE_HIGH)
-        notify.description = "আজান ছাড়া, শুধু নামাজের সময় জানায়"
+        nm.deleteNotificationChannel(OLD_NOTIFY_CHANNEL)
+        val notify = NotificationChannel(NOTIFY_CHANNEL, "নামাজের সময় ও রিমাইন্ডার", NotificationManager.IMPORTANCE_HIGH)
+        notify.description = "শুধু নোটিফিকেশন, আজানের আগের ও ইকামতের রিমাইন্ডার (কম্পনসহ)"
         notify.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        notify.enableVibration(true)
         nm.createNotificationChannel(notify)
+        val quiet = NotificationChannel(QUIET_CHANNEL, "নামাজের সময় ও রিমাইন্ডার (কম্পন ছাড়া)", NotificationManager.IMPORTANCE_HIGH)
+        quiet.description = "কম্পন বন্ধ থাকলে এটি ব্যবহার হয়"
+        quiet.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+        quiet.enableVibration(false)
+        quiet.vibrationPattern = longArrayOf(0)
+        nm.createNotificationChannel(quiet)
+    }
+
+    fun bn(s: String): String {
+        val digits = "০১২৩৪৫৬৭৮৯"
+        return s.map { if (it in '0'..'9') digits[it - '0'] else it }.joinToString("")
     }
 
     @Suppress("DEPRECATION")
     fun builder(context: Context, channel: String): Notification.Builder =
         if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, channel) else Notification.Builder(context)
 
-    fun clock(time: Long): String {
-        val t = SimpleDateFormat("h:mm", Locale.US).format(Date(if (time > 0) time else System.currentTimeMillis()))
-        val bn = "০১২৩৪৫৬৭৮৯"
-        return t.map { if (it in '0'..'9') bn[it - '0'] else it }.joinToString("")
-    }
+    fun clock(time: Long): String =
+        bn(SimpleDateFormat("h:mm", Locale.US).format(Date(if (time > 0) time else System.currentTimeMillis())))
 
     /** "শুধু নোটিফিকেশন" mode. */
-    fun showPrayerTime(context: Context, name: String, time: Long) {
+    fun showPrayerTime(context: Context, name: String, time: Long) =
+        show(context, NOTIFY_ID, "${genitive(name)} সময় হয়েছে", "$name · ${clock(time)}")
+
+    /** Reminder [mins] minutes before the azan. */
+    fun showBefore(context: Context, name: String, mins: Int, azan: Long) = show(
+        context, BEFORE_ID, "${bn(mins.toString())} মিনিট পর ${genitive(name)} আজান",
+        "আজান ${clock(azan)} · প্রস্তুতি নিন",
+    )
+
+    /** Iqamah reminder [mins] minutes after the azan. */
+    fun showIqamah(context: Context, name: String, mins: Int, azan: Long) = show(
+        context, IQAMAH_ID, "${genitive(name)} ইকামতের সময়",
+        "আজান হয়েছে ${clock(azan)} · ${bn(mins.toString())} মিনিট পর জামাত",
+    )
+
+    private fun show(context: Context, id: Int, title: String, text: String) {
         ensureChannels(context)
         val open = PendingIntent.getActivity(
             context, 7102, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val n = builder(context, NOTIFY_CHANNEL)
+        val channel = if (AzanStore.vibrate(context)) NOTIFY_CHANNEL else QUIET_CHANNEL
+        val n = builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("${genitive(name)} সময় হয়েছে")
-            .setContentText("$name · ${clock(time)}")
+            .setContentTitle(title)
+            .setContentText(text)
             .setContentIntent(open)
             .setAutoCancel(true)
             .setCategory(Notification.CATEGORY_REMINDER)
@@ -199,7 +251,7 @@ object AzanNotifications {
             .build()
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         try {
-            nm.notify(NOTIFY_ID, n)
+            nm.notify(id, n)
         } catch (e: SecurityException) {
             // Notifications not allowed.
         }
@@ -221,9 +273,14 @@ class AzanService : Service() {
         /** Called when the azan stops (so the full-screen page can close). */
         var onStopped: (() -> Unit)? = null
 
-        fun start(context: Context, name: String, fajr: Boolean, time: Long) {
+        /** [volume] < 0 uses the saved azan volume ("শুনে দেখুন" passes the slider's value). */
+        fun start(
+            context: Context, name: String, fajr: Boolean, time: Long, sound: String,
+            volume: Float = -1f,
+        ) {
             val i = Intent(context, AzanService::class.java).setAction(ACTION_PLAY)
                 .putExtra("name", name).putExtra("fajr", fajr).putExtra("time", time)
+                .putExtra("sound", sound).putExtra("volume", volume)
             if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(i) else context.startService(i)
         }
 
@@ -253,6 +310,9 @@ class AzanService : Service() {
         val name = intent?.getStringExtra("name") ?: ""
         val fajr = intent?.getBooleanExtra("fajr", false) ?: false
         val time = intent?.getLongExtra("time", 0L) ?: 0L
+        val sound = intent?.getStringExtra("sound") ?: "nabawi"
+        val asked = intent?.getFloatExtra("volume", -1f) ?: -1f
+        val volume = if (asked > 0f) asked.coerceIn(0.1f, 1f) else AzanStore.volume(this)
         AzanNotifications.ensureChannels(this)
         val notification = buildNotification(name, time)
         if (Build.VERSION.SDK_INT >= 29) {
@@ -270,27 +330,58 @@ class AzanService : Service() {
             finish()
             return START_NOT_STICKY
         }
-        if (!play(fajr, am)) {
+        if (!play(sound, fajr, volume, am)) {
             AzanNotifications.showPrayerTime(this, name, time)
             finish()
             return START_NOT_STICKY
         }
         isPlaying = true
+        if (AzanStore.vibrate(this) && am.ringerMode != AudioManager.RINGER_MODE_SILENT) vibrate()
         startVolumeKeyStop()
         if (AzanStore.fullScreen(this) && canShowFullScreen()) openFullScreenPage(name, time)
         return START_NOT_STICKY
     }
 
-    private fun rawId(fajr: Boolean): Int {
-        if (fajr) {
-            val f = resources.getIdentifier("azan_fajr", "raw", packageName)
-            if (f != 0) return f
+    /**
+     * res/raw/azan_<sound>[_fajr].mp3 (sound: nabawi, haram). Fajr uses its own
+     * recording; if a file is missing, the other masjid's recording is used.
+     */
+    private fun rawId(sound: String, fajr: Boolean): Int {
+        val order = if (sound == "haram") listOf("haram", "nabawi") else listOf("nabawi", "haram")
+        val names = order.flatMap { if (fajr) listOf("azan_${it}_fajr", "azan_$it") else listOf("azan_$it") } +
+            // The recording bundled before these sounds were added.
+            (if (fajr) listOf("azan_fajr", "azan") else listOf("azan"))
+        for (n in names) {
+            val id = resources.getIdentifier(n, "raw", packageName)
+            if (id != 0) return id
         }
-        return resources.getIdentifier("azan", "raw", packageName)
+        return 0
     }
 
-    private fun play(fajr: Boolean, am: AudioManager): Boolean {
-        val id = rawId(fajr)
+    /** Three short pulses when the azan starts. */
+    private fun vibrate() {
+        try {
+            val pattern = longArrayOf(0, 600, 400, 600, 400, 600)
+            if (Build.VERSION.SDK_INT >= 31) {
+                val vm = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
+                vm.defaultVibrator.vibrate(android.os.VibrationEffect.createWaveform(pattern, -1))
+            } else {
+                @Suppress("DEPRECATION")
+                val v = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+                if (Build.VERSION.SDK_INT >= 26) {
+                    v.vibrate(android.os.VibrationEffect.createWaveform(pattern, -1))
+                } else {
+                    @Suppress("DEPRECATION")
+                    v.vibrate(pattern, -1)
+                }
+            }
+        } catch (e: Exception) {
+            // No vibrator.
+        }
+    }
+
+    private fun play(sound: String, fajr: Boolean, volume: Float, am: AudioManager): Boolean {
+        val id = rawId(sound, fajr)
         if (id == 0) return false
         val attrs = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_ALARM)
@@ -304,6 +395,7 @@ class AzanService : Service() {
             p.setOnCompletionListener { finish() }
             p.setOnErrorListener { _, _, _ -> finish(); true }
             p.prepare()
+            p.setVolume(volume, volume)
             if (Build.VERSION.SDK_INT >= 26) {
                 val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                     .setAudioAttributes(attrs).build()
