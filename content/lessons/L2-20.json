@@ -1,0 +1,218 @@
+{
+  "id": "L2-20",
+  "level": 2,
+  "ord": 20,
+  "title_bn": "আয়াত ২:২–২:৫",
+  "objective_bn": "চার আয়াত পড়ি; দ্বিতীয় স্তরের পরীক্ষা",
+  "minutes": 15,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 2,
+  "anchor_ayah_to": 5,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 2,
+        "ayah_to": 5
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          41,
+          42,
+          45,
+          47
+        ],
+        "word_refs": [
+          [
+            2,
+            3,
+            4
+          ],
+          [
+            2,
+            3,
+            5
+          ],
+          [
+            2,
+            3,
+            7
+          ],
+          [
+            2,
+            3,
+            8
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "আয়াত ২:২ থেকে ২:৫ পর্যন্ত পড়ুন। নতুন শব্দগুলো: ইউকীমূন (কায়েম করে), আস-সালাত, রাযাকনা (আমরা রিজিক দিয়েছি), ইউনফিকূন (খরচ করে)।",
+        "example": {
+          "surah": 2,
+          "ayah": 3,
+          "word_index": 4
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 43,
+            "distractor_ids": [
+              23,
+              30,
+              252
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 26,
+            "distractor_ids": [
+              41,
+              1,
+              7
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 35,
+            "distractor_ids": [
+              95,
+              206,
+              37
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 111,
+            "distractor_ids": [
+              75,
+              2701,
+              4580
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 34,
+            "distractor_ids": [
+              287,
+              756,
+              111
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 51,
+            "distractor_ids": [
+              628,
+              162,
+              576
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 54,
+            "distractor_ids": [
+              7,
+              12,
+              17
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 50,
+            "distractor_ids": [
+              631,
+              76,
+              160
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 76,
+            "distractor_ids": [
+              459,
+              628,
+              162
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 247,
+            "distractor_ids": [
+              54,
+              35,
+              31
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 31,
+            "distractor_ids": [
+              3042,
+              5015,
+              58
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 287,
+            "distractor_ids": [
+              178,
+              51,
+              56
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 408,
+            "distractor_ids": [
+              31,
+              33,
+              930
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 200,
+            "distractor_ids": [
+              5,
+              11,
+              16
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 160,
+            "distractor_ids": [
+              6,
+              10,
+              15
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          41,
+          42,
+          45,
+          47
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 2,
+        "ayah_to": 5
+      }
+    ]
+  }
+}

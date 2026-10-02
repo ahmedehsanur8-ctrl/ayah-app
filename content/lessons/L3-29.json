@@ -1,0 +1,141 @@
+{
+  "id": "L3-29",
+  "level": 3,
+  "ord": 29,
+  "title_bn": "দুনিয়া ও আখিরাত",
+  "objective_bn": "সময়ের শব্দ",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 4,
+  "anchor_ayah_to": 12,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 4,
+        "ayah_to": 12
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          535,
+          53,
+          52,
+          227,
+          1497
+        ],
+        "word_refs": [
+          [
+            2,
+            85,
+            38
+          ],
+          [
+            2,
+            4,
+            10
+          ],
+          [
+            2,
+            4,
+            9
+          ],
+          [
+            2,
+            27,
+            6
+          ],
+          [
+            99,
+            4,
+            1
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "সময়ের শব্দ: কাবল (আগে), বা‘দ (পরে), দুনিয়া, আখিরাহ, ইয়াওমাইযিন (সেদিন)।",
+        "example": {
+          "surah": 2,
+          "ayah": 4,
+          "word_index": 9
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 535,
+            "distractor_ids": [
+              370,
+              2,
+              5
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 53,
+            "distractor_ids": [
+              535,
+              1,
+              7
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 52,
+            "distractor_ids": [
+              505,
+              140,
+              1497
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 227,
+            "distractor_ids": [
+              576,
+              88,
+              312
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 1497,
+            "distractor_ids": [
+              164,
+              124,
+              505
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 2,
+            "ayah": 25,
+            "word_index": 4
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          535,
+          53,
+          52,
+          227,
+          1497
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 4,
+        "ayah_to": 12
+      }
+    ]
+  }
+}

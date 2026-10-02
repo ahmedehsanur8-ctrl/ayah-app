@@ -1,10 +1,11 @@
 কুরআন বুঝি content DB (tools/learn/build_learn_db.py)
-Tanzil text: live check failed (URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1010)>); used the bundled copy
+Tanzil text: not checked (run with --check-tanzil)
 QAC source: https://raw.githubusercontent.com/cltk/arabic_morphology_quranic-corpus/master/quranic-corpus-morphology-0.4.txt (sha256 a1d12923815341face765083805d2148ed2d9f5cc3f7d6665219d887675d8c46)
 Words (Tanzil = corpus, every ayah): 77429
 Tanzil tokens joined into one corpus word (4): 2:181 بَعْدَ مَا; 8:6 بَعْدَ مَا; 13:37 بَعْدَ مَا; 37:130 إِلْ يَاسِينَ
 Segments: 128219; character spans found for 77218 words (211 without spans)
 Words without a stem lemma: 30
-Lemmas: 4924 stem lemmas + 54 pronoun and prefix/suffix entries
+Lemmas: 4924 stem lemmas + 99 pronoun and prefix/suffix entries
 Coverage of all Quran words by the most frequent stem lemmas: top 10: 23.42%, top 50: 44.06%, top 100: 53.84%, top 150: 59.52%, top 300: 69.92%, top 500: 77.15%
-DB size: 14.27 MB (4.50 MB gzip-compressed)
+Authored content: 30 lessons, 130 lemmas with a Bangla meaning, 227 items still DRAFT (internal testing only)
+DB size: 14.35 MB (4.53 MB gzip-compressed)

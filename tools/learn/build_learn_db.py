@@ -37,11 +37,15 @@ Lemma ids are stable: they follow the order in which each lemma first occurs
 in the Quran, so rebuilding with the same sources gives the same ids (saved
 review cards point at them).
 
-Usage: python3 tools/learn/build_learn_db.py [--check-tanzil] [--qac PATH]
+Usage: python3 tools/learn/build_learn_db.py [--check-tanzil] [--qac PATH] [--release]
+
+DRAFT content (reviewed_by = "DRAFT") is allowed for internal testing; the app shows
+a "খসড়া" badge on it. --release refuses to build while anything is DRAFT.
 """
 
 import argparse
 import collections
+import csv
 import gzip
 import hashlib
 import json
@@ -58,6 +62,7 @@ from quran_word_frequency import BW_MAP, POS_BN  # noqa: E402  (same Buckwalter 
 OUT = ROOT / 'assets' / 'learn' / 'learn_content.db'
 CACHE = ROOT / 'build' / 'learn'
 REPORT = ROOT / 'tools' / 'data' / 'learn_report.txt'
+CONTENT = ROOT / 'content'
 
 # Bump when the DB changes in a way the app must notice (it re-copies the asset).
 CONTENT_VERSION = 1
@@ -271,6 +276,145 @@ def spans(token, seg_list):
     return out
 
 
+# ------------------------------------------------------------------ authored content
+
+ARABIC = __import__('re').compile('[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]')
+
+
+def merge_content(db):
+    """Merges content/lemmas_bn.csv, roots_bn.csv and lessons/*.json and checks every
+    reference. Returns (lessons, lemmas with meaning, drafts). Exits on any error."""
+    if not (CONTENT / 'lemmas_bn.csv').exists():
+        return 0, 0, 0
+    errors = []
+    key_of = dict(db.execute('SELECT id, lemma_key FROM lemma'))
+    drafts = 0
+
+    def rows(name):
+        with open(CONTENT / name, encoding='utf-8-sig', newline='') as f:
+            return list(csv.DictReader(f))
+
+    meaning = {}
+    for r in rows('lemmas_bn.csv'):
+        lid = int(r['lemma_id'])
+        if key_of.get(lid) != r['lemma_key']:
+            errors.append(f'lemmas_bn.csv: id {lid} is {key_of.get(lid)}, not {r["lemma_key"]}')
+            continue
+        if not r['meaning_bn'].strip():
+            errors.append(f'lemmas_bn.csv: {r["lemma_key"]} has no meaning_bn')
+        if not r['reviewed_by'].strip():
+            errors.append(f'lemmas_bn.csv: {r["lemma_key"]} has no reviewed_by')
+        if ARABIC.search(r['meaning_bn'] + r['note_bn'] + r['translit_bn']):
+            errors.append(f'lemmas_bn.csv: {r["lemma_key"]} has Arabic text (use Bangla only)')
+        drafts += r['reviewed_by'].strip() == 'DRAFT'
+        meaning[lid] = r['meaning_bn'].strip()
+        db.execute('UPDATE lemma SET meaning_bn=?, translit_bn=?, note_bn=?, reviewed_by=?, '
+                   'reviewed_on=? WHERE id=?',
+                   (r['meaning_bn'].strip(), r['translit_bn'].strip() or None,
+                    r['note_bn'].strip() or None, r['reviewed_by'].strip(),
+                    r['reviewed_on'].strip() or None, lid))
+
+    db.execute('CREATE TABLE root_info (root TEXT PRIMARY KEY, meaning_bn TEXT, '
+               'reviewed_by TEXT, reviewed_on TEXT)')
+    roots = {r[0] for r in db.execute('SELECT DISTINCT root FROM lemma WHERE root IS NOT NULL')}
+    for r in rows('roots_bn.csv'):
+        if r['root'] not in roots:
+            errors.append(f'roots_bn.csv: unknown root {r["root"]}')
+        if not r['meaning_bn'].strip() or not r['reviewed_by'].strip():
+            errors.append(f'roots_bn.csv: {r["root"]} needs meaning_bn and reviewed_by')
+        drafts += r['reviewed_by'].strip() == 'DRAFT'
+        db.execute('INSERT INTO root_info VALUES (?,?,?,?)',
+                   (r['root'], r['meaning_bn'].strip(), r['reviewed_by'].strip(),
+                    r['reviewed_on'].strip() or None))
+
+    def word_id(s, a, w):
+        r = db.execute('SELECT id FROM quran_word WHERE surah=? AND ayah=? AND word_index=?',
+                       (s, a, w)).fetchone()
+        return r[0] if r else None
+
+    def words_in(s, a):
+        return db.execute('SELECT COUNT(*) FROM quran_word WHERE surah=? AND ayah=?',
+                          (s, a)).fetchone()[0]
+
+    files = sorted((CONTENT / 'lessons').glob('*.json'))
+    for f in files:
+        raw = f.read_text(encoding='utf-8')
+        where = f.name
+        if ARABIC.search(raw):
+            errors.append(f'{where}: Arabic text inside lesson JSON (refer to words instead)')
+        lo = json.loads(raw)
+        if not lo.get('reviewed_by'):
+            errors.append(f'{where}: no reviewed_by')
+        drafts += lo.get('reviewed_by') == 'DRAFT'
+
+        def need_lemma(lid, ctx):
+            if lid not in meaning:
+                errors.append(f'{where}: {ctx} lemma {lid} has no Bangla meaning in lemmas_bn.csv')
+
+        def need_word(s, a, w, ctx):
+            if word_id(s, a, w) is None:
+                errors.append(f'{where}: {ctx} {s}:{a}:{w} is not a Quran word')
+
+        def need_ayah(st, ctx):
+            s, a = st['surah'], st['ayah']
+            for x in range(a, st.get('ayah_to', a) + 1):
+                if not words_in(s, x):
+                    errors.append(f'{where}: {ctx} {s}:{x} does not exist')
+            if st.get('word_to') and st['word_to'] > words_in(s, a):
+                errors.append(f'{where}: {ctx} word_to beyond the ayah')
+
+        lesson_lemmas = []
+        for st in lo['body']['steps']:
+            t = st['type']
+            if t in ('ayah', 'ayah_recap'):
+                need_ayah(st, t)
+            elif t == 'words':
+                lesson_lemmas = st['lemma_ids']
+                for lid, ref in zip(st['lemma_ids'], st.get('word_refs', [])):
+                    need_lemma(lid, 'words')
+                    wid = word_id(*ref)
+                    if wid is None:
+                        errors.append(f'{where}: word_ref {ref} is not a Quran word')
+                    elif lid not in [x[0] for x in db.execute(
+                            'SELECT lemma_id FROM word_segment WHERE word_id=?', (wid,))]:
+                        errors.append(f'{where}: word_ref {ref} does not contain lemma {lid}')
+            elif t == 'explain':
+                for ex in [st['example']] + st.get('more_examples', []):
+                    need_word(ex['surah'], ex['ayah'], ex['word_index'], 'example')
+                if not st.get('text_bn'):
+                    errors.append(f'{where}: empty explanation')
+            elif t == 'quiz':
+                for it in st['items']:
+                    if 'lemma_id' in it:
+                        need_lemma(it['lemma_id'], it['kind'])
+                        for d in it.get('distractor_ids', []):
+                            need_lemma(d, 'distractor')
+                    if it['kind'] == 'split':
+                        need_word(it['surah'], it['ayah'], it['word_index'], 'split')
+                    if it['kind'] == 'order':
+                        need_ayah(it, 'order')
+            elif t == 'recall':
+                for lid in st['lemma_ids']:
+                    need_lemma(lid, 'recall')
+            else:
+                errors.append(f'{where}: unknown step type {t}')
+        db.execute('INSERT INTO lesson VALUES (?,?,?,?,?,?,?,?,?,?,?)', (
+            lo['id'], lo['level'], lo['ord'], lo['title_bn'], lo['objective_bn'], lo['minutes'],
+            lo['anchor_surah'], lo['anchor_ayah_from'], lo['anchor_ayah_to'],
+            json.dumps(lo['body'], ensure_ascii=False, separators=(',', ':')), CONTENT_VERSION))
+        for i, lid in enumerate(lesson_lemmas, start=1):
+            db.execute('INSERT INTO lesson_lemma VALUES (?,?,?)', (lo['id'], lid, i))
+        db.execute('INSERT OR REPLACE INTO meta VALUES (?,?)',
+                   (f'lesson_reviewed_by:{lo["id"]}', lo['reviewed_by']))
+
+    if errors:
+        for e in errors[:50]:
+            log('  ERROR', e)
+        sys.exit(f'{len(errors)} content error(s); the DB was not written.')
+    db.execute('INSERT OR REPLACE INTO meta VALUES (?,?)', ('draft_items', str(drafts)))
+    return len(files), len(meaning), drafts
+
+
 # ------------------------------------------------------------------ build
 
 def main():
@@ -278,6 +422,8 @@ def main():
     ap.add_argument('--check-tanzil', action='store_true',
                     help='download Tanzil and require it to equal the bundled copy')
     ap.add_argument('--qac', help='path to quranic-corpus-morphology-0.4.txt')
+    ap.add_argument('--release', action='store_true',
+                    help='public release: fail if any lemma, root or lesson is still DRAFT')
     args = ap.parse_args()
 
     log('Tanzil text ...')
@@ -346,7 +492,8 @@ def main():
                 elif pos == 'PRON':
                     # separate pronouns (هُوَ، هُمْ …) have no LEM: one entry per person
                     person = next((x for x in stem['feats'].split('|')[2:] if ':' not in x), '')
-                    stem_lemma = lemma_for(f'PRON|{person}', None, None, 'PRON', wid)
+                    shape = ''.join(c for c in stem['form'] if c.isalpha() and c not in 'aiuo')
+                    stem_lemma = lemma_for(f'PRON|{person}|{shape}', None, None, 'PRON', wid)
                 else:
                     no_stem_lemma += 1
             words.append((wid, s, a, w, token, stem_lemma, root, pos,
@@ -355,9 +502,11 @@ def main():
                 if x['kind'] == 'STEM':
                     lid = stem_lemma
                 else:
-                    # prefixes and attached pronouns: one entry per feature, e.g.
-                    # PREFIX|bi+ or SUFFIX|PRON:1P
-                    lid = lemma_for(f'AFFIX|{x["feats"]}', None, None, x['tag'], wid)
+                    # prefixes and attached pronouns: one entry per feature and
+                    # written form, e.g. PREFIX|bi+|b or SUFFIX|PRON:3MP|hm. The form
+                    # matters: ـهُمْ "their" and the verb ending ـوا "they" share a tag.
+                    shape = ''.join(c for c in x['form'] if c.isalpha() and c not in 'aiuo')
+                    lid = lemma_for(f'AFFIX|{x["feats"]}|{shape}', None, None, x['tag'], wid)
                 if lid:
                     lemma_rows[lid]['freq'] += 1
                 start, end = sp[i] if sp else (None, None)
@@ -422,6 +571,11 @@ def main():
         ('qac_sha256', QAC_SHA256),
     ])
     db.execute('CREATE INDEX quran_word_lemma ON quran_word (lemma_id)')
+    n_lessons, n_meanings, n_drafts = merge_content(db)
+    if args.release and n_drafts:
+        db.close()
+        sys.exit(f'--release: {n_drafts} items are still DRAFT. A teacher must review them first '
+                 '(content/REVIEW_SHEET.csv, content/REVIEW_TEXTS.csv).')
     db.execute('CREATE INDEX word_segment_lemma ON word_segment (lemma_id)')
     db.commit()
     db.execute('VACUUM')
@@ -453,6 +607,8 @@ def main():
         f'Lemmas: {len(stems)} stem lemmas + {affixes} pronoun and prefix/suffix entries',
         'Coverage of all Quran words by the most frequent stem lemmas: '
         + ', '.join(f'top {n}: {cover[n]:.2f}%' for n in sorted(cover)),
+        f'Authored content: {n_lessons} lessons, {n_meanings} lemmas with a Bangla meaning, '
+        f'{n_drafts} items still DRAFT (internal testing only)',
         f'DB size: {size / 1e6:.2f} MB ({gz / 1e6:.2f} MB gzip-compressed)',
     ]
     REPORT.parent.mkdir(parents=True, exist_ok=True)

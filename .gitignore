@@ -52,3 +52,6 @@ app.*.map.json
 *.keystore
 key.properties
 __pycache__/
+
+# কুরআন বুঝি build leftovers
+assets/learn/*.tmp

@@ -1,0 +1,113 @@
+{
+  "id": "L2-14",
+  "level": 2,
+  "ord": 14,
+  "title_bn": "এটা, ওটা",
+  "objective_bn": "কাছের ও দূরের ইঙ্গিত",
+  "minutes": 10,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 2,
+  "anchor_ayah_to": 2,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 2
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          206,
+          31,
+          56
+        ],
+        "word_refs": [
+          [
+            2,
+            25,
+            20
+          ],
+          [
+            2,
+            2,
+            1
+          ],
+          [
+            2,
+            5,
+            1
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "কাছের জিনিসের জন্য ‘হাযা’ (এটা; নারীবাচকে ‘হাযিহি’), দূরের জন্য ‘যালিকা’ (ওটা; নারীবাচকে ‘তিলকা’)। অনেকের জন্য ‘উলাইকা’ = ওরা।",
+        "example": {
+          "surah": 2,
+          "ayah": 2,
+          "word_index": 1
+        },
+        "more_examples": [
+          {
+            "surah": 2,
+            "ayah": 35,
+            "word_index": 14
+          },
+          {
+            "surah": 2,
+            "ayah": 111,
+            "word_index": 11
+          }
+        ]
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 206,
+            "distractor_ids": [
+              570,
+              4990,
+              38
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 31,
+            "distractor_ids": [
+              17,
+              22,
+              29
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 56,
+            "distractor_ids": [
+              178,
+              51,
+              2
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          206,
+          31,
+          56
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 2
+      }
+    ]
+  }
+}

@@ -82,13 +82,15 @@ free with no ads, so this is met. A paid tier would need written permission firs
 | `lemma.lemma_key` | Stable key: corpus lemma + part of speech |
 | `lemma.rank` | Frequency rank |
 | `lemma.display_word_id` | The Tanzil word used to show a lemma |
+| `root_info` | One short Bangla idea per root (authored, `content/roots_bn.csv`), behind the "মূল অক্ষর দেখুন" button |
+| Prefix/pronoun keys | Include the written form (e.g. `PRON:3MP` as ـهُمْ "their" vs ـوا "they did"), because the corpus tags both the same |
 
 Lemma ids follow first occurrence in the Quran, so they stay the same across rebuilds and
 saved review cards stay valid.
 
 ## Numbers (from `tools/data/learn_report.txt`)
 
-- 77,429 words, 128,219 segments, 4,924 stem lemmas, plus 54 pronoun and prefix/suffix
+- 77,429 words, 128,219 segments, 4,924 stem lemmas, plus 99 pronoun and prefix/suffix
   entries.
 - **Joined words.** The corpus follows Tanzil 1.0.2. The newer Tanzil text writes 4 words
   as two tokens (بَعْدَ مَا in 2:181, 8:6, 13:37 and إِلْ يَاسِينَ in 37:130). Each pair
@@ -110,5 +112,5 @@ saved review cards stay valid.
   This counts each word once, by its main word. Prefixes and attached pronouns are not
   counted separately, so these percentages are lower than the "125 words = 50%"
   marketing figures.
-- **DB size:** 14.27 MB on disk, 4.50 MB compressed. That is under the spec's 15 MB
+- **DB size:** 14.35 MB on disk, 4.53 MB compressed (with the 30 draft lessons). That is under the spec's 15 MB
   compressed target.
