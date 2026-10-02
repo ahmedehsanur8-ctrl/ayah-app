@@ -24,6 +24,8 @@ import 'package:ayah_reminder/widgets/ui.dart';
 
 import 'dart:io';
 
+import 'learn_test_helpers.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -56,6 +58,7 @@ void main() {
     await Quran.loadMeta();
     await Quran.load();
     await Duas.load();
+    await attachLearnForTests();
     // Use the real fonts so text is measured like on a phone.
     Future<void> load(String family, List<String> files) async {
       final loader = FontLoader(family);

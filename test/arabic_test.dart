@@ -416,7 +416,9 @@ void main() {
         expect(find.text('সহজ আরবি'), findsOneWidget);
         expect(find.text('প্রথম পাঠ শুরু করি'), findsOneWidget);
         await t.scrollUntilVisible(find.text('৪. বুঝে পড়ি'), 200);
-        expect(find.text('শীঘ্রই আসছে'), findsNWidgets(3));
+        // Level 2 (কুরআনের শব্দ) opens কুরআন বুঝি; levels 3 and 4 are still to come.
+        expect(find.text('শীঘ্রই আসছে'), findsNWidgets(2));
+        expect(find.text('কুরআন বুঝি'), findsOneWidget);
 
         await t.tap(find.text('১. পড়তে শিখি'));
         await t.pumpAndSettle();

@@ -10,6 +10,7 @@ import '../services/quran.dart';
 import '../theme.dart';
 import '../widgets/category_style.dart';
 import '../widgets/ui.dart';
+import '../features/learn/ui/screens/learn_screens.dart';
 import 'arabic_screens.dart';
 import 'collection_screen.dart';
 import 'dua_screens.dart';
@@ -63,6 +64,9 @@ final _features = <_Feature>[
   }),
   _Feature('প্রিয়', Icons.favorite_border_rounded, 'ফেভারিট সংরক্ষিত বুকমার্ক', (c) {
     push(c, const FavoritesScreen());
+  }),
+  _Feature('কুরআন বুঝি', Icons.translate_rounded, 'শব্দ অর্থ শিখি বুঝি রিভিউ আরবি', (c) {
+    push(c, const LearnDashboardScreen());
   }),
   _Feature('সহজ আরবি', Icons.school_outlined, 'আরবি শিখি অক্ষর তাজবীদ', (c) {
     push(c, const ArabicHomeScreen());

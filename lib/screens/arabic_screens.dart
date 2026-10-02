@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/learn/ui/screens/learn_screens.dart';
 import '../models/content.dart' show toBanglaDigits;
 import '../services/arabic.dart';
 import '../services/quran.dart';
@@ -243,9 +244,14 @@ class _LevelCard extends StatelessWidget {
     final pr = ArabicProgress.instance;
     final total = ArabicCourse.lessons.length;
     return AppCard(
-      onTap: level.ready ? () => push(context, const ArabicLevelScreen()) : null,
+      // Level 2 (কুরআনের শব্দ) is taught in কুরআন বুঝি.
+      onTap: level.ready
+          ? () => push(context, const ArabicLevelScreen())
+          : level.n == 2
+          ? () => push(context, const LearnDashboardScreen())
+          : null,
       child: Opacity(
-        opacity: level.ready ? 1 : 0.7,
+        opacity: level.ready || level.n == 2 ? 1 : 0.7,
         child: Row(
           children: [
             Container(
@@ -289,6 +295,22 @@ class _LevelCard extends StatelessWidget {
             const SizedBox(width: 8),
             if (level.ready)
               Icon(Icons.chevron_right_rounded, color: p.muted)
+            else if (level.n == 2)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: p.mint.background,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'কুরআন বুঝি',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: p.mint.foreground,
+                  ),
+                ),
+              )
             else
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),

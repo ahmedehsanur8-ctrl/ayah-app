@@ -14,6 +14,7 @@ import '../widgets/audio_button.dart';
 import '../widgets/item_view.dart';
 import '../widgets/share_card.dart';
 import '../widgets/ui.dart';
+import '../features/learn/ui/screens/learn_screens.dart';
 import 'arabic_screens.dart';
 import 'dua_screens.dart';
 import 'favorites_screen.dart';
@@ -112,6 +113,8 @@ class _TodayScreenState extends State<TodayScreen> {
                 const AdhkarCard(showAllButton: true),
                 const SizedBox(height: 14),
                 const QuranContinueCard(showWhenEmpty: true),
+                const SizedBox(height: 14),
+                const _LearnCard(),
                 const SizedBox(height: 14),
                 const _ArabicCard(),
               ],
@@ -629,6 +632,42 @@ class _HadithCard extends StatelessWidget {
 }
 
 /// Opens সহজ আরবি.
+/// Opens কুরআন বুঝি.
+class _LearnCard extends StatelessWidget {
+  const _LearnCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return AppCard(
+      key: const ValueKey('learn-card'),
+      onTap: () => push(context, const LearnDashboardScreen()),
+      child: Row(
+        children: [
+          IconBubble(Icons.translate_rounded, tint: p.mint, size: 48),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'কুরআন বুঝি',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: p.text),
+                ),
+                Text(
+                  'আয়াতের শব্দ চিনে অর্থ বুঝি · প্রতিদিন কয়েক মিনিট',
+                  style: TextStyle(fontSize: 14, height: 1.4, color: p.muted),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right_rounded, color: p.muted),
+        ],
+      ),
+    );
+  }
+}
+
 class _ArabicCard extends StatelessWidget {
   const _ArabicCard();
 

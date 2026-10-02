@@ -13,6 +13,7 @@ import '../theme.dart';
 import '../widgets/audio_button.dart';
 import '../widgets/ui.dart';
 import '../widgets/quran_widgets.dart' show QuranReadingSettings;
+import '../features/learn/ui/learn_settings.dart';
 import 'about_screen.dart';
 import 'credits_screen.dart';
 import 'prayer_screen.dart' show AzanSettings;
@@ -29,6 +30,7 @@ enum SettingsSection {
   audio('অডিও ও ক্বারী', Icons.mic_none_rounded),
   duas('দোয়া', Icons.front_hand_outlined),
   display('লেখার আকার ও ডার্ক মোড', Icons.format_size_rounded),
+  learn('শিখুন: কুরআন বুঝি', Icons.school_outlined),
   storage('ডাউনলোড', Icons.download_for_offline_outlined),
   setup('অনুমতি ও সেটআপ', Icons.verified_user_outlined),
   about('অ্যাপ সম্পর্কে', Icons.info_outline_rounded);
@@ -121,6 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       SettingsSection.audio => _audio(context, settings),
       SettingsSection.duas => _duas(context, settings),
       SettingsSection.display => _display(context, settings),
+      SettingsSection.learn => const [LearnSettings()],
       SettingsSection.storage => [
         RowGroup(
           children: [
