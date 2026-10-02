@@ -135,7 +135,7 @@ class CreditsScreen extends StatelessWidget {
                 : 'আজানের অডিও এখনো যোগ করা হয়নি; শুধু নোটিফিকেশন আসে',
             details: [
               if (Prayers.azanBundled) _licenseText('সব ওয়াক্ত', Prayers.azanLicense),
-              if (Prayers.fajrBundled)
+              if (Prayers.azanLicense['fajr'] is Map)
                 _licenseText('ফজর', (Prayers.azanLicense['fajr'] as Map).cast<String, dynamic>()),
             ].join('\n\n'),
           ),

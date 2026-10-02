@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Resources used only by name (notification icon, azan sound) must not be removed by the build. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/*,@mipmap/ic_launcher,@raw/azan,@raw/azan_fajr,@raw/reminder_chime,@raw/reminder_bell" />
+    tools:keep="@drawable/*,@mipmap/ic_launcher,@raw/azan*,@raw/reminder_chime,@raw/reminder_bell" />

@@ -255,6 +255,79 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Azan sound per prayer: 'nabawi' (মসজিদে নববী), 'haram' (মসজিদুল হারাম),
+  /// 'notify' (notification only) or 'off'. Follows the older [azanMode] until set.
+  String azanSound(String prayer) {
+    final v = _prefs.getString('azanSound_$prayer');
+    if (v != null) return v;
+    return switch (azanMode(prayer)) {
+      'azan' => 'nabawi',
+      final m => m,
+    };
+  }
+
+  Future<void> setAzanSound(String prayer, String sound) async {
+    await _prefs.setString('azanSound_$prayer', sound);
+    await _prefs.setString(
+      'azanMode_$prayer',
+      sound == 'nabawi' || sound == 'haram' ? 'azan' : sound,
+    );
+    notifyListeners();
+  }
+
+  /// Minutes to move the azan from the calculated time (-30 … +30).
+  int azanOffset(String prayer) => _prefs.getInt('azanOffset_$prayer') ?? 0;
+
+  Future<void> setAzanOffset(String prayer, int minutes) async {
+    await _prefs.setInt('azanOffset_$prayer', minutes.clamp(-30, 30));
+    notifyListeners();
+  }
+
+  /// "নিজে সময় দিন": a fixed azan time (minutes after midnight), used every
+  /// day instead of the calculated time. Null when off.
+  int? azanFixedMinutes(String prayer) => _prefs.getInt('azanFixed_$prayer');
+
+  Future<void> setAzanFixedMinutes(String prayer, int? minutes) async {
+    if (minutes == null) {
+      await _prefs.remove('azanFixed_$prayer');
+    } else {
+      await _prefs.setInt('azanFixed_$prayer', minutes.clamp(0, 24 * 60 - 1));
+    }
+    notifyListeners();
+  }
+
+  /// Reminder this many minutes before the azan (0 = off; 5, 10, 15 or 30).
+  int azanBefore(String prayer) => _prefs.getInt('azanBefore_$prayer') ?? 0;
+
+  Future<void> setAzanBefore(String prayer, int minutes) async {
+    await _prefs.setInt('azanBefore_$prayer', minutes);
+    notifyListeners();
+  }
+
+  /// Iqamah reminder this many minutes after the azan (0 = off; 10, 15 or 20).
+  int iqamahAfter(String prayer) => _prefs.getInt('iqamahAfter_$prayer') ?? 0;
+
+  Future<void> setIqamahAfter(String prayer, int minutes) async {
+    await _prefs.setInt('iqamahAfter_$prayer', minutes);
+    notifyListeners();
+  }
+
+  /// Azan volume, 0.1 – 1.0 of the phone's alarm volume.
+  double get azanVolume => _prefs.getDouble('azanVolume') ?? 1.0;
+
+  Future<void> setAzanVolume(double v) async {
+    await _prefs.setDouble('azanVolume', v.clamp(0.1, 1.0));
+    notifyListeners();
+  }
+
+  /// Vibrate when the azan and prayer notifications come.
+  bool get azanVibrate => _prefs.getBool('azanVibrate') ?? true;
+
+  Future<void> setAzanVibrate(bool v) async {
+    await _prefs.setBool('azanVibrate', v);
+    notifyListeners();
+  }
+
   /// Play the azan on the alarm stream, so it is heard in silent mode too.
   bool get azanInSilent => _prefs.getBool('azanInSilent') ?? true;
 

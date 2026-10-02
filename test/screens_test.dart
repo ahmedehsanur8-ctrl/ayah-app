@@ -1,5 +1,6 @@
 import 'package:ayah_reminder/app_state.dart';
 import 'package:ayah_reminder/screens/about_screen.dart';
+import 'package:ayah_reminder/screens/azan_settings_screen.dart';
 import 'package:ayah_reminder/screens/collection_screen.dart';
 import 'package:ayah_reminder/screens/credits_screen.dart';
 import 'package:ayah_reminder/screens/home_shell.dart';
@@ -17,11 +18,13 @@ import 'package:ayah_reminder/screens/tasbih_screen.dart';
 import 'package:ayah_reminder/screens/quran_reader_screen.dart';
 import 'package:ayah_reminder/screens/quran_screen.dart';
 import 'package:ayah_reminder/services/duas.dart';
+import 'package:ayah_reminder/services/prayer.dart';
 import 'package:ayah_reminder/services/quran.dart';
 import 'package:ayah_reminder/services/reminders.dart';
 import 'package:ayah_reminder/theme.dart';
 import 'package:ayah_reminder/widgets/ui.dart';
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'learn_test_helpers.dart';
@@ -322,6 +325,97 @@ void main() {
         await t.pumpWidget(app(const PrivacyScreen(), b));
         await t.pumpAndSettle();
         expect(find.text('কোনো তথ্য সংগ্রহ করা হয় না'), findsOneWidget);
+      });
+
+      testWidgets('azan page: sound, listen, time, reminders; each change re-schedules', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        final s = AppState.instance.settings;
+        await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+        Prayers.azanBundled = true;
+        final calls = <MethodCall>[];
+        t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('ayah_reminder/azan'),
+          (c) async {
+            calls.add(c);
+            return true;
+          },
+        );
+        addTearDown(() async {
+          t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            const MethodChannel('ayah_reminder/azan'),
+            null,
+          );
+          for (final k in Prayers.azanPrayers) {
+            await s.setAzanSound(k, 'nabawi');
+            await s.setAzanOffset(k, 0);
+            await s.setAzanFixedMinutes(k, null);
+            await s.setAzanBefore(k, 0);
+            await s.setIqamahAfter(k, 0);
+          }
+        });
+        List<Map<String, dynamic>> lastEvents() => (jsonDecode(
+          calls.lastWhere((c) => c.method == 'schedule').arguments['events'] as String,
+        ) as List).cast<Map<String, dynamic>>();
+
+        await t.pumpWidget(app(const AzanPrayerScreen(prayer: 'asr'), b));
+        await t.pump();
+        for (final n in ['মসজিদে নববী', 'মসজিদুল হারাম', 'শুধু নোটিফিকেশন', 'বন্ধ']) {
+          expect(find.text(n), findsWidgets, reason: n);
+        }
+        // "শুনে দেখুন" for each azan sound.
+        await t.tap(find.byKey(const ValueKey('listen-haram')));
+        await t.pump();
+        expect(calls.last.method, 'playNow');
+        expect(calls.last.arguments['sound'], 'haram');
+        expect(calls.last.arguments['fajr'], isFalse);
+
+        await t.tap(find.text('মসজিদুল হারাম'));
+        await t.pump();
+        expect(s.azanSound('asr'), 'haram');
+        expect(
+          lastEvents().where((e) => e['key'] == 'asr' && e['mode'] == 'azan').first['sound'],
+          'haram',
+        );
+
+        // Move the azan 1 minute later: the prayer list shows "আসর … → আজান …".
+        calls.clear();
+        await t.tap(find.byTooltip('১ মিনিট পরে'));
+        await t.pump();
+        expect(s.azanOffset('asr'), 1);
+        expect(calls.where((c) => c.method == 'schedule'), isNotEmpty);
+        expect(find.textContaining('→ আজান'), findsOneWidget);
+        expect(find.text('+১ মিনিট'), findsOneWidget);
+
+        // Reminder before and iqamah.
+        await t.scrollUntilVisible(find.text('ইকামতের রিমাইন্ডার'), 200);
+        await t.tap(find.text('নামাজের আগে রিমাইন্ডার'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('১০ মিনিট আগে'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('ইকামতের রিমাইন্ডার'));
+        await t.pumpAndSettle();
+        await t.tap(find.text('আজানের ১৫ মিনিট পর'));
+        await t.pumpAndSettle();
+        expect(s.azanBefore('asr'), 10);
+        expect(s.iqamahAfter('asr'), 15);
+        final ev = lastEvents();
+        expect(ev.where((e) => e['key'] == 'asr' && e['mode'] == 'before'), isNotEmpty);
+        expect(ev.where((e) => e['key'] == 'asr' && e['mode'] == 'iqamah'), isNotEmpty);
+
+        // The prayer times page shows the moved time.
+        await t.pumpWidget(app(const PrayerScreen(), b));
+        await t.pump();
+        expect(find.textContaining('আসর '), findsWidgets);
+        expect(find.textContaining('→ আজান'), findsOneWidget);
+        // Volume, vibration, silent mode and "শুনে দেখুন" are in Settings → আজান.
+        await t.pumpWidget(
+          app(const Scaffold(body: SingleChildScrollView(child: AzanSettings())), b),
+        );
+        await t.pump();
+        expect(find.text('আজান শুনে দেখুন'), findsOneWidget);
+        expect(find.textContaining('আজানের ভলিউম'), findsOneWidget);
+        expect(find.text('কম্পন'), findsOneWidget);
+        expect(find.text('সাইলেন্ট মোডেও বাজবে'), findsOneWidget);
       });
 
       testWidgets('stories list and a story page', (t) async {
