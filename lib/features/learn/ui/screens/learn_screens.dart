@@ -27,6 +27,36 @@ class LearnRoutes {
 
 const levelTitles = {1: 'যা প্রতিদিন পড়ি', 2: 'সর্বনাম ও ছোট বাক্য', 3: 'ক্রিয়ার শুরু'};
 
+/// A slice of the lessons for one সহজ আরবি level card (levels 3 and 4 open
+/// কুরআন বুঝি at these lessons).
+class LearnTrack {
+  const LearnTrack({required this.title, required this.about, required this.lessonIds});
+
+  final String title;
+  final String about;
+  final List<String> lessonIds;
+
+  /// সহজ আরবি level 3: lessons whose main idea is a grammar rule.
+  static const grammar = LearnTrack(
+    title: 'সহজ ব্যাকরণ',
+    about: 'শব্দ কীভাবে বদলায়, বাক্য কীভাবে গড়ে — কুরআন বুঝি-র যে পাঠগুলোতে একটি করে নিয়ম শেখানো হয়।',
+    lessonIds: [
+      'L1-02', 'L1-03', 'L1-04', 'L1-05', // আল, -এর, ক্রিয়ায় ‘আমরা’, বিশেষণ
+      'L2-11', 'L2-12', 'L2-13', 'L2-14', 'L2-15', // অব্যয়, সর্বনাম, ইঙ্গিত, ছোট বাক্য
+      'L2-16', 'L2-17', 'L2-18', 'L2-19', // প্রশ্ন, না-বোধক, জোর, গুণের ছাঁচ
+      'L3-21', 'L3-22', 'L3-23', 'L3-24', // অতীত, শেষ অংশ, বর্তমান, আদেশ
+      'L3-26', 'L3-27', 'L3-28', // মূল অক্ষর, বহুবচন
+    ],
+  );
+
+  /// সহজ আরবি level 4: lessons that read whole ayahs or short surahs.
+  static const reading = LearnTrack(
+    title: 'বুঝে পড়ি',
+    about: 'পুরো আয়াত ও ছোট সূরা অর্থসহ বুঝে পড়া — কুরআন বুঝি-র পড়ার পাঠগুলো।',
+    lessonIds: ['L1-07', 'L1-09', 'L1-10', 'L2-20', 'L3-30'],
+  );
+}
+
 /// Opens the databases on first use, then rebuilds whenever learning state changes.
 class LearnGate extends StatelessWidget {
   const LearnGate({super.key, required this.builder});
@@ -277,32 +307,62 @@ class _ContinueCard extends StatelessWidget {
 
 /// /learn/path
 class LearnPathScreen extends StatelessWidget {
-  const LearnPathScreen({super.key});
+  const LearnPathScreen({super.key, this.track});
+
+  /// Only these lessons (opened from a সহজ আরবি level card).
+  final LearnTrack? track;
 
   @override
   Widget build(BuildContext context) {
+    final t = track;
     return Scaffold(
-      appBar: AppBar(title: const Text('সব পাঠ')),
+      appBar: AppBar(title: Text(t == null ? 'সব পাঠ' : t.title)),
       body: LearnGate(
         builder: (context, learn) {
           final p = context.palette;
+          bool show(Lesson l) => t == null || t.lessonIds.contains(l.id);
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
             children: [
-              for (final level in levelTitles.keys) ...[
-                SectionLabel(
-                  'স্তর ${toBanglaDigits(level)} · ${levelTitles[level]}',
-                  trailing: learn.levelDone(level)
-                      ? Icon(Icons.workspace_premium_outlined, color: p.goldText)
-                      : null,
-                ),
-                RowGroup(
-                  children: [
-                    for (final l in learn.lessons.where((x) => x.level == level))
-                      _LessonTile(lesson: l, status: learn.statusOf(l), learn: learn),
-                  ],
+              if (t != null) ...[
+                const SizedBox(height: 8),
+                AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      LessonText(t.about, size: 16),
+                      const SizedBox(height: 6),
+                      LessonText(
+                        'তৈরি: ${toBanglaDigits(t.lessonIds.length)}টি পাঠ · '
+                        'শেষ: ${toBanglaDigits(learn.lessons.where((l) => show(l) && learn.statusOf(l) == LessonStatus.done).length)}টি',
+                        size: 16,
+                        weight: FontWeight.w700,
+                        color: p.primary,
+                      ),
+                      LessonText(
+                        'যেকোনো পাঠ খুলতে পারেন; ক্রমে পড়লে সবচেয়ে সহজ।',
+                        size: 14,
+                        color: p.muted,
+                      ),
+                    ],
+                  ),
                 ),
               ],
+              for (final level in levelTitles.keys)
+                if (learn.lessons.any((l) => l.level == level && show(l))) ...[
+                  SectionLabel(
+                    'স্তর ${toBanglaDigits(level)} · ${levelTitles[level]}',
+                    trailing: learn.levelDone(level)
+                        ? Icon(Icons.workspace_premium_outlined, color: p.goldText)
+                        : null,
+                  ),
+                  RowGroup(
+                    children: [
+                      for (final l in learn.lessons.where((x) => x.level == level && show(x)))
+                        _LessonTile(lesson: l, status: learn.statusOf(l), learn: learn),
+                    ],
+                  ),
+                ],
             ],
           );
         },
@@ -337,12 +397,35 @@ class _LessonTile extends StatelessWidget {
       subtitle: [
         '${toBanglaDigits(lesson.minutes)} মিনিট',
         if (status == LessonStatus.done && score != null) 'ফল ${toBanglaDigits(score)}%',
-        if (status == LessonStatus.locked) 'আগের পাঠ শেষ করলে খুলবে',
+        if (status == LessonStatus.locked) 'আগের পাঠ শেষ করে এলে সহজ হবে',
         if (lesson.isCheckpoint) 'স্তরের পরীক্ষা',
       ].join(' · '),
-      onTap: status == LessonStatus.locked
-          ? null
-          : () => push(context, LessonScreen(lesson: lesson)),
+      onTap: () async {
+        // Every lesson can be opened; out of order, a short reminder first.
+        if (status == LessonStatus.locked) {
+          final ok = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(lesson.title),
+              content: const Text(
+                'এই পাঠের আগের পাঠগুলো এখনো শেষ হয়নি। ক্রমে পড়লে সহজ হয়, তবে চাইলে এখনই খুলতে পারেন।',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('পরে'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('খুলুন'),
+                ),
+              ],
+            ),
+          );
+          if (ok != true) return;
+        }
+        if (context.mounted) await push(context, LessonScreen(lesson: lesson));
+      },
     );
   }
 }

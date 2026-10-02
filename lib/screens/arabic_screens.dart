@@ -232,6 +232,14 @@ class _Hero extends StatelessWidget {
   );
 }
 
+/// What a সহজ আরবি level card shows when কুরআন বুঝি teaches that level.
+String? _learnBadge(ArLevel level) => switch (level.n) {
+  2 => 'কুরআন বুঝি',
+  3 => '${toBanglaDigits(LearnTrack.grammar.lessonIds.length)}টি পাঠ তৈরি',
+  4 => '${toBanglaDigits(LearnTrack.reading.lessonIds.length)}টি পাঠ তৈরি',
+  _ => null,
+};
+
 class _LevelCard extends StatelessWidget {
   const _LevelCard({required this.level});
 
@@ -244,14 +252,17 @@ class _LevelCard extends StatelessWidget {
     final pr = ArabicProgress.instance;
     final total = ArabicCourse.lessons.length;
     return AppCard(
-      // Level 2 (কুরআনের শব্দ) is taught in কুরআন বুঝি.
+      // Levels 2–4 are taught in কুরআন বুঝি: words, its grammar lessons, its reading lessons.
       onTap: level.ready
           ? () => push(context, const ArabicLevelScreen())
-          : level.n == 2
-          ? () => push(context, const LearnDashboardScreen())
-          : null,
+          : switch (level.n) {
+              2 => () => push(context, const LearnDashboardScreen()),
+              3 => () => push(context, const LearnPathScreen(track: LearnTrack.grammar)),
+              4 => () => push(context, const LearnPathScreen(track: LearnTrack.reading)),
+              _ => null,
+            },
       child: Opacity(
-        opacity: level.ready || level.n == 2 ? 1 : 0.7,
+        opacity: level.ready || _learnBadge(level) != null ? 1 : 0.7,
         child: Row(
           children: [
             Container(
@@ -295,7 +306,7 @@ class _LevelCard extends StatelessWidget {
             const SizedBox(width: 8),
             if (level.ready)
               Icon(Icons.chevron_right_rounded, color: p.muted)
-            else if (level.n == 2)
+            else if (_learnBadge(level) != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
@@ -303,7 +314,7 @@ class _LevelCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'কুরআন বুঝি',
+                  _learnBadge(level)!,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,

@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+
+import 'learn_test_helpers.dart';
+
 import 'dart:math' as math;
 
 import 'package:ayah_reminder/app_state.dart';
@@ -30,6 +33,7 @@ void main() {
     await Quran.loadMeta();
     await Quran.load();
     await ArabicCourse.load();
+    await attachLearnForTests();
     Future<void> load(String family, List<String> files) async {
       final loader = FontLoader(family);
       for (final f in files) {
@@ -416,9 +420,37 @@ void main() {
         expect(find.text('সহজ আরবি'), findsOneWidget);
         expect(find.text('প্রথম পাঠ শুরু করি'), findsOneWidget);
         await t.scrollUntilVisible(find.text('৪. বুঝে পড়ি'), 200);
-        // Level 2 (কুরআনের শব্দ) opens কুরআন বুঝি; levels 3 and 4 are still to come.
-        expect(find.text('শীঘ্রই আসছে'), findsNWidgets(2));
+        // Levels 2–4 open কুরআন বুঝি; nothing says "coming soon".
+        expect(find.text('শীঘ্রই আসছে'), findsNothing);
         expect(find.text('কুরআন বুঝি'), findsOneWidget);
+        expect(find.text('২০টি পাঠ তৈরি'), findsOneWidget);
+        expect(find.text('৫টি পাঠ তৈরি'), findsOneWidget);
+        await t.tap(find.text('৩. সহজ ব্যাকরণ'));
+        await settleLearn(t);
+        expect(find.text('তৈরি: ২০টি পাঠ · শেষ: ০টি'), findsOneWidget);
+        await t.pageBack();
+        await t.pumpAndSettle();
+        await t.tap(find.text('৪. বুঝে পড়ি'));
+        await settleLearn(t);
+        expect(find.text('তৈরি: ৫টি পাঠ · শেষ: ০টি'), findsOneWidget);
+        expect(find.text('৭. পুরো ফাতিহা বুঝি'), findsOneWidget);
+        // A lesson out of order still opens, after a short tip.
+        await t.tap(find.text('৭. পুরো ফাতিহা বুঝি'));
+        await settleLearn(t);
+        await t.tap(find.text('খুলুন'));
+        await settleLearn(t, 20);
+        expect(find.text('পরের ধাপ'), findsOneWidget);
+        await t.pageBack();
+        await settleLearn(t, 20);
+        await t.tap(find.text('বের হই'));
+        await settleLearn(t, 20);
+        await t.pageBack();
+        await settleLearn(t, 20);
+        await t.scrollUntilVisible(
+          find.text('১. পড়তে শিখি'),
+          -200,
+          scrollable: find.byType(Scrollable).first,
+        );
 
         await t.tap(find.text('১. পড়তে শিখি'));
         await t.pumpAndSettle();

@@ -224,7 +224,7 @@ void main() {
         await t.tap(find.text('সব পাঠ'));
         await settle(t);
         expect(find.text('স্তর ১ · যা প্রতিদিন পড়ি'), findsOneWidget);
-        expect(find.textContaining('আগের পাঠ শেষ করলে খুলবে'), findsWidgets);
+        expect(find.textContaining('আগের পাঠ শেষ করে এলে সহজ হবে'), findsWidgets);
         await t.pageBack();
         await settle(t);
 
