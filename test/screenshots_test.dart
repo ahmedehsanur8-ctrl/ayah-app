@@ -20,7 +20,9 @@ import 'package:ayah_reminder/screens/settings_screen.dart';
 import 'package:ayah_reminder/screens/setup_screen.dart';
 import 'package:ayah_reminder/screens/stories_screen.dart';
 import 'package:ayah_reminder/screens/tasbih_screen.dart';
+import 'package:ayah_reminder/services/prayer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ayah_reminder/widgets/night.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -30,8 +32,10 @@ import 'learn_test_helpers.dart';
 final shots = <String, Widget Function()>{
   'components': () => const _Gallery(),
   'home': () => const HomeShell(),
+  'home-full': () => const HomeShell(),
   'prayer': () => const PrayerScreen(),
   'qibla': () => const QiblaScreen(),
+  'qibla-facing': () => const QiblaScreen(),
   'quran': () => const QuranScreen(),
   'reader': () => const QuranReaderScreen(surah: 1),
   'duas': () => const DuaHomeScreen(),
@@ -64,11 +68,23 @@ void main() {
       if (only.isNotEmpty && !only.contains(e.key)) continue;
       testWidgets('${e.key} $mode', skip: !on, (t) async {
         t.view.devicePixelRatio = 2;
-        t.view.physicalSize = const Size(780, 1688);
+        // "-full" pictures are tall, to show a whole long page at once.
+        t.view.physicalSize = Size(780, e.key.endsWith('-full') ? 4400 : 1688);
         t.view.padding = const FakeViewPadding(top: 48, bottom: 32);
         t.view.viewPadding = const FakeViewPadding(top: 48, bottom: 32);
         addTearDown(t.view.reset);
         HomeShell.tab.value = 0;
+        // A fake compass: pointing a little off, or straight at the Qibla.
+        final qibla = Prayers.qibla(AppState.instance.settings) ?? 0;
+        t.binding.defaultBinaryMessenger.setMockStreamHandler(
+          const EventChannel('ayah_reminder/compass'),
+          MockStreamHandler.inline(
+            onListen: (_, sink) => sink.success({
+              'heading': e.key == 'qibla-facing' ? qibla : qibla - 38,
+              'accuracy': 3,
+            }),
+          ),
+        );
         await t.pumpWidget(themedApp(e.value(), b));
         await settleLearn(t, 12);
         await t.pump(const Duration(milliseconds: 600));

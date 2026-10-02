@@ -10,8 +10,8 @@ import '../services/quran.dart';
 import '../services/quran_player.dart';
 import '../services/settings.dart';
 import '../theme.dart';
-import '../widgets/pattern.dart';
 import '../widgets/share_card.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 import 'favorites_screen.dart';
 import 'home_shell.dart';
@@ -220,16 +220,10 @@ class AdhkarCard extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radiusL),
       child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [p.greenCard, p.greenCardDark],
-          ),
-        ),
+        color: p.night,
         child: Stack(
           children: [
-            const PatternLayer(color: Brand.gold, opacity: 0.07, cell: 44),
+            const GirihLayer(cell: 44, opacity: 0.16),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Column(
@@ -239,30 +233,25 @@ class AdhkarCard extends StatelessWidget {
                     children: [
                       Icon(
                         evening ? Icons.nights_stay_outlined : Icons.wb_sunny_outlined,
-                        color: Brand.gold,
+                        color: p.gold,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         showAllButton ? 'দোয়া ও জিকির' : 'আজকের জিকির',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
+                        style: TextStyle(color: p.onNightMuted, fontSize: 14),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '$title · ${toBanglaDigits(set.length)}টি জিকির',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: headingFont,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
+                    style: nightTitleStyle(p, size: 19),
                   ),
                   Text(
                     evening
                         ? 'আসর থেকে রাত পর্যন্ত পড়ার জিকির, গুনে গুনে'
                         : 'ফজর থেকে সকাল পর্যন্ত পড়ার জিকির, গুনে গুনে',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
+                    style: TextStyle(color: p.onNightMuted, fontSize: 14),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -270,22 +259,18 @@ class AdhkarCard extends StatelessWidget {
                     runSpacing: 4,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      FilledButton.icon(
+                      GoldButton(
                         onPressed: set.isEmpty
                             ? null
                             : () => push(context, DuaCounterScreen.adhkar(evening: evening)),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Brand.gold,
-                          foregroundColor: Brand.greenDark,
-                        ),
-                        icon: const Icon(Icons.touch_app_outlined),
-                        label: const Text('জিকির শুরু করুন'),
+                        icon: Icons.touch_app_outlined,
+                        label: 'জিকির শুরু করুন',
                       ),
                       TextButton(
                         onPressed: showAllButton
                             ? () => HomeShell.tab.value = HomeShell.duas
                             : () => push(context, DuaCounterScreen.adhkar(evening: !evening)),
-                        style: TextButton.styleFrom(foregroundColor: Colors.white),
+                        style: TextButton.styleFrom(foregroundColor: p.onNight),
                         child: Text(
                           showAllButton
                               ? 'সব দোয়া'

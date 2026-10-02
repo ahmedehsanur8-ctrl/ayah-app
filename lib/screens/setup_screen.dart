@@ -241,11 +241,6 @@ class _SetupBannerState extends State<SetupBanner> with WidgetsBindingObserver {
                 ),
                 FilledButton(
                   onPressed: () => push(context, const SetupScreen()),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: warnOrange,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(0, 48),
-                  ),
                   child: const Text('ঠিক করুন'),
                 ),
               ],

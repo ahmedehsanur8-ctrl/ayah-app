@@ -153,6 +153,9 @@ class Palette extends ThemeExtension<Palette> {
   /// Filled heart (প্রিয়), the north letter on the compass, the lesson stars.
   Color get heart => isDark ? const Color(0xFFF2788E) : const Color(0xFFC23A55);
   Color get north => isDark ? const Color(0xFFF07563) : const Color(0xFFC0392B);
+
+  /// The north letter on a night surface.
+  Color get northOnNight => const Color(0xFFF07563);
   Color get star => gold;
 
   // Older names, still used by a few screens.

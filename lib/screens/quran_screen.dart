@@ -6,8 +6,8 @@ import '../app_state.dart';
 import '../models/content.dart';
 import '../services/quran.dart';
 import '../theme.dart';
-import '../widgets/pattern.dart';
 import '../widgets/quran_widgets.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 import 'favorites_screen.dart';
 import 'quran_downloads_screen.dart';
@@ -282,60 +282,53 @@ class QuranContinueCard extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: Ink(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [p.greenCard, p.greenCardDark],
-                ),
-              ),
+              color: p.night,
               child: InkWell(
                 onTap: () => has
                     ? openQuran(context, prefs.lastSurah, prefs.lastAyah)
                     : openQuran(context, 1),
                 child: Stack(
                   children: [
-                    const PatternLayer(color: Brand.gold, opacity: 0.07, cell: 44),
+                    const GirihLayer(cell: 44, opacity: 0.16),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-                      child: Row(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.menu_book_rounded, color: Brand.gold, size: 30),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  has ? 'যেখানে শেষ করেছিলেন' : 'কুরআন পড়ুন',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.8),
-                                    fontSize: 14,
-                                  ),
+                          Row(
+                            children: [
+                              Icon(Icons.menu_book_outlined, color: p.gold, size: 28),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      has ? 'যেখানে শেষ করেছিলেন' : 'কুরআন পড়ুন',
+                                      style: TextStyle(color: p.onNightMuted, fontSize: 14),
+                                    ),
+                                    Text(
+                                      has
+                                          ? 'সূরা ${s!.nameBn} · আয়াত ${toBanglaDigits(prefs.lastAyah)}'
+                                          : 'আরবি ও বাংলা অর্থসহ পুরো কুরআন',
+                                      style: TextStyle(
+                                        color: p.onNight,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16.5,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  has
-                                      ? 'সূরা ${s!.nameBn} · আয়াত ${toBanglaDigits(prefs.lastAyah)}'
-                                      : 'আরবি ও বাংলা অর্থসহ পুরো কুরআন',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                          FilledButton(
+                          const SizedBox(height: 12),
+                          GoldButton(
                             onPressed: () => has
                                 ? openQuran(context, prefs.lastSurah, prefs.lastAyah)
                                 : openQuran(context, 1),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: Brand.gold,
-                              foregroundColor: Brand.greenDark,
-                              minimumSize: const Size(0, 48),
-                            ),
-                            child: Text(has ? 'চালিয়ে যান' : 'শুরু করুন'),
+                            icon: Icons.play_arrow_rounded,
+                            label: has ? 'চালিয়ে যান' : 'শুরু করুন',
                           ),
                         ],
                       ),

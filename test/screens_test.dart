@@ -97,22 +97,27 @@ void main() {
         HomeShell.tab.value = 0;
         await t.pumpWidget(app(const HomeShell(), b));
         await t.pumpAndSettle();
-        // আজ: buttons at the top, today's ayah, then the hadith right after it.
-        expect(find.textContaining('আজকের আয়াত'), findsWidgets);
+        // আজ: night header with labelled buttons, quick actions, today's ayah,
+        // then the hadith right after it.
         expect(find.text('আসসালামু আলাইকুম'), findsOneWidget);
-        expect(find.text('শুনুন'), findsOneWidget);
+        expect(find.textContaining('হিজরি'), findsOneWidget);
         for (final label in ['খুঁজুন', 'প্রিয়', 'সেটিংস']) {
+          expect(find.byTooltip(label), findsOneWidget, reason: label);
+        }
+        for (final label in ['কিবলা', 'তাসবিহ']) {
           expect(find.text(label), findsOneWidget, reason: label);
         }
+        await t.scrollUntilVisible(find.text('শুনুন'), 300);
+        expect(find.textContaining('আজকের আয়াত'), findsWidgets);
+        expect(find.text('শুনুন'), findsOneWidget);
         await t.scrollUntilVisible(find.text('আজকের হাদিস'), 300);
         expect(find.text('আজকের হাদিস'), findsOneWidget);
         await t.drag(find.byType(Scrollable).first, const Offset(0, -250));
         await t.pumpAndSettle();
         await t.tap(find.text('পরের').last);
         await t.pump();
-        await t.scrollUntilVisible(find.text('তাসবিহ'), 300);
-        expect(find.text('নামাজের সময়'), findsOneWidget);
-        expect(find.text('কিবলা'), findsOneWidget);
+        await t.scrollUntilVisible(find.text('কুরআন বুঝি'), 300);
+        expect(find.text('কুরআন বুঝি'), findsOneWidget);
         await t.scrollUntilVisible(find.text('সহজ আরবি'), 300);
         expect(find.text('সহজ আরবি'), findsOneWidget);
 
@@ -164,7 +169,7 @@ void main() {
         await t.pumpWidget(app(const HomeShell(), b));
         await t.pumpAndSettle();
 
-        await t.tap(find.text('সেটিংস'));
+        await t.tap(find.byTooltip('সেটিংস'));
         await t.pumpAndSettle();
         expect(find.text('রাত ৯:০০'), findsOneWidget);
         expect(find.text('সকাল ৯:০০'), findsOneWidget);
@@ -180,7 +185,7 @@ void main() {
         await t.pageBack();
         await t.pumpAndSettle();
 
-        await t.tap(find.text('প্রিয়'));
+        await t.tap(find.byTooltip('প্রিয়'));
         await t.pumpAndSettle();
         expect(find.text('আয়াত ও হাদিস'), findsOneWidget);
         await t.tap(find.text('বুকমার্ক'));
@@ -190,7 +195,7 @@ void main() {
         await t.pageBack();
         await t.pumpAndSettle();
 
-        await t.tap(find.text('খুঁজুন'));
+        await t.tap(find.byTooltip('খুঁজুন'));
         await t.pumpAndSettle();
         expect(find.text('সব ফিচার'), findsOneWidget);
         await t.enterText(find.byType(TextField), 'কিবলা');

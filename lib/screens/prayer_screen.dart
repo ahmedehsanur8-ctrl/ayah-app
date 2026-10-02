@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_state.dart';
 import '../models/content.dart';
@@ -9,6 +10,7 @@ import '../services/prayer.dart';
 import '../services/settings.dart';
 import '../theme.dart';
 import '../utils/bangla.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 import 'azan_settings_screen.dart';
 import 'qibla_screen.dart';
@@ -44,10 +46,23 @@ class _PrayerScreenState extends State<PrayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('নামাজের সময়')),
-      body: ListenableBuilder(
-        listenable: _s,
-        builder: (context, _) => _s.hasLocation ? _times(context) : const ChooseLocationView(),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: ListenableBuilder(
+          listenable: _s,
+          builder: (context, _) => _s.hasLocation
+              ? _times(context)
+              : Column(
+                  children: [
+                    NightHeader(
+                      leading: Navigator.of(context).canPop() ? const NightBackButton() : null,
+                      title: 'নামাজের সময়',
+                      lip: true,
+                    ),
+                    const Expanded(child: ChooseLocationView()),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -58,118 +73,140 @@ class _PrayerScreenState extends State<PrayerScreen> {
     final list = Prayers.forDay(_s, now);
     final next = Prayers.next(_s, now);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+      padding: EdgeInsets.zero,
       children: [
-        Row(
-          children: [
-            Flexible(
-              child: InfoPill(
-                icon: Icons.location_on_outlined,
-                text: _s.placeName.isEmpty ? 'অবস্থান' : _s.placeName,
-                onTap: () => showLocationSheet(context),
-              ),
-            ),
-            const Spacer(),
-            Text(banglaDate(now), style: TextStyle(color: p.muted, fontSize: 14)),
-          ],
-        ),
-        const SizedBox(height: 14),
-        if (next != null)
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [p.greenCard, p.greenCardDark],
-              ),
-              borderRadius: BorderRadius.circular(radiusL),
-            ),
+        NightHeader(
+          leading: Navigator.of(context).canPop() ? const NightBackButton() : null,
+          title: 'নামাজের সময়',
+          lip: true,
+          padding: EdgeInsets.fromLTRB(Navigator.of(context).canPop() ? 8 : 20, 4, 12, 22),
+          child: Padding(
+            padding: EdgeInsets.only(left: Navigator.of(context).canPop() ? 12 : 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'পরের নামাজ',
-                  style: TextStyle(color: p.gold, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  next.name,
-                  style: const TextStyle(
-                    fontFamily: titleFont,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  formatClock(next.time),
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Icon(Icons.hourglass_bottom_rounded, color: p.gold, size: 18),
-                    const SizedBox(width: 6),
+                    NightPill(
+                      icon: Icons.location_on_outlined,
+                      text: _s.placeName.isEmpty ? 'অবস্থান' : _s.placeName,
+                      onTap: () => showLocationSheet(context),
+                    ),
                     Text(
-                      'আর ${formatCountdown(next.time.difference(now))}',
-                      style: TextStyle(color: p.gold, fontSize: 15, fontWeight: FontWeight.w600),
+                      '${banglaDate(now)} · ${hijriDate(now)}',
+                      style: TextStyle(color: p.onNightMuted, fontSize: 14),
                     ),
                   ],
                 ),
+                if (next != null) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    'পরের নামাজ',
+                    style: TextStyle(
+                      color: p.onNightMuted,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    children: [
+                      Text(next.name, style: nightTitleStyle(p, size: 30)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          formatClock(next.time),
+                          style: TextStyle(
+                            color: p.onNight,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Semantics(
+                    liveRegion: false,
+                    label: 'আর ${formatCountdown(next.time.difference(now))}',
+                    excludeSemantics: true,
+                    child: Text(
+                      'আর ${formatCountdown(next.time.difference(now))}',
+                      style: titleStyle(
+                        p,
+                        size: 26,
+                      ).copyWith(color: p.gold, fontWeight: FontWeight.w700, height: 1.3),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-        const SizedBox(height: 14),
-        AppCard(
-          padding: EdgeInsets.zero,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (var i = 0; i < list.length; i++) ...[
-                if (i > 0) Divider(height: 1, color: p.border),
-                _PrayerRow(
-                  prayer: list[i],
-                  isNext:
-                      next != null && next.key == list[i].key && _sameDay(next.time, list[i].time),
-                  onBell: list[i].isSunrise
-                      ? null
-                      : () => push(context, AzanPrayerScreen(prayer: list[i].key)),
+              const SizedBox(height: 14),
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < list.length; i++) ...[
+                      if (i > 0) Divider(height: 1, color: p.border),
+                      _PrayerRow(
+                        prayer: list[i],
+                        isNext:
+                            next != null &&
+                            next.key == list[i].key &&
+                            _sameDay(next.time, list[i].time),
+                        onBell: list[i].isSunrise
+                            ? null
+                            : () => push(context, AzanPrayerScreen(prayer: list[i].key)),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'কোনো ওয়াক্তে চাপ দিয়ে বেছে নিন: আজানের শব্দ (মসজিদে নববী, মসজিদুল হারাম, '
+                'শুধু নোটিফিকেশন বা বন্ধ), সময় আগে-পিছে করা বা নিজের সময়, আর আগের ও ইকামতের রিমাইন্ডার। '
+                'আজান বাজার সময় "থামান" বোতাম বা ফোনের ভলিউম বোতাম চাপলে থেমে যাবে।',
+                style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
+              ),
+              const SizedBox(height: 14),
+              ActionRow(
+                children: [
+                  LabeledAction(
+                    icon: Icons.explore_outlined,
+                    label: 'কিবলা দেখুন',
+                    tint: p.sky,
+                    onTap: () => push(context, const QiblaScreen()),
+                  ),
+                  LabeledAction(
+                    icon: Icons.tune_rounded,
+                    label: 'আজান সেটিংস',
+                    tint: p.mint,
+                    onTap: () => push(context, const SettingsScreen(section: SettingsSection.azan)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'নামাজের সময় ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না। কোনো সেটিং বদলালে বা অ্যাপ খুললে '
+                'পরের ৩০ দিনের আজান নতুন করে ঠিক করা হয়, ফোন রিস্টার্ট হলেও থাকে। '
+                'আজান ঠিকমতো না বাজলে সেটিংস → "অনুমতি ও সেটআপ" দেখুন। স্থানীয় মসজিদের সময়ের সাথে '
+                '১–২ মিনিট পার্থক্য হতে পারে।',
+                style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'কোনো ওয়াক্তে চাপ দিয়ে বেছে নিন: আজানের শব্দ (মসজিদে নববী, মসজিদুল হারাম, '
-          'শুধু নোটিফিকেশন বা বন্ধ), সময় আগে-পিছে করা বা নিজের সময়, আর আগের ও ইকামতের রিমাইন্ডার। '
-          'আজান বাজার সময় "থামান" বোতাম বা ফোনের ভলিউম বোতাম চাপলে থেমে যাবে।',
-          style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
-        ),
-        const SizedBox(height: 14),
-        ActionRow(
-          children: [
-            LabeledAction(
-              icon: Icons.explore_outlined,
-              label: 'কিবলা দেখুন',
-              tint: p.sky,
-              onTap: () => push(context, const QiblaScreen()),
-            ),
-            LabeledAction(
-              icon: Icons.tune_rounded,
-              label: 'আজান সেটিংস',
-              tint: p.mint,
-              onTap: () => push(context, const SettingsScreen(section: SettingsSection.azan)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'নামাজের সময় ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না। কোনো সেটিং বদলালে বা অ্যাপ খুললে '
-          'পরের ৩০ দিনের আজান নতুন করে ঠিক করা হয়, ফোন রিস্টার্ট হলেও থাকে। '
-          'আজান ঠিকমতো না বাজলে সেটিংস → "অনুমতি ও সেটআপ" দেখুন। স্থানীয় মসজিদের সময়ের সাথে '
-          '১–২ মিনিট পার্থক্য হতে পারে।',
-          style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
         ),
       ],
     );
