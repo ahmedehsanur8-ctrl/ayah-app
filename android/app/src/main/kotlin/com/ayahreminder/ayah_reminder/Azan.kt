@@ -203,6 +203,7 @@ object AzanNotifications {
     private const val IQAMAH_ID = 7106
     private const val IFTAR_BEFORE_ID = 7107
     private const val IFTAR_ID = 7108
+    private const val SEHRI_ID = 7109
 
     fun ensureChannels(context: Context) {
         if (Build.VERSION.SDK_INT < 26) return
@@ -252,6 +253,11 @@ object AzanNotifications {
     fun showIqamah(context: Context, name: String, mins: Int, azan: Long) = show(
         context, IQAMAH_ID, "${genitive(name)} ইকামতের সময়",
         "আজান হয়েছে ${clock(azan)} · ${bn(mins.toString())} মিনিট পর জামাত",
+    )
+
+    /** Sehri alarm without sound (only when the alarm service could not start). */
+    fun showSehri(context: Context, sehriEnd: Long) = show(
+        context, SEHRI_ID, "সেহরির সময়", "সেহরি শেষ হবে ${clock(sehriEnd)}",
     )
 
     /** Iftar reminder [mins] minutes before iftar. */
@@ -320,7 +326,17 @@ class AzanService : Service() {
             val i = Intent(context, AzanService::class.java).setAction(ACTION_PLAY)
                 .putExtra("name", name).putExtra("fajr", fajr).putExtra("time", time)
                 .putExtra("sound", sound).putExtra("volume", volume)
-            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(i) else context.startService(i)
+            try {
+                if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(i) else context.startService(i)
+            } catch (e: Exception) {
+                // Android 12+ can refuse a foreground service from the background
+                // (e.g. an inexact alarm): tell the time with a notification instead.
+                if (sound == "sehri") {
+                    AzanNotifications.showSehri(context, time)
+                } else {
+                    AzanNotifications.showPrayerTime(context, name, time)
+                }
+            }
         }
 
         fun stop(context: Context) {
@@ -491,11 +507,7 @@ class AzanService : Service() {
         volumeReceiver = r
     }
 
-    private fun canShowFullScreen(): Boolean {
-        if (Build.VERSION.SDK_INT < 34) return true
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        return nm.canUseFullScreenIntent()
-    }
+    private fun canShowFullScreen(): Boolean = canUseFullScreen(this)
 
     private fun pageIntent(name: String, time: Long): Intent =
         Intent(this, AzanActivity::class.java)

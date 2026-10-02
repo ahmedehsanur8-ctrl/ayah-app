@@ -76,6 +76,8 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
                     onOpen: item.key == PermKey.brand ? null : () => _open(item.key),
                     child: item.key == PermKey.brand && st.brand != null
                         ? BrandStepsList(brand: st.brand!, onChanged: _refresh)
+                        : item.key == PermKey.overlay && !st.isGranted(item.key)
+                        ? const RestrictedSettingsHelp()
                         : null,
                   ),
                   const SizedBox(height: 10),
@@ -157,7 +159,7 @@ class _PermissionCard extends StatelessWidget {
               IconBubble(item.icon, tint: granted ? p.mint : p.sand, size: 40),
               const SizedBox(width: 12),
               Expanded(child: Text(item.title, style: Theme.of(context).textTheme.titleMedium)),
-              StatusChip(granted),
+              StatusChip(granted, optional: item.optional),
             ],
           ),
           const SizedBox(height: 8),
@@ -173,6 +175,8 @@ class _PermissionCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: granted
                   ? TextButton(onPressed: onOpen, child: const Text('সেটিংস দেখুন'))
+                  : item.optional
+                  ? OutlinedButton(onPressed: onOpen, child: const Text('চালু করুন'))
                   : FilledButton(onPressed: onOpen, child: const Text('অনুমতি দিন')),
             ),
           ],

@@ -430,4 +430,17 @@ void main() {
     expect(table.length, 30);
     expect(Fasting.ramadanTimetable(s, shawwal), isEmpty);
   });
+
+  test('"Display over other apps" is optional: a blocked overlay is not "missing"', () {
+    final all = {for (final k in PermKey.values) k: true};
+    expect(PermissionStatus(all, null).missingForReminders, 0);
+    expect(PermissionStatus({...all, PermKey.overlay: false}, null).missingForReminders, 0);
+    expect(Permissions.info(PermKey.overlay).optional, isTrue);
+    // The ones reminders really need still count.
+    expect(PermissionStatus({...all, PermKey.fullScreen: false}, null).missingForReminders, 1);
+    expect(PermissionStatus({...all, PermKey.notifications: false}, null).missingForReminders, 1);
+    expect(PermissionStatus({...all, PermKey.exactAlarm: false}, null).missingForReminders, 1);
+    // Location only affects prayer times.
+    expect(PermissionStatus({...all, PermKey.location: false}, null).missingForReminders, 0);
+  });
 }

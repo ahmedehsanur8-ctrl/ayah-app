@@ -163,7 +163,7 @@ class MainActivity : AudioServiceActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "isIgnoringBatteryOptimizations" -> result.success(isIgnoringBatteryOptimizations())
-                    "canDrawOverlays" -> result.success(Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this))
+                    "canDrawOverlays" -> result.success(canDrawOverlays(this))
                     "openOverlaySettings" -> result.success(
                         tryStart(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).setData(Uri.parse("package:$packageName")))
                             || tryStart(appDetails())
@@ -232,11 +232,7 @@ class MainActivity : AudioServiceActivity() {
         return tryStart(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
     }
 
-    private fun canUseFullScreenIntent(): Boolean {
-        if (Build.VERSION.SDK_INT < 34) return true
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        return nm.canUseFullScreenIntent()
-    }
+    private fun canUseFullScreenIntent(): Boolean = canUseFullScreen(this)
 
     /** Opens the phone's text-to-speech settings (to install the Bangla voice). */
     private fun openTtsSettings(): Boolean {

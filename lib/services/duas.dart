@@ -10,6 +10,7 @@ import 'prayer.dart';
 import 'quran.dart';
 import 'reminders.dart';
 import 'settings.dart';
+import 'system_settings.dart';
 
 /// A counter step, e.g. 33 × সুবহানাল্লাহ.
 class DuaStep {
@@ -238,6 +239,12 @@ class AdhkarReminders {
         category: AndroidNotificationCategory.reminder,
       ),
     );
+    // On time when "Alarms & reminders" is allowed; otherwise Android may
+    // deliver it a little late.
+    final exact = await SystemSettings.canScheduleExactAlarms();
+    final mode = exact
+        ? AndroidScheduleMode.exactAllowWhileIdle
+        : AndroidScheduleMode.inexactAllowWhileIdle;
     final now = DateTime.now();
     for (var d = 0; d < days; d++) {
       final day = DateTime(now.year, now.month, now.day + d);
@@ -256,7 +263,7 @@ class AdhkarReminders {
             id: id,
             scheduledDate: tz.TZDateTime.from(when, Reminders.dhaka),
             notificationDetails: details,
-            androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+            androidScheduleMode: mode,
             title: title,
             body: body,
             payload: 'adhkar|$slot',

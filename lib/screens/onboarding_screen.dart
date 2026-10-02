@@ -431,7 +431,7 @@ class _SummaryPage extends StatelessWidget {
                 ListTile(
                   leading: Icon(items[i].icon, color: p.primary),
                   title: Text(items[i].title),
-                  trailing: StatusChip(status.isGranted(items[i].key)),
+                  trailing: StatusChip(status.isGranted(items[i].key), optional: items[i].optional),
                   onTap: status.isGranted(items[i].key) ? null : () => onOpen(i),
                 ),
               ],
