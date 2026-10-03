@@ -361,6 +361,23 @@ void main() {
     expect(s.hijriOffset, 2);
   });
 
+  test('sehri on Home: users who never chose get "always", a choice is kept', () async {
+    // Updated from an older version without touching the setting.
+    SharedPreferences.setMockInitialValues({'setupDone': true, 'remindersOn': true});
+    var s = await AppSettings.load();
+    expect(s.sehriShowMode, 'always');
+    expect(Fasting.showOnHome(s, DateTime(2026, 10, 3, 9)), isTrue);
+    expect(s.sehriAlarm, 0);
+    expect(s.iftarBefore, 0);
+    // Someone who picked a value keeps it, including the old default.
+    for (final chosen in ['ramadan', 'off']) {
+      SharedPreferences.setMockInitialValues({'setupDone': true, 'sehriShowMode': chosen});
+      s = await AppSettings.load();
+      expect(s.sehriShowMode, chosen);
+      expect(Fasting.showOnHome(s, DateTime(2026, 10, 3, 9)), isFalse);
+    }
+  });
+
   test('home display, nafl day, alarms and the Ramadan timetable', () async {
     SharedPreferences.setMockInitialValues({});
     final s = await AppSettings.load();
@@ -368,8 +385,14 @@ void main() {
     Prayers.azanBundled = true;
     final ramadan = DateTime(2026, 3, 1, 9);
     final shawwal = DateTime(2026, 4, 10, 9);
-    // Default: only in Ramadan.
-    expect(s.sehriShowMode, 'ramadan');
+    // Default: every day, but only the times (no sehri alarm or iftar reminder).
+    expect(s.sehriShowMode, 'always');
+    expect(Fasting.showOnHome(s, ramadan), isTrue);
+    expect(Fasting.showOnHome(s, shawwal), isTrue);
+    expect(s.sehriAlarm, 0);
+    expect(s.iftarBefore, 0);
+    // "শুধু রমজানে": only in Ramadan and on nafl days.
+    await s.setSehriShowMode('ramadan');
     expect(Fasting.showOnHome(s, ramadan), isTrue);
     expect(Fasting.showOnHome(s, shawwal), isFalse);
     // A nafl fast marked for today shows it and counts as a fasting day.

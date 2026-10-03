@@ -339,8 +339,10 @@ class AppSettings extends ChangeNotifier {
   }
 
   /// Sehri and iftar on the home screen: 'always', 'ramadan' (Ramadan and days
-  /// marked "রোজা রাখছি") or 'off'.
-  String get sehriShowMode => _prefs.getString('sehriShowMode') ?? 'ramadan';
+  /// marked "রোজা রাখছি") or 'off'. Saved only when the user picks one, so
+  /// everyone who never chose gets the default, 'always' (it was 'ramadan'
+  /// before 1.0.78).
+  String get sehriShowMode => _prefs.getString('sehriShowMode') ?? 'always';
 
   Future<void> setSehriShowMode(String v) async {
     await _prefs.setString('sehriShowMode', v);
