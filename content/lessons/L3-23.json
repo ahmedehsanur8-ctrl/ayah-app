@@ -1,0 +1,97 @@
+{
+  "id": "L3-23",
+  "level": 3,
+  "ord": 23,
+  "title_bn": "সে করে / করবে",
+  "objective_bn": "বর্তমান ক্রিয়া",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 3,
+  "anchor_ayah_to": 3,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 3
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          105,
+          39
+        ],
+        "word_refs": [
+          [
+            2,
+            13,
+            19
+          ],
+          [
+            2,
+            3,
+            2
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "বর্তমান ক্রিয়ার শুরুর অক্ষর বলে কে করে: ইয়া (সে), তা (তুমি), না (আমরা), আ (আমি)। শেষে ‘-ঊনা’ থাকলে ‘তারা করে’: ইউ’মিনূনা = তারা ঈমান আনে।",
+        "example": {
+          "surah": 2,
+          "ayah": 3,
+          "word_index": 2
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 105,
+            "distractor_ids": [
+              950,
+              75,
+              2701
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 39,
+            "distractor_ids": [
+              33,
+              930,
+              408
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 2,
+            "ayah": 3,
+            "word_index": 2
+          },
+          {
+            "kind": "split",
+            "surah": 2,
+            "ayah": 3,
+            "word_index": 8
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          105,
+          39
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 3
+      }
+    ]
+  }
+}

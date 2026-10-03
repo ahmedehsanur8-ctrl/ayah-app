@@ -45,6 +45,17 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
+  // তাসবিহ. Saved without notifying listeners: a tap must not rebuild the app.
+  int get tasbihCount => _prefs.getInt('tasbihCount') ?? 0;
+  int get tasbihZikr => _prefs.getInt('tasbihZikr') ?? 0;
+  int get tasbihTarget => _prefs.getInt('tasbihTarget') ?? 33;
+
+  Future<void> saveTasbih({required int count, required int zikr, required int target}) async {
+    await _prefs.setInt('tasbihCount', count);
+    await _prefs.setInt('tasbihZikr', zikr);
+    await _prefs.setInt('tasbihTarget', target);
+  }
+
   /// Saved (favourite) item ids, newest first.
   List<String> get favorites => _prefs.getStringList('favorites') ?? [];
 
@@ -113,6 +124,12 @@ class AppSettings extends ChangeNotifier {
     await _prefs.setStringList('duaFavorites', list);
     notifyListeners();
   }
+
+  /// কুরআন বুঝি learning mode, mirrored here (the learn DB holds the real setting)
+  /// so the reminder screen knows at once whether to mark known words.
+  bool get learnModeOn => _prefs.getBool('learnModeOn') ?? false;
+
+  Future<void> setLearnModeOn(bool v) => _prefs.setBool('learnModeOn', v);
 
   /// Show the Bangla pronunciation under the Arabic.
   bool get showUccharon => _prefs.getBool('showUccharon') ?? true;
@@ -235,6 +252,140 @@ class AppSettings extends ChangeNotifier {
 
   Future<void> setAzanMode(String prayer, String mode) async {
     await _prefs.setString('azanMode_$prayer', mode);
+    notifyListeners();
+  }
+
+  /// Azan sound per prayer: 'nabawi' (মসজিদে নববী), 'haram' (মসজিদুল হারাম),
+  /// 'notify' (notification only) or 'off'. Follows the older [azanMode] until set.
+  String azanSound(String prayer) {
+    final v = _prefs.getString('azanSound_$prayer');
+    if (v != null) return v;
+    return switch (azanMode(prayer)) {
+      'azan' => 'nabawi',
+      final m => m,
+    };
+  }
+
+  Future<void> setAzanSound(String prayer, String sound) async {
+    await _prefs.setString('azanSound_$prayer', sound);
+    await _prefs.setString(
+      'azanMode_$prayer',
+      sound == 'nabawi' || sound == 'haram' ? 'azan' : sound,
+    );
+    notifyListeners();
+  }
+
+  /// Minutes to move the azan from the calculated time (-30 … +30).
+  int azanOffset(String prayer) => _prefs.getInt('azanOffset_$prayer') ?? 0;
+
+  Future<void> setAzanOffset(String prayer, int minutes) async {
+    await _prefs.setInt('azanOffset_$prayer', minutes.clamp(-30, 30));
+    notifyListeners();
+  }
+
+  /// "নিজে সময় দিন": a fixed azan time (minutes after midnight), used every
+  /// day instead of the calculated time. Null when off.
+  int? azanFixedMinutes(String prayer) => _prefs.getInt('azanFixed_$prayer');
+
+  Future<void> setAzanFixedMinutes(String prayer, int? minutes) async {
+    if (minutes == null) {
+      await _prefs.remove('azanFixed_$prayer');
+    } else {
+      await _prefs.setInt('azanFixed_$prayer', minutes.clamp(0, 24 * 60 - 1));
+    }
+    notifyListeners();
+  }
+
+  /// Reminder this many minutes before the azan (0 = off; 5, 10, 15 or 30).
+  int azanBefore(String prayer) => _prefs.getInt('azanBefore_$prayer') ?? 0;
+
+  Future<void> setAzanBefore(String prayer, int minutes) async {
+    await _prefs.setInt('azanBefore_$prayer', minutes);
+    notifyListeners();
+  }
+
+  /// Iqamah reminder this many minutes after the azan (0 = off; 10, 15 or 20).
+  int iqamahAfter(String prayer) => _prefs.getInt('iqamahAfter_$prayer') ?? 0;
+
+  Future<void> setIqamahAfter(String prayer, int minutes) async {
+    await _prefs.setInt('iqamahAfter_$prayer', minutes);
+    notifyListeners();
+  }
+
+  /// Azan volume, 0.1 – 1.0 of the phone's alarm volume.
+  double get azanVolume => _prefs.getDouble('azanVolume') ?? 1.0;
+
+  Future<void> setAzanVolume(double v) async {
+    await _prefs.setDouble('azanVolume', v.clamp(0.1, 1.0));
+    notifyListeners();
+  }
+
+  /// Vibrate when the azan and prayer notifications come.
+  bool get azanVibrate => _prefs.getBool('azanVibrate') ?? true;
+
+  Future<void> setAzanVibrate(bool v) async {
+    await _prefs.setBool('azanVibrate', v);
+    notifyListeners();
+  }
+
+  // ------------------------------------------------------------ sehri & iftar
+
+  /// Sehri ends this many minutes before Fajr (0, 3, 5 or 10).
+  int get sehriPrecaution => _prefs.getInt('sehriPrecaution') ?? 0;
+
+  Future<void> setSehriPrecaution(int v) async {
+    await _prefs.setInt('sehriPrecaution', v);
+    notifyListeners();
+  }
+
+  /// Sehri and iftar on the home screen: 'always', 'ramadan' (Ramadan and days
+  /// marked "রোজা রাখছি") or 'off'. Saved only when the user picks one, so
+  /// everyone who never chose gets the default, 'always' (it was 'ramadan'
+  /// before 1.0.78).
+  String get sehriShowMode => _prefs.getString('sehriShowMode') ?? 'always';
+
+  Future<void> setSehriShowMode(String v) async {
+    await _prefs.setString('sehriShowMode', v);
+    notifyListeners();
+  }
+
+  /// A nafl fast: the date (yyyy-mm-dd) the user marked "রোজা রাখছি".
+  String get naflFastDay => _prefs.getString('naflFastDay') ?? '';
+
+  Future<void> setNaflFastDay(String v) async {
+    await _prefs.setString('naflFastDay', v);
+    notifyListeners();
+  }
+
+  /// Sehri wake-up alarm, minutes before sehri ends (0 = off; 30, 45, 60, 90).
+  int get sehriAlarm => _prefs.getInt('sehriAlarm') ?? 0;
+
+  Future<void> setSehriAlarm(int v) async {
+    await _prefs.setInt('sehriAlarm', v);
+    notifyListeners();
+  }
+
+  /// Iftar reminder, minutes before iftar (0 = off; 5 or 10).
+  int get iftarBefore => _prefs.getInt('iftarBefore') ?? 0;
+
+  Future<void> setIftarBefore(int v) async {
+    await _prefs.setInt('iftarBefore', v);
+    notifyListeners();
+  }
+
+  /// A notification at iftar time with the iftar dua.
+  bool get iftarNotify => _prefs.getBool('iftarNotify') ?? true;
+
+  Future<void> setIftarNotify(bool v) async {
+    await _prefs.setBool('iftarNotify', v);
+    notifyListeners();
+  }
+
+  /// Days added to the calculated Hijri date (-2 … +2) to match local moon sighting.
+  int get hijriOffset => _prefs.getInt('hijriOffset') ?? 0;
+
+  Future<void> setHijriOffset(int v) async {
+    await _prefs.setInt('hijriOffset', v.clamp(-2, 2));
     notifyListeners();
   }
 

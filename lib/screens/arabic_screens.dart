@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../features/learn/ui/screens/learn_screens.dart';
 import '../models/content.dart' show toBanglaDigits;
 import '../services/arabic.dart';
 import '../services/quran.dart';
 import '../theme.dart';
 import '../widgets/arabic_games.dart';
-import '../widgets/pattern.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 
 // ------------------------------------------------------------------ home
@@ -72,7 +73,7 @@ class _ArabicHomeScreenState extends State<ArabicHomeScreen> {
                               ),
                               Text(
                                 'আগে ভুল হওয়া ${toBanglaDigits(_progress.dueItems().length)}টি অক্ষর/শব্দ আবার দেখি',
-                                style: TextStyle(color: p.sand.foreground, fontSize: 13),
+                                style: TextStyle(color: p.sand.foreground, fontSize: 14),
                               ),
                             ],
                           ),
@@ -91,7 +92,7 @@ class _ArabicHomeScreenState extends State<ArabicHomeScreen> {
                 Text(
                   'সব পাঠ, উদাহরণ ও অনুশীলন এই অ্যাপের জন্য নতুন করে লেখা। কুরআনের শব্দ ও আয়াত অ্যাপের '
                   'Tanzil কুরআন টেক্সট থেকে নেওয়া। অগ্রগতি শুধু এই ফোনে থাকে।',
-                  style: TextStyle(color: p.muted, fontSize: 12.5, height: 1.5),
+                  style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
                 ),
               ],
             ),
@@ -113,16 +114,10 @@ class _Hero extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(radiusL),
       child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [p.greenCard, p.greenCardDark],
-          ),
-        ),
+        color: p.night,
         child: Stack(
           children: [
-            const PatternLayer(color: Brand.gold, opacity: 0.07),
+            const GirihLayer(),
             Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
@@ -138,22 +133,19 @@ class _Hero extends StatelessWidget {
                               'বাংলা থেকে আরবি',
                               style: TextStyle(
                                 color: p.gold,
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              'কুরআন পড়তে শিখি',
-                              style: titleStyle(p, size: 22).copyWith(color: Colors.white),
-                            ),
+                            Text('কুরআন পড়তে শিখি', style: nightTitleStyle(p, size: 22)),
                           ],
                         ),
                       ),
-                      const Text(
+                      Text(
                         'أ ب ت',
                         textDirection: TextDirection.rtl,
-                        style: TextStyle(fontFamily: arabicFont, fontSize: 30, color: Brand.gold),
+                        style: TextStyle(fontFamily: arabicFont, fontSize: 30, color: p.gold),
                       ),
                     ],
                   ),
@@ -161,14 +153,16 @@ class _Hero extends StatelessWidget {
                   Row(
                     children: [
                       _stat(
-                        Icons.local_fire_department_rounded,
+                        p,
+                        Icons.local_fire_department_outlined,
                         '${toBanglaDigits(streak)} দিন',
                         'টানা',
                       ),
                       const SizedBox(width: 10),
-                      _stat(Icons.star_rounded, toBanglaDigits(pr.totalStars), 'তারা'),
+                      _stat(p, Icons.star_outline_rounded, toBanglaDigits(pr.totalStars), 'তারা'),
                       const SizedBox(width: 10),
                       _stat(
+                        p,
                         Icons.check_circle_outline_rounded,
                         '${toBanglaDigits(done)}/${toBanglaDigits(total)}',
                         'পাঠ',
@@ -178,8 +172,8 @@ class _Hero extends StatelessWidget {
                   const SizedBox(height: 14),
                   FilledButton.icon(
                     style: FilledButton.styleFrom(
-                      backgroundColor: Brand.gold,
-                      foregroundColor: Brand.greenDark,
+                      backgroundColor: p.gold,
+                      foregroundColor: p.night,
                     ),
                     onPressed: () => push(context, LessonScreen(index: pr.nextIndex)),
                     icon: const Icon(Icons.play_arrow_rounded),
@@ -197,16 +191,13 @@ class _Hero extends StatelessWidget {
     );
   }
 
-  Widget _stat(IconData icon, String value, String label) => Expanded(
+  Widget _stat(Palette p, IconData icon, String value, String label) => Expanded(
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-      ),
+      decoration: BoxDecoration(color: p.nightLine, borderRadius: BorderRadius.circular(14)),
       child: Row(
         children: [
-          Icon(icon, color: Brand.gold, size: 20),
+          Icon(icon, color: p.gold, size: 20),
           const SizedBox(width: 6),
           Expanded(
             child: Column(
@@ -215,13 +206,9 @@ class _Hero extends StatelessWidget {
                 Text(
                   value,
                   maxLines: 1,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: p.onNight, fontWeight: FontWeight.w700, fontSize: 14),
                 ),
-                Text(label, style: const TextStyle(color: Brand.gold, fontSize: 11.5)),
+                Text(label, style: TextStyle(color: p.gold, fontSize: 14)),
               ],
             ),
           ),
@@ -230,6 +217,14 @@ class _Hero extends StatelessWidget {
     ),
   );
 }
+
+/// What a সহজ আরবি level card shows when কুরআন বুঝি teaches that level.
+String? _learnBadge(ArLevel level) => switch (level.n) {
+  2 => 'কুরআন বুঝি',
+  3 => '${toBanglaDigits(LearnTrack.grammar.lessonIds.length)}টি পাঠ তৈরি',
+  4 => '${toBanglaDigits(LearnTrack.reading.lessonIds.length)}টি পাঠ তৈরি',
+  _ => null,
+};
 
 class _LevelCard extends StatelessWidget {
   const _LevelCard({required this.level});
@@ -243,9 +238,17 @@ class _LevelCard extends StatelessWidget {
     final pr = ArabicProgress.instance;
     final total = ArabicCourse.lessons.length;
     return AppCard(
-      onTap: level.ready ? () => push(context, const ArabicLevelScreen()) : null,
+      // Levels 2–4 are taught in কুরআন বুঝি: words, its grammar lessons, its reading lessons.
+      onTap: level.ready
+          ? () => push(context, const ArabicLevelScreen())
+          : switch (level.n) {
+              2 => () => push(context, const LearnDashboardScreen()),
+              3 => () => push(context, const LearnPathScreen(track: LearnTrack.grammar)),
+              4 => () => push(context, const LearnPathScreen(track: LearnTrack.reading)),
+              _ => null,
+            },
       child: Opacity(
-        opacity: level.ready ? 1 : 0.7,
+        opacity: level.ready || _learnBadge(level) != null ? 1 : 0.7,
         child: Row(
           children: [
             Container(
@@ -270,7 +273,7 @@ class _LevelCard extends StatelessWidget {
                     '${toBanglaDigits(level.n)}. ${level.title}',
                     style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w700, color: p.text),
                   ),
-                  Text(level.subtitle, style: TextStyle(fontSize: 13, color: p.muted, height: 1.4)),
+                  Text(level.subtitle, style: TextStyle(fontSize: 14, color: p.muted, height: 1.4)),
                   if (level.ready) ...[
                     const SizedBox(height: 8),
                     ClipRRect(
@@ -289,6 +292,22 @@ class _LevelCard extends StatelessWidget {
             const SizedBox(width: 8),
             if (level.ready)
               Icon(Icons.chevron_right_rounded, color: p.muted)
+            else if (_learnBadge(level) != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: p.mint.background,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _learnBadge(level)!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: p.mint.foreground,
+                  ),
+                ),
+              )
             else
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -298,7 +317,7 @@ class _LevelCard extends StatelessWidget {
                 ),
                 child: Text(
                   'শীঘ্রই আসছে',
-                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: p.muted),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: p.muted),
                 ),
               ),
           ],
@@ -378,7 +397,7 @@ class _ArabicLevelScreenState extends State<ArabicLevelScreen> {
                             toBanglaDigits(l.n),
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: stars > 0 ? Brand.gold : p.primary,
+                              color: stars > 0 ? p.goldText : p.primary,
                             ),
                           )
                         : Icon(Icons.lock_outline_rounded, size: 18, color: p.muted),
@@ -400,7 +419,7 @@ class _ArabicLevelScreenState extends State<ArabicLevelScreen> {
                           '${l.subtitle} · ${toBanglaDigits(l.minutes)} মিনিট',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12.5, color: p.muted),
+                          style: TextStyle(fontSize: 14, color: p.muted),
                         ),
                       ],
                     ),
@@ -432,7 +451,7 @@ class _Stars extends StatelessWidget {
           Icon(
             k < count ? Icons.star_rounded : Icons.star_outline_rounded,
             size: size,
-            color: k < count ? const Color(0xFFD9A93A) : p.border,
+            color: k < count ? p.star : p.border,
           ),
       ],
     );
@@ -583,7 +602,7 @@ class _LessonScreenState extends State<LessonScreen> {
         const SizedBox(height: 10),
         Text(
           'সময় লাগবে প্রায় ${toBanglaDigits(_lesson.minutes)} মিনিট · ${toBanglaDigits(_gameCount)}টি অনুশীলন',
-          style: TextStyle(color: p.muted, fontSize: 13),
+          style: TextStyle(color: p.muted, fontSize: 14),
         ),
         const SizedBox(height: 18),
         FilledButton.icon(
@@ -611,7 +630,7 @@ class _LessonScreenState extends State<LessonScreen> {
         Text(
           _lesson.ayahs.isNotEmpty
               ? 'আয়াতে চাপ দিলে তিলাওয়াত শুনবে। প্রথমবার ইন্টারনেট লাগে।'
-              : 'প্রতিটিতে চাপ দিয়ে দেখো ও শোনো, তারপর নিজে জোরে বলো।',
+              : 'প্রতিটিতে চাপ দিয়ে দেখুন ও শুনুন, তারপর নিজে জোরে বলুন।',
           style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
         ),
         const SizedBox(height: 12),
@@ -654,7 +673,7 @@ class _LessonScreenState extends State<LessonScreen> {
     final msg = switch (_stars) {
       3 => 'মাশাআল্লাহ! দারুণ হয়েছে।',
       2 => 'খুব ভালো! আরেকবার করলে তিন তারা পাবে।',
-      _ => 'শেষ করেছ! আরেকবার অনুশীলন করলে আরও সহজ লাগবে।',
+      _ => 'শেষ করেছেন! আরেকবার অনুশীলন করলে আরও সহজ লাগবে।',
     };
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 30, 16, 28),
@@ -794,7 +813,7 @@ void showItemSheet(BuildContext context, ArItem item) {
               const SizedBox(height: 8),
               Text(
                 'কুরআনে: আয়াত ${refBn(item.ref!)}',
-                style: TextStyle(color: p.goldText, fontSize: 13),
+                style: TextStyle(color: p.goldText, fontSize: 14),
               ),
             ],
             const SizedBox(height: 14),
@@ -818,7 +837,7 @@ class _FormsTable extends StatelessWidget {
       child: Text(
         t,
         textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 12.5, color: p.muted, fontWeight: FontWeight.w600),
+        style: TextStyle(fontSize: 14, color: p.muted, fontWeight: FontWeight.w600),
       ),
     );
     return AppCard(
@@ -880,7 +899,7 @@ class _SignCard extends StatelessWidget {
           Text(
             'উদাহরণ: আয়াত ${refBn(sign['ref'] as String)}',
             textAlign: TextAlign.center,
-            style: TextStyle(color: p.goldText, fontSize: 12.5),
+            style: TextStyle(color: p.goldText, fontSize: 14),
           ),
         ],
       ),

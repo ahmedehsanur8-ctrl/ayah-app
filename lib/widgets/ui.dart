@@ -118,7 +118,7 @@ class IconBubble extends StatelessWidget {
     height: size,
     decoration: BoxDecoration(
       color: tint.background,
-      borderRadius: BorderRadius.circular(size * 0.36),
+      borderRadius: BorderRadius.circular(size * 0.3),
     ),
     child: Icon(icon, color: tint.foreground, size: size * 0.52),
   );
@@ -161,7 +161,7 @@ class GridTile3 extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 style: TextStyle(
-                  fontSize: 13.5,
+                  fontSize: 14,
                   height: 1.3,
                   fontWeight: FontWeight.w600,
                   color: tint.foreground,
@@ -174,7 +174,7 @@ class GridTile3 extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11.5, color: tint.foreground.withValues(alpha: 0.8)),
+                  style: TextStyle(fontSize: 14, color: tint.foreground.withValues(alpha: 0.8)),
                 ),
               ],
             ],
@@ -223,13 +223,10 @@ class NavRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: p.text),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: p.text),
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty)
-                      Text(
-                        subtitle!,
-                        style: TextStyle(fontSize: 12.5, color: p.muted, height: 1.4),
-                      ),
+                      Text(subtitle!, style: TextStyle(fontSize: 14, color: p.muted, height: 1.4)),
                   ],
                 ),
               ),
@@ -259,7 +256,7 @@ class RowGroup extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) Divider(height: 1, indent: 64, color: p.border),
+            if (i > 0) Divider(height: 1, indent: 66, color: p.border),
             children[i],
           ],
         ],
@@ -301,7 +298,7 @@ class InfoPill extends StatelessWidget {
                     text,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: t.foreground,
                     ),
@@ -314,6 +311,81 @@ class InfoPill extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A button with an icon above a short Bangla label (never icon-only).
+/// At least 64 high, so it is easy to tap.
+class LabeledAction extends StatelessWidget {
+  const LabeledAction({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.tint,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  /// Coloured background; without it the button is a plain bordered card.
+  final Tint? tint;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final fg = tint?.foreground ?? p.primary;
+    return Material(
+      color: tint?.background ?? p.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(radiusM),
+        side: tint == null ? BorderSide(color: p.border) : BorderSide.none,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 64),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: fg, size: 24),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    style: TextStyle(color: fg, fontSize: 14, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// [LabeledAction]s side by side, sharing the width.
+class ActionRow extends StatelessWidget {
+  const ActionRow({super.key, required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (var i = 0; i < children.length; i++) ...[
+        if (i > 0) const SizedBox(width: 10),
+        Expanded(child: children[i]),
+      ],
+    ],
+  );
 }
 
 /// Opens a page.

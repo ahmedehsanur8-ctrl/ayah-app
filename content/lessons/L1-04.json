@@ -1,0 +1,128 @@
+{
+  "id": "L1-04",
+  "level": 1,
+  "ord": 4,
+  "title_bn": "শুধু আপনারই ইবাদত",
+  "objective_bn": "ক্রিয়ার ভেতরে ‘আমরা’",
+  "minutes": 10,
+  "anchor_surah": 1,
+  "anchor_ayah_from": 5,
+  "anchor_ayah_to": 5,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 1,
+        "ayah": 5
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          14,
+          15,
+          16,
+          17
+        ],
+        "word_refs": [
+          [
+            1,
+            5,
+            1
+          ],
+          [
+            1,
+            5,
+            2
+          ],
+          [
+            1,
+            5,
+            3
+          ],
+          [
+            1,
+            5,
+            4
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "ক্রিয়ার শুরুতে ‘ন’ থাকলে কাজটি ‘আমরা’ করি: না‘বুদু = আমরা ইবাদত করি, নাসতা‘ঈন = আমরা সাহায্য চাই। শুরুর ‘ওয়া’ মানে ‘এবং’।",
+        "example": {
+          "surah": 1,
+          "ayah": 5,
+          "word_index": 2
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 14,
+            "distractor_ids": [
+              3,
+              8,
+              13
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 15,
+            "distractor_ids": [
+              10,
+              16,
+              4
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 16,
+            "distractor_ids": [
+              2,
+              5,
+              11
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 17,
+            "distractor_ids": [
+              8,
+              13,
+              1
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 1,
+            "ayah": 5,
+            "word_index": 3
+          },
+          {
+            "kind": "order",
+            "surah": 1,
+            "ayah": 5
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          14,
+          15,
+          16,
+          17
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 1,
+        "ayah": 5
+      }
+    ]
+  }
+}

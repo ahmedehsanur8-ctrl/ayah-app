@@ -64,13 +64,7 @@ class MainActivity : AudioServiceActivity() {
         reminders.setMethodCallHandler { call, result ->
             when (call.method) {
                 "schedule" -> {
-                    ReminderStore.save(
-                        this,
-                        call.argument<String>("events") ?: "[]",
-                        call.argument<String>("sound") ?: "chime",
-                        call.argument<Boolean>("vibrate") ?: true,
-                    )
-                    ReminderScheduler.scheduleNext(this)
+                    Planner.saveReminders(this, call)
                     result.success(true)
                 }
                 "test" -> {
@@ -106,18 +100,15 @@ class MainActivity : AudioServiceActivity() {
             pendingReminderPayload = null
             Handler(Looper.getMainLooper()).post { reminders.invokeMethod("open", waiting) }
         }
+        // When to top up the alarm plan in the background (Planner.kt).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/planner")
+            .setMethodCallHandler { call, result -> Planner.handlePlanner(this, call, result) {} }
         // Full azan at prayer times (Azan.kt).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/azan")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "schedule" -> {
-                        AzanStore.save(
-                            this,
-                            call.argument<String>("events") ?: "[]",
-                            call.argument<Boolean>("inSilent") ?: true,
-                            call.argument<Boolean>("fullScreen") ?: true,
-                        )
-                        AzanScheduler.scheduleNext(this)
+                        Planner.saveAzan(this, call)
                         result.success(true)
                     }
                     "playNow" -> {
@@ -126,6 +117,8 @@ class MainActivity : AudioServiceActivity() {
                             call.argument<String>("name") ?: "",
                             call.argument<Boolean>("fajr") ?: false,
                             System.currentTimeMillis(),
+                            call.argument<String>("sound") ?: "nabawi",
+                            (call.argument<Double>("volume") ?: -1.0).toFloat(),
                         )
                         result.success(true)
                     }
@@ -133,9 +126,6 @@ class MainActivity : AudioServiceActivity() {
                         AzanService.stop(this); result.success(true)
                     }
                     "isPlaying" -> result.success(AzanService.isPlaying)
-                    "hasFajrSound" -> result.success(
-                        resources.getIdentifier("azan_fajr", "raw", packageName) != 0
-                    )
                     else -> result.notImplemented()
                 }
             }
@@ -162,7 +152,7 @@ class MainActivity : AudioServiceActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "isIgnoringBatteryOptimizations" -> result.success(isIgnoringBatteryOptimizations())
-                    "canDrawOverlays" -> result.success(Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this))
+                    "canDrawOverlays" -> result.success(canDrawOverlays(this))
                     "openOverlaySettings" -> result.success(
                         tryStart(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).setData(Uri.parse("package:$packageName")))
                             || tryStart(appDetails())
@@ -231,11 +221,7 @@ class MainActivity : AudioServiceActivity() {
         return tryStart(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
     }
 
-    private fun canUseFullScreenIntent(): Boolean {
-        if (Build.VERSION.SDK_INT < 34) return true
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        return nm.canUseFullScreenIntent()
-    }
+    private fun canUseFullScreenIntent(): Boolean = canUseFullScreen(this)
 
     /** Opens the phone's text-to-speech settings (to install the Bangla voice). */
     private fun openTtsSettings(): Boolean {

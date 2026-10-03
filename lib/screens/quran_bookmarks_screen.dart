@@ -7,39 +7,7 @@ import '../widgets/quran_widgets.dart';
 import '../widgets/ui.dart';
 import 'quran_reader_screen.dart';
 
-/// কুরআন বুকমার্ক: saved ayahs, newest first; tap opens the ayah.
-class QuranBookmarksScreen extends StatelessWidget {
-  const QuranBookmarksScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final prefs = AppState.instance.settings.quran;
-    return Scaffold(
-      appBar: AppBar(title: const Text('কুরআন বুকমার্ক')),
-      body: ListenableBuilder(
-        listenable: prefs,
-        builder: (context, _) => prefs.bookmarks.isEmpty
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Text(
-                    'আয়াতের পাশের বুকমার্ক চিহ্নে চাপ দিলে সেটি এখানে জমা থাকবে।',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: p.muted, height: 1.6),
-                  ),
-                ),
-              )
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                children: const [QuranBookmarkList()],
-              ),
-      ),
-    );
-  }
-}
-
-/// The bookmarked ayahs in a card (also used on the প্রিয় page).
+/// The bookmarked ayahs in a card (the বুকমার্ক tab of the প্রিয় page).
 class QuranBookmarkList extends StatelessWidget {
   const QuranBookmarkList({super.key});
 
@@ -78,7 +46,7 @@ class QuranBookmarkList extends StatelessWidget {
                                 Text(
                                   ayahTitle(refs[i].surah, refs[i].ayah),
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     color: p.primary,
                                     fontWeight: FontWeight.w700,
                                   ),

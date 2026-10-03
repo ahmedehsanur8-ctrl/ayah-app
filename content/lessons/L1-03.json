@@ -1,0 +1,106 @@
+{
+  "id": "L1-03",
+  "level": 1,
+  "ord": 3,
+  "title_bn": "বিচার দিনের মালিক",
+  "objective_bn": "পাশাপাশি দুই বিশেষ্য = ‘-এর’",
+  "minutes": 8,
+  "anchor_surah": 1,
+  "anchor_ayah_from": 4,
+  "anchor_ayah_to": 4,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 1,
+        "ayah": 4
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          11,
+          12,
+          13
+        ],
+        "word_refs": [
+          [
+            1,
+            4,
+            1
+          ],
+          [
+            1,
+            4,
+            2
+          ],
+          [
+            1,
+            4,
+            3
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "দুটি বিশেষ্য পাশাপাশি বসলে মাঝে ‘-এর’ অর্থ আসে: মালিকি ইয়াওমিদ্দীন = বিচার দিনের মালিক। আরবিতে ‘-এর’ আলাদা করে লেখা হয় না, পাশাপাশি বসাই যথেষ্ট।",
+        "example": {
+          "surah": 1,
+          "ayah": 4,
+          "word_index": 2
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 11,
+            "distractor_ids": [
+              5,
+              12,
+              4
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 12,
+            "distractor_ids": [
+              2,
+              5,
+              11
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 13,
+            "distractor_ids": [
+              8,
+              2,
+              5
+            ]
+          },
+          {
+            "kind": "order",
+            "surah": 1,
+            "ayah": 4
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          11,
+          12,
+          13
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 1,
+        "ayah": 4
+      }
+    ]
+  }
+}

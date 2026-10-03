@@ -5,6 +5,22 @@
  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
  "author": "Atcovi",
  "credit": "Own work",
+ "duration": 86.51756027323688,
+ "file": "azan.mp3",
+ "audio": {
+  "programs": [],
+  "streams": [
+   {
+    "codec_name": "mp3",
+    "sample_rate": "44100",
+    "channels": 2
+   }
+  ],
+  "format": {
+   "duration": "86.543673",
+   "bit_rate": "133878"
+  }
+ },
  "fajr": {
   "title": "File:Eid al-Fitr Fajr azan at Malmö Mosque - 19 August 2012.webm",
   "source": "https://commons.wikimedia.org/wiki/File%3AEid_al-Fitr_Fajr_azan_at_Malm%C3%B6_Mosque_-_19_August_2012.webm",
@@ -12,6 +28,21 @@
   "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
   "author": "Islamic Center Malmö",
   "credit": "YouTube: Islamic Center Malmo, Ezani Sabahut, Besim Azemi, Gryningsbön Azan, Qendra Islame Malmo Suedi – View/save archived versions on archive.org",
-  "duration": 247.561
+  "duration": 247.561,
+  "file": "azan_fajr.webm",
+  "audio": {
+   "programs": [],
+   "streams": [
+    {
+     "codec_name": "opus",
+     "sample_rate": "48000",
+     "channels": 2
+    }
+   ],
+   "format": {
+    "duration": "247.568000",
+    "bit_rate": "136404"
+   }
+  }
  }
 }

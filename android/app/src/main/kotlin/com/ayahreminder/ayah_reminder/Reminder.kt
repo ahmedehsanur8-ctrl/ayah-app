@@ -1,7 +1,6 @@
 package com.ayahreminder.ayah_reminder
 
 import android.app.AlarmManager
-import android.app.KeyguardManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -32,20 +31,47 @@ import org.json.JSONObject
  *
  * Flutter saves the next 30 days of reminders here ([ReminderStore]). Only the
  * next one is set as an alarm clock; when it rings, [ReminderService] shows a
- * full-screen alarm notification, plays a gentle sound on the alarm stream with
- * vibration, and opens the reading page (over the lock screen, or over other apps
- * when "Display over other apps" is allowed). "আমি পড়েছি" / "১০ মিনিট পরে" on the
- * reading page stop the sound. [AzanBootReceiver] sets the alarm again after a restart.
+ * high-priority alarm notification and plays a gentle sound on the alarm stream
+ * with vibration. Delivery is notification-first:
+ *  - phone locked or screen off: the full-screen intent opens the reading page
+ *    (when Android allows full-screen notifications; on Android 14+ the user
+ *    grants this, otherwise it stays a heads-up notification);
+ *  - phone in use (another app open): a heads-up notification with "পড়ুন" /
+ *    "১০ মিনিট পরে";
+ *  - optional extra: with "Display over other apps" allowed, the page also opens
+ *    over the app in use. If that permission is missing or restricted (common on
+ *    sideloaded installs), nothing breaks; the notification is used.
+ * "আমি পড়েছি" / "১০ মিনিট পরে" on the reading page stop the sound.
+ * [AzanBootReceiver] sets the alarm again after a restart, an app update, a clock
+ * change, or when the exact-alarm permission is granted.
  */
+/** "Display over other apps" (never throws; false when restricted). */
+fun canDrawOverlays(context: Context): Boolean = try {
+    Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(context)
+} catch (e: Exception) {
+    false
+}
+
+/** Full-screen notifications are allowed (Android 14+ asks the user). */
+fun canUseFullScreen(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < 34) return true
+    return try {
+        (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).canUseFullScreenIntent()
+    } catch (e: Exception) {
+        false
+    }
+}
+
 object ReminderStore {
     private const val PREFS = "reminder_schedule"
 
     fun save(context: Context, events: String, sound: String, vibrate: Boolean) {
+        // commit (not apply): the alarm is set right after, and a restart must find the new list.
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString("events", events)
             .putString("sound", sound)
             .putBoolean("vibrate", vibrate)
-            .apply()
+            .commit()
     }
 
     fun events(context: Context): JSONArray = try {
@@ -130,6 +156,9 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         if (request == ReminderScheduler.REQUEST_NEXT) {
             ReminderScheduler.scheduleNext(context, maxOf(t, System.currentTimeMillis()))
         }
+        // Top up the plan in the background if fewer than 30 days are left.
+        val pending = goAsync()
+        Planner.maybeRun(context, false) { pending.finish() }
     }
 }
 
@@ -149,7 +178,20 @@ class ReminderService : Service() {
 
         fun start(context: Context, e: JSONObject) {
             val i = Intent(context, ReminderService::class.java).setAction(ACTION_SHOW).putExtra("event", e.toString())
-            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(i) else context.startService(i)
+            try {
+                if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(i) else context.startService(i)
+            } catch (ex: Exception) {
+                // Android 12+ can refuse a foreground service from the background
+                // (e.g. an inexact alarm without the exact-alarm permission): show
+                // the reminder as a notification without the sound instead.
+                ensureChannel(context)
+                try {
+                    (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                        .notify(NOTIFICATION_ID, notification(context, e))
+                } catch (se: SecurityException) {
+                    // Notifications not allowed.
+                }
+            }
         }
 
         /** Stops the sound (the notification stays until the page is done). */
@@ -168,6 +210,37 @@ class ReminderService : Service() {
                 .setAction("com.ayahreminder.OPEN_REMINDER")
                 .putExtra("reminder_payload", e.optString("payload"))
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+
+        /** The alarm notification for a reminder (heads-up, or full screen when allowed). */
+        fun notification(context: Context, e: JSONObject): Notification {
+            val open = PendingIntent.getActivity(
+                context, 7301, pageIntent(context, e),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val snooze = PendingIntent.getService(
+                context, 7302, Intent(context, ReminderService::class.java).setAction(ACTION_SNOOZE),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val b = AzanNotifications.builder(context, CHANNEL)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(e.optString("title"))
+                .setContentText(e.optString("body"))
+                .setStyle(Notification.BigTextStyle().bigText(e.optString("body")))
+                .setCategory(Notification.CATEGORY_ALARM)
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setColor(NightGold.EMERALD)
+                .setOngoing(true)
+                .setAutoCancel(true)
+                .setContentIntent(open)
+                .addAction(Notification.Action.Builder(null, "পড়ুন", open).build())
+                .addAction(Notification.Action.Builder(null, "১০ মিনিট পরে", snooze).build())
+            @Suppress("DEPRECATION")
+            if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_MAX)
+            // Full screen only where allowed (Android 14+: "Send full-screen
+            // notifications"); otherwise the high-priority channel shows it heads-up.
+            if (canUseFullScreen(context)) b.setFullScreenIntent(open, true)
+            return b.build()
+        }
 
         fun ensureChannel(context: Context) {
             if (Build.VERSION.SDK_INT < 26) return
@@ -213,7 +286,7 @@ class ReminderService : Service() {
         }
         current = e
         ensureChannel(this)
-        val n = buildNotification(e)
+        val n = notification(this, e)
         if (Build.VERSION.SDK_INT >= 29) {
             startForeground(NOTIFICATION_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         } else {
@@ -224,49 +297,18 @@ class ReminderService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun isLockedOrOff(): Boolean {
-        val km = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-        return km.isKeyguardLocked || !pm.isInteractive
-    }
-
-    /** Opens the reading page over the lock screen or over other apps when allowed. */
+    /**
+     * Optional extra: opens the reading page directly when "Display over other
+     * apps" is allowed. Without it (or when ColorOS restricts it) this does
+     * nothing and the notification / full-screen intent is used instead.
+     */
     private fun openPage(e: JSONObject) {
-        val overlay = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(this)
-        if (!overlay && !isLockedOrOff()) return // the heads-up notification stays instead
+        if (!canDrawOverlays(this)) return
         try {
             startActivity(pageIntent(this, e))
         } catch (ex: Exception) {
-            // Not allowed now; the full-screen intent / notification covers it.
+            // Blocked by the system; the notification covers it.
         }
-    }
-
-    private fun buildNotification(e: JSONObject): Notification {
-        val open = PendingIntent.getActivity(
-            this, 7301, pageIntent(this, e),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val snooze = PendingIntent.getService(
-            this, 7302, Intent(this, ReminderService::class.java).setAction(ACTION_SNOOZE),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val b = AzanNotifications.builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(e.optString("title"))
-            .setContentText(e.optString("body"))
-            .setStyle(Notification.BigTextStyle().bigText(e.optString("body")))
-            .setCategory(Notification.CATEGORY_ALARM)
-            .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setColor(Color.parseColor("#14553F"))
-            .setOngoing(true)
-            .setAutoCancel(true)
-            .setContentIntent(open)
-            .setFullScreenIntent(open, true)
-            .addAction(Notification.Action.Builder(null, "পড়ুন", open).build())
-            .addAction(Notification.Action.Builder(null, "১০ মিনিট পরে", snooze).build())
-        @Suppress("DEPRECATION")
-        if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_MAX)
-        return b.build()
     }
 
     private fun soundUri(sound: String): Uri? = when (sound) {

@@ -1,0 +1,178 @@
+{
+  "id": "L1-09",
+  "level": 1,
+  "ord": 9,
+  "title_bn": "সূরা ইখলাস",
+  "objective_bn": "সূরা ইখলাস বুঝি",
+  "minutes": 10,
+  "anchor_surah": 112,
+  "anchor_ayah_from": 1,
+  "anchor_ayah_to": 4,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 112,
+        "ayah": 1,
+        "ayah_to": 4
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          75,
+          238,
+          570,
+          5015,
+          65,
+          2701,
+          5016
+        ],
+        "word_refs": [
+          [
+            112,
+            1,
+            1
+          ],
+          [
+            112,
+            1,
+            2
+          ],
+          [
+            112,
+            1,
+            4
+          ],
+          [
+            112,
+            2,
+            2
+          ],
+          [
+            112,
+            3,
+            1
+          ],
+          [
+            112,
+            3,
+            2
+          ],
+          [
+            112,
+            4,
+            4
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "‘কুল’ একটি আদেশ: ‘বলুন’। ‘লাম’ + ক্রিয়া মানে কাজটি হয়নি: লাম ইয়ালিদ = তিনি জন্ম দেননি, ওয়া লাম ইউলাদ = এবং তাঁকেও জন্ম দেওয়া হয়নি।",
+        "example": {
+          "surah": 112,
+          "ayah": 1,
+          "word_index": 1
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 75,
+            "distractor_ids": [
+              19,
+              25,
+              950
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 238,
+            "distractor_ids": [
+              950,
+              75,
+              5016
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 570,
+            "distractor_ids": [
+              13,
+              18,
+              23
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 5015,
+            "distractor_ids": [
+              5,
+              11,
+              16
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 65,
+            "distractor_ids": [
+              29,
+              3042,
+              5015
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 2701,
+            "distractor_ids": [
+              3042,
+              5015,
+              3
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 5016,
+            "distractor_ids": [
+              13,
+              18,
+              23
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 112,
+            "ayah": 3,
+            "word_index": 3
+          },
+          {
+            "kind": "order",
+            "surah": 112,
+            "ayah": 3
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          75,
+          238,
+          570,
+          5015,
+          65,
+          2701,
+          5016
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 112,
+        "ayah": 1,
+        "ayah_to": 4
+      }
+    ]
+  }
+}

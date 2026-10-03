@@ -100,7 +100,7 @@ class CategoryChip extends StatelessWidget {
     final p = context.palette;
     final style = CategoryStyle.of(item.categoryId);
     final fg = onDark ? Brand.lightGold : style.foreground(p);
-    final bg = onDark ? Colors.white.withValues(alpha: 0.12) : style.background(p);
+    final bg = onDark ? Brand.onNight.withValues(alpha: 0.12) : style.background(p);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(30)),
@@ -115,7 +115,7 @@ class CategoryChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: headingFont,
-                fontSize: 13,
+                fontSize: 14,
                 color: fg,
                 fontWeight: FontWeight.w600,
               ),
@@ -210,7 +210,7 @@ class FavoriteButton extends StatelessWidget {
             child: Icon(
               fav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               key: ValueKey(fav),
-              color: fav ? const Color(0xFFE0506B) : (color ?? context.palette.muted),
+              color: fav ? context.palette.heart : (color ?? context.palette.muted),
             ),
           ),
         );
@@ -255,9 +255,15 @@ class ShareButton extends StatelessWidget {
 
 /// The full text of an item: Arabic, Bangla, reference and note.
 class ItemBody extends StatelessWidget {
-  const ItemBody(this.item, {super.key});
+  const ItemBody(this.item, {super.key, this.arabic, this.afterMeaning});
 
   final ContentItem item;
+
+  /// Shown instead of the plain Arabic (the reminder screen in learning mode).
+  final Widget? arabic;
+
+  /// Shown right under the Bangla meaning (the reminder's "এই আয়াত বুঝুন").
+  final Widget? afterMeaning;
 
   @override
   Widget build(BuildContext context) {
@@ -265,9 +271,10 @@ class ItemBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ArabicText(item.arabic, size: item.isAyah ? 31 : 25),
+        arabic ?? ArabicText(item.arabic, size: item.isAyah ? 31 : 25),
         const OrnamentDivider(),
         BanglaText(item.bangla, size: 18),
+        ?afterMeaning,
         const SizedBox(height: 16),
         Row(
           children: [
@@ -290,9 +297,13 @@ class ItemBody extends StatelessWidget {
           ],
         ),
         if (item.placeholder)
-          const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: BanglaText('কিছু লেখা ডাউনলোড করা যায়নি।', size: 13, color: Colors.red),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: BanglaText(
+              'কিছু লেখা ডাউনলোড করা যায়নি।',
+              size: 14,
+              color: context.palette.heart,
+            ),
           ),
         if (item.note.trim().isNotEmpty) ...[const SizedBox(height: 18), NoteBox(item)],
       ],

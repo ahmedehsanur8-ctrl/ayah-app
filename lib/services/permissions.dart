@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'prayer.dart';
 import 'reminders.dart';
 import 'settings.dart';
 import 'system_settings.dart';
@@ -10,12 +11,15 @@ enum PermKey { notifications, fullScreen, exactAlarm, overlay, location, battery
 
 /// One permission, with the words shown for it.
 class PermissionInfo {
-  const PermissionInfo(this.key, this.icon, this.title, this.why);
+  const PermissionInfo(this.key, this.icon, this.title, this.why, {this.optional = false});
 
   final PermKey key;
   final IconData icon;
   final String title;
   final String why;
+
+  /// Nice to have; reminders work without it, so it is not counted as missing.
+  final bool optional;
 }
 
 /// A setting inside the phone maker's own pages (autostart etc.).
@@ -154,9 +158,9 @@ class PermissionStatus {
       Permissions.all.where((i) => i.key != PermKey.brand || brand != null).toList();
 
   /// Missing items that stop reminders from working (location only affects
-  /// prayer times, so it is not counted).
+  /// prayer times, and optional items are extras, so they are not counted).
   int get missingForReminders =>
-      items.where((i) => i.key != PermKey.location && !isGranted(i.key)).length;
+      items.where((i) => i.key != PermKey.location && !i.optional && !isGranted(i.key)).length;
 }
 
 class Permissions {
@@ -185,9 +189,10 @@ class Permissions {
     PermissionInfo(
       PermKey.overlay,
       Icons.layers_rounded,
-      'অন্য অ্যাপের উপরে দেখানো',
-      'ফোন ব্যবহারের সময়ও রিমাইন্ডারের পাতাটি সামনে খুলবে। '
-          'খোলা পাতায় Ayah Reminder বেছে সুইচটি চালু করুন।',
+      'অন্য অ্যাপের উপরে দেখানো (ঐচ্ছিক)',
+      'এটি ছাড়াও রিমাইন্ডার আসবে: অন্য অ্যাপ ব্যবহারের সময় উপরে নোটিফিকেশন, ফোন লক থাকলে পুরো '
+          'স্ক্রিনে। চালু থাকলে রিমাইন্ডারের পাতাটি সরাসরি সামনে খুলবে।',
+      optional: true,
     ),
     PermissionInfo(
       PermKey.location,
@@ -232,7 +237,15 @@ class Permissions {
       PermKey.battery: await SystemSettings.isIgnoringBatteryOptimizations(),
       PermKey.brand: brand == null || brand.steps.every((st) => done.contains(st.id)),
     }, brand);
+    final before = status.value;
     status.value = result;
+    // "Alarms & reminders" was just turned on: plan the azan, sehri/iftar and
+    // adhkar again so they are exact. (Android re-sets the native alarms too.)
+    if (before != null &&
+        !before.isGranted(PermKey.exactAlarm) &&
+        result.isGranted(PermKey.exactAlarm)) {
+      await Prayers.schedule(s);
+    }
     return result;
   }
 

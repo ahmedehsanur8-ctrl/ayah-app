@@ -1,0 +1,117 @@
+{
+  "id": "L2-11",
+  "level": 2,
+  "ord": 11,
+  "title_bn": "কোথা থেকে, কোথায়",
+  "objective_bn": "মূল অব্যয়গুলো চিনি",
+  "minutes": 10,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 4,
+  "anchor_ayah_to": 4,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 4
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          43,
+          34,
+          50,
+          287
+        ],
+        "word_refs": [
+          [
+            2,
+            4,
+            8
+          ],
+          [
+            2,
+            2,
+            5
+          ],
+          [
+            2,
+            4,
+            5
+          ],
+          [
+            2,
+            36,
+            3
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "মিন, ফী, ইলা, ‘আন, ‘আলা — এগুলো অব্যয় (হারফে জার)। এরা বিশেষ্যের আগে বসে, আর সেই বিশেষ্যের শেষে সাধারণত ‘ই’-কার আওয়াজ আসে: মিন কাবলিকা = আপনার আগে থেকে।",
+        "example": {
+          "surah": 2,
+          "ayah": 4,
+          "word_index": 8
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 43,
+            "distractor_ids": [
+              5015,
+              58,
+              198
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 34,
+            "distractor_ids": [
+              29,
+              3042,
+              5015
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 50,
+            "distractor_ids": [
+              252,
+              65,
+              409
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 287,
+            "distractor_ids": [
+              219,
+              2,
+              5
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          43,
+          34,
+          50,
+          287
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 4
+      }
+    ]
+  }
+}

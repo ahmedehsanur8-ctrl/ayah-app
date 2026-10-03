@@ -1,0 +1,135 @@
+{
+  "id": "L2-19",
+  "level": 2,
+  "ord": 19,
+  "title_bn": "আল্লাহর গুণ",
+  "objective_bn": "গুণবাচক শব্দের ছাঁচ",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 173,
+  "anchor_ayah_to": 24,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 173,
+        "ayah_to": 24
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          244,
+          266,
+          795,
+          685,
+          576
+        ],
+        "word_refs": [
+          [
+            2,
+            29,
+            19
+          ],
+          [
+            2,
+            32,
+            12
+          ],
+          [
+            2,
+            173,
+            24
+          ],
+          [
+            2,
+            127,
+            13
+          ],
+          [
+            2,
+            96,
+            23
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "আল্লাহর অনেক গুণবাচক শব্দের একই ছাঁচ: ‘ফা‘ঈল’ (‘আলীম, হাকীম, সামী‘, বাসীর) আর ‘ফা‘ঊল’ (গাফূর)। ছাঁচটি চিনলে নতুন শব্দও সহজে চেনা যায়।",
+        "example": {
+          "surah": 2,
+          "ayah": 173,
+          "word_index": 24
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 244,
+            "distractor_ids": [
+              18,
+              23,
+              30
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 266,
+            "distractor_ids": [
+              160,
+              685,
+              4
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 795,
+            "distractor_ids": [
+              199,
+              50,
+              178
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 685,
+            "distractor_ids": [
+              192,
+              161,
+              576
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 576,
+            "distractor_ids": [
+              30,
+              252,
+              65
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          244,
+          266,
+          795,
+          685,
+          576
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 173,
+        "ayah_to": 24
+      }
+    ]
+  }
+}

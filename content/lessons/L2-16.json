@@ -1,0 +1,145 @@
+{
+  "id": "L2-16",
+  "level": 2,
+  "ord": 16,
+  "title_bn": "প্রশ্নের শব্দ",
+  "objective_bn": "প্রশ্ন চিনি",
+  "minutes": 10,
+  "anchor_surah": 88,
+  "anchor_ayah_from": 1,
+  "anchor_ayah_to": 1,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 88,
+        "ayah": 1
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          631,
+          459,
+          220,
+          233,
+          930
+        ],
+        "word_refs": [
+          [
+            2,
+            255,
+            20
+          ],
+          [
+            101,
+            3,
+            1
+          ],
+          [
+            2,
+            26,
+            24
+          ],
+          [
+            2,
+            28,
+            1
+          ],
+          [
+            88,
+            1,
+            1
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "প্রশ্নের শব্দ বাক্যের শুরুতে বসে: মান (কে), মা বা মাযা (কী), কাইফা (কীভাবে), হাল (কি — হ্যাঁ/না প্রশ্ন)।",
+        "example": {
+          "surah": 88,
+          "ayah": 1,
+          "word_index": 1
+        },
+        "more_examples": [
+          {
+            "surah": 101,
+            "ayah": 3,
+            "word_index": 3
+          }
+        ]
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 631,
+            "distractor_ids": [
+              10,
+              15,
+              20
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 459,
+            "distractor_ids": [
+              111,
+              32,
+              233
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 220,
+            "distractor_ids": [
+              4990,
+              38,
+              43
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 233,
+            "distractor_ids": [
+              570,
+              4990,
+              38
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 930,
+            "distractor_ids": [
+              43,
+              54,
+              35
+            ]
+          },
+          {
+            "kind": "order",
+            "surah": 88,
+            "ayah": 1
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          631,
+          459,
+          220,
+          233,
+          930
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 88,
+        "ayah": 1
+      }
+    ]
+  }
+}

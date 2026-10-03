@@ -12,7 +12,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
-    <!-- Opens the reminder page over other apps while the phone is in use (user can allow it). -->
+    <!-- Optional: also opens the reminder page over the app in use. Reminders work without it
+         (heads-up / full-screen notifications); sideloaded installs may need "Allow restricted settings". -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <!-- Azan and alarm-style reminders: play sound at the set time as a foreground media service. -->
@@ -65,6 +66,8 @@
         <!-- Azan: alarm at prayer time, the player service, the full-screen page, and
              setting the next alarm again after a restart or clock change. -->
         <receiver android:exported="false" android:name=".AzanAlarmReceiver" />
+        <!-- Daily check that tops up the alarm plan when the app is not opened (Planner.kt). -->
+        <receiver android:exported="false" android:name=".PlannerReceiver" />
         <receiver android:exported="false" android:name=".AzanBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
@@ -72,6 +75,8 @@
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="android.intent.action.TIME_SET"/>
                 <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+                <!-- "Alarms & reminders" was turned on: set the alarms again as exact. -->
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/>
             </intent-filter>
         </receiver>
         <service

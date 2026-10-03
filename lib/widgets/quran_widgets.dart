@@ -8,56 +8,19 @@ import '../services/quran.dart';
 import '../services/quran_player.dart';
 import '../services/settings.dart';
 import '../theme.dart';
-import 'pattern.dart';
+import 'night.dart';
 import 'share_card.dart';
 
-/// Ayah number inside a small gold eight-pointed star.
+/// Ayah number in the gold 8-point star (see [StarBadge]).
 class AyahBadge extends StatelessWidget {
-  const AyahBadge(this.n, {super.key, this.size = 36});
+  const AyahBadge(this.n, {super.key, this.size = 40, this.onNight = false});
 
   final int n;
   final double size;
+  final bool onNight;
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return SizedBox.square(
-      dimension: size,
-      child: CustomPaint(
-        painter: _StarOutline(p.goldText),
-        child: Center(
-          child: Text(
-            toBanglaDigits(n),
-            style: TextStyle(
-              fontSize: n > 99 ? size * 0.3 : size * 0.36,
-              fontWeight: FontWeight.w700,
-              color: p.primary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StarOutline extends CustomPainter {
-  _StarOutline(this.color);
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawPath(
-      eightPointStar(size.center(Offset.zero), size.width / 2 - 1),
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.4,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_StarOutline old) => old.color != color;
+  Widget build(BuildContext context) => StarBadge(toBanglaDigits(n), size: size, onNight: onNight);
 }
 
 /// "সূরা আল-বাকারা · ২:২৫৫".
@@ -91,7 +54,7 @@ Future<void> showAyahNotes(BuildContext context, int s, int a) {
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
         children: [
           Text('টীকা', style: titleStyle(p, size: 19)),
-          Text(ayahTitle(s, a), style: TextStyle(color: p.muted, fontSize: 13)),
+          Text(ayahTitle(s, a), style: TextStyle(color: p.muted, fontSize: 14)),
           for (final t in notes) ...[
             const SizedBox(height: 16),
             Text(
@@ -194,17 +157,20 @@ Future<void> showQuranSettingsSheet(BuildContext context) => showModalBottomShee
   context: context,
   isScrollControlled: true,
   showDragHandle: true,
-  builder: (context) => const _QuranSettingsSheet(),
+  builder: (context) => const QuranReadingSettings(),
 );
 
-class _QuranSettingsSheet extends StatefulWidget {
-  const _QuranSettingsSheet();
+/// The Quran reading settings: in a bottom sheet, or [embedded] in the সেটিংস page.
+class QuranReadingSettings extends StatefulWidget {
+  const QuranReadingSettings({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
-  State<_QuranSettingsSheet> createState() => _QuranSettingsSheetState();
+  State<QuranReadingSettings> createState() => _QuranReadingSettingsState();
 }
 
-class _QuranSettingsSheetState extends State<_QuranSettingsSheet> {
+class _QuranReadingSettingsState extends State<QuranReadingSettings> {
   final Map<String, bool> _onPhone = {};
   final Map<String, double> _progress = {};
 
@@ -277,76 +243,80 @@ class _QuranSettingsSheetState extends State<_QuranSettingsSheet> {
     final prefs = AppState.instance.settings.quran;
     return ListenableBuilder(
       listenable: prefs,
-      builder: (context, _) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.75,
-        maxChildSize: 0.95,
-        builder: (context, scroll) => ListView(
-          controller: scroll,
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
-          children: [
+      builder: (context, _) {
+        final children = <Widget>[
+          if (!widget.embedded) ...[
             Text('পড়ার সেটিংস', style: titleStyle(p, size: 19)),
             const SizedBox(height: 14),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'both', label: Text('দুটোই')),
-                ButtonSegment(value: 'arabic', label: Text('শুধু আরবি')),
-                ButtonSegment(value: 'bangla', label: Text('শুধু বাংলা')),
-              ],
-              selected: {prefs.mode},
-              showSelectedIcon: false,
-              onSelectionChanged: (v) => prefs.setMode(v.first),
-            ),
-            const SizedBox(height: 18),
-            _SizeRow(
-              label: 'আরবির আকার',
-              value: prefs.arabicSize,
-              min: 20,
-              max: 48,
-              onChanged: prefs.setArabicSize,
-              sample: Text(
-                'بِسْمِ ٱللَّهِ',
-                textDirection: TextDirection.rtl,
-                style: TextStyle(
-                  fontFamily: arabicFont,
-                  fontSize: prefs.arabicSize,
-                  color: p.arabic,
-                ),
-              ),
-            ),
-            _SizeRow(
-              label: 'বাংলার আকার',
-              value: prefs.banglaSize,
-              min: 13,
-              max: 30,
-              onChanged: prefs.setBanglaSize,
-              sample: Text(
-                'পরম করুণাময়',
-                style: TextStyle(fontSize: prefs.banglaSize, color: p.text),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text('অনুবাদ (একসাথে সর্বোচ্চ দুটি)', style: titleStyle(p, size: 16)),
-            const SizedBox(height: 6),
-            for (final t in Quran.translations)
-              _TranslationRow(
-                info: t,
-                selected: prefs.translations.contains(t.id),
-                onPhone: _onPhone[t.id] ?? t.bundled,
-                progress: _progress[t.id],
-                onChanged: (v) => _toggle(t, v),
-                onDelete: t.bundled || _onPhone[t.id] != true ? null : () => _delete(t),
-              ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: prefs.followAudio,
-              onChanged: prefs.setFollowAudio,
-              title: const Text('তিলাওয়াতের সাথে পাতা এগোবে'),
-            ),
           ],
-        ),
-      ),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'both', label: Text('দুটোই')),
+              ButtonSegment(value: 'arabic', label: Text('শুধু আরবি')),
+              ButtonSegment(value: 'bangla', label: Text('শুধু বাংলা')),
+            ],
+            selected: {prefs.mode},
+            showSelectedIcon: false,
+            onSelectionChanged: (v) => prefs.setMode(v.first),
+          ),
+          const SizedBox(height: 18),
+          _SizeRow(
+            label: 'আরবির আকার',
+            value: prefs.arabicSize,
+            min: 20,
+            max: 48,
+            onChanged: prefs.setArabicSize,
+            sample: Text(
+              'بِسْمِ ٱللَّهِ',
+              textDirection: TextDirection.rtl,
+              style: TextStyle(fontFamily: arabicFont, fontSize: prefs.arabicSize, color: p.arabic),
+            ),
+          ),
+          _SizeRow(
+            label: 'বাংলার আকার',
+            value: prefs.banglaSize,
+            min: 13,
+            max: 30,
+            onChanged: prefs.setBanglaSize,
+            sample: Text(
+              'পরম করুণাময়',
+              style: TextStyle(fontSize: prefs.banglaSize, color: p.text),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text('অনুবাদ (একসাথে সর্বোচ্চ দুটি)', style: titleStyle(p, size: 16)),
+          const SizedBox(height: 6),
+          for (final t in Quran.translations)
+            _TranslationRow(
+              info: t,
+              selected: prefs.translations.contains(t.id),
+              onPhone: _onPhone[t.id] ?? t.bundled,
+              progress: _progress[t.id],
+              onChanged: (v) => _toggle(t, v),
+              onDelete: t.bundled || _onPhone[t.id] != true ? null : () => _delete(t),
+            ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: prefs.followAudio,
+            onChanged: prefs.setFollowAudio,
+            title: const Text('তিলাওয়াতের সাথে পাতা এগোবে'),
+          ),
+        ];
+        if (widget.embedded) {
+          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
+        }
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.75,
+          maxChildSize: 0.95,
+          builder: (context, scroll) => ListView(
+            controller: scroll,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+            children: children,
+          ),
+        );
+      },
     );
   }
 }
@@ -436,7 +406,7 @@ class _TranslationRow extends StatelessWidget {
           value: selected,
           onChanged: progress != null ? null : (v) => onChanged(v ?? false),
           title: Text(info.name),
-          subtitle: Text(sub, style: TextStyle(color: p.muted, fontSize: 12.5)),
+          subtitle: Text(sub, style: TextStyle(color: p.muted, fontSize: 14)),
           secondary: onDelete == null
               ? (onPhone ? null : Icon(Icons.download_rounded, color: p.muted))
               : IconButton(
@@ -475,7 +445,8 @@ class QuranPlayerBar extends StatelessWidget {
         final loading = mine && player.status == AudioStatus.loading;
         final speaking = mine && player.status == AudioStatus.speaking;
         final count = Quran.surah(surah).ayahCount;
-        final dim = Colors.white.withValues(alpha: 0.75);
+        final dim = p.onNightMuted;
+        final off = p.onNight.withValues(alpha: 0.35);
         final line = mine
             ? 'আয়াত ${toBanglaDigits(player.ayah)} / ${toBanglaDigits(count)}'
             : 'তিলাওয়াত শুনুন';
@@ -486,89 +457,85 @@ class QuranPlayerBar extends StatelessWidget {
                 if (mine && player.repeat != QuranRepeat.off) 'পুনরাবৃত্তি',
                 if (player.sleepAt != null) 'স্লিপ টাইমার',
               ].join(' · ');
-        return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [p.greenCard, p.greenCardDark]),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(radiusM)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              child: Row(
-                children: [
-                  IconButton(
-                    tooltip: 'আগের আয়াত',
-                    onPressed: mine ? player.previous : null,
-                    icon: Icon(
-                      Icons.skip_previous_rounded,
-                      color: mine ? Colors.white : Colors.white30,
+        // A floating navy bar above the bottom edge (nothing scrolls under it).
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 4, 12, 10),
+            child: Material(
+              color: p.night,
+              borderRadius: BorderRadius.circular(22),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'আগের আয়াত',
+                      onPressed: mine ? player.previous : null,
+                      icon: Icon(Icons.skip_previous_rounded, color: mine ? p.onNight : off),
                     ),
-                  ),
-                  SizedBox.square(
-                    dimension: 50,
-                    child: Material(
-                      color: p.gold,
-                      shape: const CircleBorder(),
-                      child: InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: () => player.toggle(surah, mine ? player.ayah : startAyah()),
-                        child: loading
-                            ? const Padding(
-                                padding: EdgeInsets.all(14),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Brand.greenDark,
+                    SizedBox.square(
+                      dimension: 52,
+                      child: Material(
+                        color: p.gold,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () => player.toggle(surah, mine ? player.ayah : startAyah()),
+                          child: loading
+                              ? Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: p.night,
+                                  ),
+                                )
+                              : Icon(
+                                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                  size: 30,
+                                  color: p.night,
+                                  semanticLabel: playing ? 'থামান' : 'শুনুন',
                                 ),
-                              )
-                            : Icon(
-                                playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                                size: 30,
-                                color: Brand.greenDark,
-                                semanticLabel: playing ? 'থামান' : 'শুনুন',
-                              ),
+                        ),
                       ),
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'পরের আয়াত',
-                    onPressed: mine ? player.next : null,
-                    icon: Icon(
-                      Icons.skip_next_rounded,
-                      color: mine ? Colors.white : Colors.white30,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          line,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                        ),
-                        Text(
-                          sub,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: dim, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (mine)
                     IconButton(
-                      tooltip: 'বন্ধ করুন',
-                      onPressed: player.stop,
-                      icon: Icon(Icons.stop_rounded, color: dim),
+                      tooltip: 'পরের আয়াত',
+                      onPressed: mine ? player.next : null,
+                      icon: Icon(Icons.skip_next_rounded, color: mine ? p.onNight : off),
                     ),
-                  IconButton(
-                    tooltip: 'তিলাওয়াতের অপশন',
-                    onPressed: () => showPlayerOptions(context, surah, startAyah()),
-                    icon: Icon(Icons.tune_rounded, color: p.gold),
-                  ),
-                ],
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            line,
+                            style: TextStyle(color: p.onNight, fontWeight: FontWeight.w700),
+                          ),
+                          Text(
+                            sub,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: dim, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (mine)
+                      IconButton(
+                        tooltip: 'বন্ধ করুন',
+                        onPressed: player.stop,
+                        icon: Icon(Icons.stop_rounded, color: dim),
+                      ),
+                    IconButton(
+                      tooltip: 'তিলাওয়াতের অপশন',
+                      onPressed: () => showPlayerOptions(context, surah, startAyah()),
+                      icon: Icon(Icons.tune_rounded, color: p.gold),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

@@ -1,0 +1,156 @@
+{
+  "id": "L1-08",
+  "level": 1,
+  "ord": 8,
+  "title_bn": "সালাতের শব্দ",
+  "objective_bn": "তাকবীর ও তাসবীহের শব্দ চিনি",
+  "minutes": 10,
+  "anchor_surah": 87,
+  "anchor_ayah_from": 1,
+  "anchor_ayah_to": 1,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 87,
+        "ayah": 1
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          950,
+          261,
+          72,
+          3042,
+          252
+        ],
+        "word_refs": [
+          [
+            2,
+            217,
+            22
+          ],
+          [
+            2,
+            32,
+            2
+          ],
+          [
+            2,
+            255,
+            50
+          ],
+          [
+            87,
+            1,
+            4
+          ],
+          [
+            87,
+            1,
+            1
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "সালাতে আমরা যে শব্দগুলো বারবার বলি, সেগুলো কুরআনেও আছে। ‘আকবার’ ও ‘আ‘লা’ ধরনের শব্দ ‘সবচেয়ে বেশি’ বোঝায়: আকবার = সবচেয়ে বড়, আল-আ‘লা = সর্বোচ্চ।",
+        "example": {
+          "surah": 87,
+          "ayah": 1,
+          "word_index": 4
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 950,
+            "distractor_ids": [
+              29,
+              252,
+              6
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 261,
+            "distractor_ids": [
+              4,
+              9,
+              14
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 72,
+            "distractor_ids": [
+              27,
+              261,
+              3
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 3042,
+            "distractor_ids": [
+              15,
+              20,
+              27
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 252,
+            "distractor_ids": [
+              6,
+              10,
+              15
+            ]
+          },
+          {
+            "kind": "listen_choose",
+            "lemma_id": 3042,
+            "distractor_ids": [
+              15,
+              20,
+              27
+            ]
+          },
+          {
+            "kind": "listen_choose",
+            "lemma_id": 252,
+            "distractor_ids": [
+              6,
+              10,
+              15
+            ]
+          },
+          {
+            "kind": "order",
+            "surah": 87,
+            "ayah": 1
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          950,
+          261,
+          72,
+          3042,
+          252
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 87,
+        "ayah": 1
+      }
+    ]
+  }
+}

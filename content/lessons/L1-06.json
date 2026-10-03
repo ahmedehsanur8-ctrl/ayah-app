@@ -1,0 +1,171 @@
+{
+  "id": "L1-06",
+  "level": 1,
+  "ord": 6,
+  "title_bn": "যাদের প্রতি অনুগ্রহ",
+  "objective_bn": "‘যারা’ শব্দটি চিনি",
+  "minutes": 10,
+  "anchor_surah": 1,
+  "anchor_ayah_from": 7,
+  "anchor_ayah_to": 7,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 1,
+        "ayah": 7
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          22,
+          23,
+          25,
+          27,
+          28,
+          29,
+          30
+        ],
+        "word_refs": [
+          [
+            1,
+            7,
+            2
+          ],
+          [
+            1,
+            7,
+            3
+          ],
+          [
+            1,
+            7,
+            4
+          ],
+          [
+            1,
+            7,
+            5
+          ],
+          [
+            1,
+            7,
+            6
+          ],
+          [
+            1,
+            7,
+            8
+          ],
+          [
+            1,
+            7,
+            9
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "‘আল্লাযীনা’ মানে ‘যারা’; এর পরে তাদের কথা আসে। ‘আলাইহিম’ শব্দে ‘আলা’ (প্রতি) আর শেষের ‘হিম’ (তাদের) মিলে হয় ‘তাদের প্রতি’।",
+        "example": {
+          "surah": 1,
+          "ayah": 7,
+          "word_index": 4
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 22,
+            "distractor_ids": [
+              20,
+              28,
+              3
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 23,
+            "distractor_ids": [
+              30,
+              6,
+              10
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 25,
+            "distractor_ids": [
+              14,
+              19,
+              27
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 27,
+            "distractor_ids": [
+              2,
+              5,
+              11
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 28,
+            "distractor_ids": [
+              8,
+              13,
+              18
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 29,
+            "distractor_ids": [
+              15,
+              20,
+              27
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 30,
+            "distractor_ids": [
+              22,
+              29,
+              6
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 1,
+            "ayah": 7,
+            "word_index": 8
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          22,
+          23,
+          25,
+          27,
+          28,
+          29,
+          30
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 1,
+        "ayah": 7
+      }
+    ]
+  }
+}

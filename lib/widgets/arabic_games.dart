@@ -25,11 +25,11 @@ typedef GameDone = void Function(GameResult result);
 
 /// Title of each game type, shown above it.
 String gameTitle(String type) => switch (type) {
-  'listen' || 'listen_ayah' => 'শুনে বেছে নাও',
-  'match' => 'মিলাও',
-  'arrange' => 'সাজাও',
-  'trace' => 'লিখে দেখো',
-  _ => 'বেছে নাও',
+  'listen' || 'listen_ayah' => 'শুনে বেছে নিন',
+  'match' => 'মেলান',
+  'arrange' => 'সাজান',
+  'trace' => 'লিখে দেখুন',
+  _ => 'বেছে নিন',
 };
 
 IconData gameIcon(String type) => switch (type) {
@@ -150,11 +150,7 @@ class AudioSoonLabel extends StatelessWidget {
                   'অডিও শীঘ্রই',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: t.foreground,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: t.foreground),
                 ),
               ),
             ],
@@ -177,7 +173,7 @@ class ItemSound extends StatelessWidget {
     if (!ArabicAudio.has(item)) return const AudioSoonLabel();
     final p = context.palette;
     return IconButton.filledTonal(
-      tooltip: 'শোনো',
+      tooltip: 'শুনুন',
       iconSize: size * 0.55,
       style: IconButton.styleFrom(backgroundColor: p.pill, foregroundColor: p.primary),
       onPressed: () => ArabicAudio.play(item),
@@ -302,7 +298,7 @@ List<ArItem> _options(ArItem target, List<ArItem> pool, math.Random r, {int coun
 
 // ------------------------------------------------------------------ listen
 
-/// শুনে বেছে নাও: hear a letter or word and tap it. Without a recording the
+/// শুনে বেছে নিন: hear a letter or word and tap it. Without a recording the
 /// Bangla sound is shown instead.
 class ListenGame extends StatefulWidget {
   const ListenGame({
@@ -390,15 +386,15 @@ class _ListenGameState extends State<ListenGame> {
     return _GameFrame(
       type: 'listen',
       instruction: hasAudio
-          ? 'শোনো, তারপর ঠিক অক্ষর বা শব্দে চাপ দাও।'
-          : 'বাংলায় লেখা আওয়াজটা পড়ো, তারপর ঠিক আরবিতে চাপ দাও।',
+          ? 'শুনুন, তারপর ঠিক অক্ষর বা শব্দে চাপ দিন।'
+          : 'বাংলায় লেখা আওয়াজটা পড়ুন, তারপর ঠিক আরবিতে চাপ দিন।',
       step: _i,
       total: _queue.length,
       child: Column(
         children: [
           if (hasAudio)
             IconButton.filled(
-              tooltip: 'আবার শোনো',
+              tooltip: 'আবার শুনুন',
               iconSize: 40,
               style: IconButton.styleFrom(
                 backgroundColor: p.greenCard,
@@ -434,7 +430,7 @@ class _ListenGameState extends State<ListenGame> {
 
 // ------------------------------------------------------------------ ayah listen
 
-/// শুনে বেছে নাও for surahs: hear an ayah, pick its text.
+/// শুনে বেছে নিন for surahs: hear an ayah, pick its text.
 class AyahListenGame extends StatefulWidget {
   const AyahListenGame({
     super.key,
@@ -545,14 +541,14 @@ class _AyahListenGameState extends State<AyahListenGame> {
     return _GameFrame(
       type: 'listen_ayah',
       instruction: _offline
-          ? 'তিলাওয়াত চালাতে ইন্টারনেট লাগবে। এখন নিচের নাম দেখে আয়াতটি বেছে নাও।'
-          : 'ক্বারীর তিলাওয়াত শোনো, তারপর সেই আয়াতে চাপ দাও।',
+          ? 'তিলাওয়াত চালাতে ইন্টারনেট লাগবে। এখন নিচের নাম দেখে আয়াতটি বেছে নিন।'
+          : 'ক্বারীর তিলাওয়াত শুনুন, তারপর সেই আয়াতে চাপ দিন।',
       step: _i,
       total: _queue.length,
       child: Column(
         children: [
           IconButton.filled(
-            tooltip: 'আবার শোনো',
+            tooltip: 'আবার শুনুন',
             iconSize: 40,
             style: IconButton.styleFrom(
               backgroundColor: p.greenCard,
@@ -586,7 +582,7 @@ class _AyahListenGameState extends State<AyahListenGame> {
 
 // ------------------------------------------------------------------ match
 
-/// মিলাও: pair each Arabic tile with its sound, name or meaning.
+/// মেলান: pair each Arabic tile with its sound, name or meaning.
 class MatchGame extends StatefulWidget {
   const MatchGame({
     super.key,
@@ -693,7 +689,7 @@ class _MatchGameState extends State<MatchGame> {
     };
     return _GameFrame(
       type: 'match',
-      instruction: 'বাঁ দিকের আরবির সাথে ডান দিকের $what মিলাও। একটায় চাপ দাও, তারপর তার জোড়ায়।',
+      instruction: 'বাঁ দিকের আরবির সাথে ডান দিকের $what মেলান। একটায় চাপ দিন, তারপর তার জোড়ায়।',
       step: _rounds.length > 1 ? _round : null,
       total: _rounds.length > 1 ? _rounds.length : null,
       child: Row(
@@ -751,7 +747,7 @@ class _MatchGameState extends State<MatchGame> {
 
 // ------------------------------------------------------------------ arrange
 
-/// সাজাও: put letters (or words of an ayah) in order, right to left.
+/// সাজান: put letters (or words of an ayah) in order, right to left.
 class ArrangeGame extends StatefulWidget {
   const ArrangeGame({
     super.key,
@@ -901,7 +897,7 @@ class _ArrangeGameState extends State<ArrangeGame> {
     final item = _item;
     return _GameFrame(
       type: 'arrange',
-      instruction: widget.hint.isEmpty ? 'টুকরোগুলো ঠিক ক্রমে সাজাও।' : widget.hint,
+      instruction: widget.hint.isEmpty ? 'টুকরোগুলো ঠিক ক্রমে সাজান।' : widget.hint,
       step: _i,
       total: widget.puzzles.length,
       child: Column(
@@ -1080,7 +1076,7 @@ class _QuizGameState extends State<QuizGame> {
     final explain = (q['explain'] ?? '') as String;
     return _GameFrame(
       type: 'quiz',
-      instruction: 'ঠিক উত্তরে চাপ দাও।',
+      instruction: 'ঠিক উত্তরে চাপ দিন।',
       step: _i,
       total: widget.questions.length,
       child: Column(
@@ -1232,7 +1228,7 @@ Future<List<bool>> letterMask(String ch, double box, {int grid = 48}) async {
   return (accuracy: onLetter / pts.length, coverage: covered / glyph.length);
 }
 
-/// লিখে দেখো: trace a letter with a finger over its faint shape.
+/// লিখে দেখুন: trace a letter with a finger over its faint shape.
 class TraceGame extends StatefulWidget {
   const TraceGame({super.key, required this.items, required this.onDone});
 
@@ -1256,7 +1252,7 @@ class _TraceGameState extends State<TraceGame> {
 
   Future<void> _check() async {
     if (_strokes.isEmpty) {
-      setState(() => _message = 'আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানো।');
+      setState(() => _message = 'আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানুন।');
       return;
     }
     final mask = await letterMask(_item.ar, _box);
@@ -1275,8 +1271,8 @@ class _TraceGameState extends State<TraceGame> {
         _fails++;
         _strokes.clear();
         _message = s.coverage < 0.5
-            ? 'পুরো অক্ষরটা ঢেকে দাও, ফোঁটাসহ। আবার চেষ্টা করো।'
-            : 'দাগের বাইরে চলে গেছে। হালকা অক্ষরের ওপর দিয়েই টানো।';
+            ? 'পুরো অক্ষরটা ঢেকে দিন, ফোঁটাসহ। আবার চেষ্টা করুন।'
+            : 'দাগের বাইরে চলে গেছে। হালকা অক্ষরের ওপর দিয়েই টানুন।';
       });
     }
   }
@@ -1301,7 +1297,7 @@ class _TraceGameState extends State<TraceGame> {
     final item = _item;
     return _GameFrame(
       type: 'trace',
-      instruction: 'হালকা অক্ষরের ওপর দিয়ে আঙুল টেনে লেখো। লেখা ডান থেকে শুরু হয়।',
+      instruction: 'হালকা অক্ষরের ওপর দিয়ে আঙুল টেনে লিখুন। লেখা ডান থেকে শুরু হয়।',
       step: _i,
       total: widget.items.length,
       child: Column(
@@ -1339,7 +1335,9 @@ class _TraceGameState extends State<TraceGame> {
                     painter: _TracePainter(
                       letter: item.ar,
                       strokes: _strokes,
-                      guide: p.isDark ? const Color(0x55F1DDA8) : const Color(0x3314553F),
+                      guide: p.isDark
+                          ? p.gold.withValues(alpha: 0.33)
+                          : p.primary.withValues(alpha: 0.2),
                       ink: p.primary,
                     ),
                   ),
@@ -1375,7 +1373,7 @@ class _TraceGameState extends State<TraceGame> {
                     _message = null;
                   }),
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('মুছে ফেলো'),
+                  label: const Text('মুছে ফেলুন'),
                 ),
                 FilledButton.icon(
                   onPressed: _check,
