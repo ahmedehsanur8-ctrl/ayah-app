@@ -64,13 +64,7 @@ class MainActivity : AudioServiceActivity() {
         reminders.setMethodCallHandler { call, result ->
             when (call.method) {
                 "schedule" -> {
-                    ReminderStore.save(
-                        this,
-                        call.argument<String>("events") ?: "[]",
-                        call.argument<String>("sound") ?: "chime",
-                        call.argument<Boolean>("vibrate") ?: true,
-                    )
-                    ReminderScheduler.scheduleNext(this)
+                    Planner.saveReminders(this, call)
                     result.success(true)
                 }
                 "test" -> {
@@ -106,20 +100,15 @@ class MainActivity : AudioServiceActivity() {
             pendingReminderPayload = null
             Handler(Looper.getMainLooper()).post { reminders.invokeMethod("open", waiting) }
         }
+        // When to top up the alarm plan in the background (Planner.kt).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/planner")
+            .setMethodCallHandler { call, result -> Planner.handlePlanner(this, call, result) {} }
         // Full azan at prayer times (Azan.kt).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ayah_reminder/azan")
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "schedule" -> {
-                        AzanStore.save(
-                            this,
-                            call.argument<String>("events") ?: "[]",
-                            call.argument<Boolean>("inSilent") ?: true,
-                            call.argument<Boolean>("fullScreen") ?: true,
-                            call.argument<Double>("volume") ?: 1.0,
-                            call.argument<Boolean>("vibrate") ?: true,
-                        )
-                        AzanScheduler.scheduleNext(this)
+                        Planner.saveAzan(this, call)
                         result.success(true)
                     }
                     "playNow" -> {

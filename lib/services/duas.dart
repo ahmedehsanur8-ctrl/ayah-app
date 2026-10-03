@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../models/content.dart';
+import 'planner.dart';
 import 'prayer.dart';
 import 'quran.dart';
 import 'reminders.dart';
@@ -215,7 +216,11 @@ class AdhkarReminders {
   AdhkarReminders._();
 
   static const _firstId = 4000;
-  static const days = 14;
+
+  /// Longer than Planner.minAdhkarDays by the top-up margin (and a day each for
+  /// a late daily check, the last day ending early and today), so at least 14
+  /// days are always planned.
+  static const days = Planner.minAdhkarDays + Planner.refreshAfterDays + 4;
   static const channel = 'adhkar';
 
   /// Minutes after Fajr / Asr.
@@ -245,7 +250,30 @@ class AdhkarReminders {
     final mode = exact
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
-    final now = DateTime.now();
+    for (final a in plan(s, DateTime.now())) {
+      final evening = a.slot == 'evening';
+      try {
+        await plugin.zonedSchedule(
+          id: a.id,
+          scheduledDate: tz.TZDateTime.from(a.at, Reminders.dhaka),
+          notificationDetails: details,
+          androidScheduleMode: mode,
+          title: evening ? 'সন্ধ্যার জিকির' : 'সকালের জিকির',
+          body:
+              '${evening ? 'সন্ধ্যার' : 'সকালের'} জিকিরের সময় হয়েছে — '
+              '${toBanglaDigits(adhkarCount(evening))}টি জিকির',
+          payload: 'adhkar|${a.slot}',
+        );
+      } catch (e) {
+        debugPrint('adhkar reminder: $e');
+      }
+    }
+  }
+
+  /// The adhkar notifications of the next [days] days after [now]: 20 minutes
+  /// after Fajr (morning) and after Asr (evening).
+  static List<({int id, DateTime at, String slot})> plan(AppSettings s, DateTime now) {
+    final out = <({int id, DateTime at, String slot})>[];
     for (var d = 0; d < days; d++) {
       final day = DateTime(now.year, now.month, now.day + d);
       final times = Prayers.forDay(s, day);
@@ -256,42 +284,14 @@ class AdhkarReminders {
         return DateTime(day.year, day.month, day.day, fallbackHour, fallbackMinute);
       }
 
-      Future<void> add(int id, DateTime when, String slot, String title, String body) async {
-        if (!when.isAfter(now)) return;
-        try {
-          await plugin.zonedSchedule(
-            id: id,
-            scheduledDate: tz.TZDateTime.from(when, Reminders.dhaka),
-            notificationDetails: details,
-            androidScheduleMode: mode,
-            title: title,
-            body: body,
-            payload: 'adhkar|$slot',
-          );
-        } catch (e) {
-          debugPrint('adhkar reminder: $e');
-        }
+      void add(int id, DateTime when, String slot) {
+        if (when.isAfter(now)) out.add((id: id, at: when, slot: slot));
       }
 
-      if (s.adhkarMorning) {
-        await add(
-          _firstId + d * 2,
-          at('fajr', 6, 0),
-          'morning',
-          'সকালের জিকির',
-          'সকালের জিকিরের সময় হয়েছে — ${toBanglaDigits(adhkarCount(false))}টি জিকির',
-        );
-      }
-      if (s.adhkarEvening) {
-        await add(
-          _firstId + d * 2 + 1,
-          at('asr', 16, 30),
-          'evening',
-          'সন্ধ্যার জিকির',
-          'সন্ধ্যার জিকিরের সময় হয়েছে — ${toBanglaDigits(adhkarCount(true))}টি জিকির',
-        );
-      }
+      if (s.adhkarMorning) add(_firstId + d * 2, at('fajr', 6, 0), 'morning');
+      if (s.adhkarEvening) add(_firstId + d * 2 + 1, at('asr', 16, 30), 'evening');
     }
+    return out;
   }
 
   static int adhkarCount(bool evening) => Duas.loaded ? Duas.adhkar(evening: evening).length : 0;

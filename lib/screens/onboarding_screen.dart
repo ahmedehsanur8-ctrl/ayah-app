@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../models/content.dart';
 import '../services/permissions.dart';
-import '../services/prayer.dart';
-import '../services/reminders.dart';
+import '../services/planner.dart';
 import '../theme.dart';
 import '../widgets/pattern.dart';
 import '../widgets/permission_widgets.dart';
@@ -102,8 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
   Future<void> _finish() async {
     final s = AppState.instance;
     await s.settings.setSetupDone();
-    await Reminders.reschedule(s.settings, s.data);
-    await Prayers.schedule(s.settings);
+    await Planner.planAll(s.settings, s.data);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
   }

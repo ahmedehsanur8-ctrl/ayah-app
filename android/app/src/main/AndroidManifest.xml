@@ -66,6 +66,8 @@
         <!-- Azan: alarm at prayer time, the player service, the full-screen page, and
              setting the next alarm again after a restart or clock change. -->
         <receiver android:exported="false" android:name=".AzanAlarmReceiver" />
+        <!-- Daily check that tops up the alarm plan when the app is not opened (Planner.kt). -->
+        <receiver android:exported="false" android:name=".PlannerReceiver" />
         <receiver android:exported="false" android:name=".AzanBootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>

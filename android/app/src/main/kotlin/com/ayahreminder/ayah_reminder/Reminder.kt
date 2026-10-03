@@ -156,6 +156,9 @@ class ReminderAlarmReceiver : BroadcastReceiver() {
         if (request == ReminderScheduler.REQUEST_NEXT) {
             ReminderScheduler.scheduleNext(context, maxOf(t, System.currentTimeMillis()))
         }
+        // Top up the plan in the background if fewer than 30 days are left.
+        val pending = goAsync()
+        Planner.maybeRun(context, false) { pending.finish() }
     }
 }
 

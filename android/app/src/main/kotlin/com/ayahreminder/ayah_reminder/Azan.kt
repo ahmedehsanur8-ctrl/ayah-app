@@ -181,6 +181,9 @@ class AzanAlarmReceiver : BroadcastReceiver() {
             }
         }
         AzanScheduler.scheduleNext(context, maxOf(time, System.currentTimeMillis()))
+        // Top up the plan in the background if fewer than 30 days are left.
+        val pending = goAsync()
+        Planner.maybeRun(context, false) { pending.finish() }
     }
 }
 
@@ -189,6 +192,11 @@ class AzanBootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         AzanScheduler.scheduleNext(context)
         ReminderScheduler.scheduleNext(context)
+        // Plan the next weeks again in the background (times may have changed,
+        // and the phone may have been off for a long time), and keep the daily check.
+        Planner.scheduleDaily(context)
+        val pending = goAsync()
+        Planner.maybeRun(context, true) { pending.finish() }
     }
 }
 

@@ -205,8 +205,10 @@ void main() {
     Prayers.azanBundled = true;
     final now = DateTime(2026, 3, 21, 0, 1);
     final events = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
-    // 4 prayers (isha off) for 30 days; the first day may already have started.
-    expect(events.length, inInclusiveRange(30 * 4 - 4, 30 * 4));
+    // 4 prayers (isha off) for today and the next daysAhead days; the first
+    // day may already have started.
+    const days = Prayers.daysAhead + 1;
+    expect(events.length, inInclusiveRange(days * 4 - 4, days * 4));
     expect(events.map((e) => e['key']).toSet(), {'fajr', 'dhuhr', 'asr', 'maghrib'});
     expect(events.where((e) => e['key'] == 'asr').every((e) => e['mode'] == 'notify'), isTrue);
     expect(
@@ -393,9 +395,9 @@ void main() {
     final sehri = events.where((e) => e['mode'] == 'sehri').toList();
     final before = events.where((e) => e['mode'] == 'iftar_before').toList();
     final iftar = events.where((e) => e['mode'] == 'iftar').toList();
-    // Ramadan days in the 30-day window (1 – 19 March), alarms still ahead of now.
+    // Ramadan days in the planned window (1 – 19 March), alarms still ahead of now.
     int count(DateTime Function(FastingDay) at) => [
-      for (var d = 0; d < Prayers.daysAhead; d++)
+      for (var d = 0; d <= Prayers.daysAhead; d++)
         if (Fasting.isRamadan(s, DateTime(2026, 3, 1 + d)))
           if (at(Fasting.forDay(s, DateTime(2026, 3, 1 + d))!).isAfter(now)) d,
     ].length;

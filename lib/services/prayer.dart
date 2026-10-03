@@ -8,6 +8,7 @@ import '../app_state.dart';
 import '../models/content.dart';
 import 'duas.dart';
 import 'fasting.dart';
+import 'planner.dart';
 import 'reminders.dart';
 import 'settings.dart';
 
@@ -123,7 +124,7 @@ class Prayers {
   static const _oldFirstId = 3000;
 
   /// How many days of prayer times are handed to the Android alarm.
-  static const daysAhead = 30;
+  static const daysAhead = Planner.planDays;
 
   static const _channel = MethodChannel('ayah_reminder/azan');
 
@@ -189,7 +190,9 @@ class Prayers {
       });
     }
 
-    for (var d = 0; d < daysAhead; d++) {
+    // Today plus [daysAhead] full days, so the last planned alarm is always at
+    // least [daysAhead] days away.
+    for (var d = 0; d <= daysAhead; d++) {
       final day = DateTime(now.year, now.month, now.day + d);
       for (final p in forDay(s, day)) {
         if (p.isSunrise || !prayersOn) continue;
