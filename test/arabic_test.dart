@@ -367,31 +367,133 @@ void main() {
       expect(done!.mistakes, 1);
     });
 
-    test('tracing: strokes on the letter pass, scribbles elsewhere do not', () {
-      // A vertical bar (like alif) in the middle of a 48x48 board.
-      const grid = 48;
-      final mask = List<bool>.generate(grid * grid, (i) {
-        final x = i % grid, y = i ~/ grid;
-        return x >= 22 && x <= 25 && y >= 8 && y <= 40;
-      });
-      const box = 240.0;
-      final cell = box / grid;
-      final good = [
-        [for (var y = 8; y <= 40; y++) Offset(23.5 * cell, y * cell)],
-      ];
-      final s = scoreTrace(mask, good, box);
-      expect(s.accuracy, greaterThan(0.9));
+    // A wide bar (like the base of ب) and a tall bar (like alif) on a 48x48 board.
+    const grid = 48;
+    const box = 288.0;
+    const cell = box / grid;
+    List<bool> maskOf(bool Function(int x, int y) on) =>
+        List<bool>.generate(grid * grid, (i) => on(i % grid, i ~/ grid));
+    final wideBar = TraceGuide(maskOf((x, y) => x >= 8 && x <= 40 && y >= 22 && y <= 25), box);
+    final tallBar = TraceGuide(maskOf((x, y) => x >= 22 && x <= 25 && y >= 8 && y <= 40), box);
+    List<Offset> along(double fromX, double toX, {double y = 23.5}) => [
+      for (var k = 0; k <= 40; k++) Offset((fromX + (toX - fromX) * k / 40) * cell, y * cell),
+    ];
+
+    test('tracing: the usual way passes, and the hint points right to left', () {
+      expect(wideBar.wide, isTrue);
+      expect(wideBar.start.dx, greaterThan(box * 0.75)); // starts at the right
+      final s = scoreTrace(wideBar, [along(40, 8)]);
       expect(s.coverage, greaterThan(0.9));
-      final bad = [
-        [for (var x = 0; x < 20; x++) Offset(x * cell, 5 * cell)],
-      ];
-      final b = scoreTrace(mask, bad, box);
-      expect(b.accuracy, lessThan(0.5));
-      expect(b.coverage, lessThan(0.2));
-      final half = [
-        [for (var y = 8; y <= 20; y++) Offset(23.5 * cell, y * cell)],
-      ];
-      expect(scoreTrace(mask, half, box).coverage, lessThan(0.5));
+      expect(s.passed(), isTrue);
+      expect(s.passed(strict: true), isTrue);
+      expect(tallBar.wide, isFalse);
+      expect(tallBar.start.dy, lessThan(box * 0.25)); // starts at the top
+    });
+
+    test('tracing: starting from the middle passes', () {
+      // Middle to the left end, then middle to the right end.
+      final s = scoreTrace(wideBar, [along(24, 8), along(24, 40)]);
+      expect(s.counted, 2);
+      expect(s.passed(), isTrue);
+      // A single stroke from the middle that covers enough also passes.
+      expect(scoreTrace(wideBar, [along(30, 6)]).passed(), isTrue);
+    });
+
+    test('tracing: drawing in reverse passes (not in strict mode)', () {
+      final s = scoreTrace(wideBar, [along(8, 40)]);
+      expect(s.passed(), isTrue);
+      expect(s.directionOk, isFalse);
+      expect(s.passed(strict: true), isFalse);
+      final down = [for (var y = 8; y <= 40; y++) Offset(23.5 * cell, y * cell)];
+      expect(scoreTrace(tallBar, [down.reversed.toList()]).passed(), isTrue);
+      expect(scoreTrace(tallBar, [down]).passed(strict: true), isTrue);
+    });
+
+    test('tracing: several strokes add up', () {
+      final parts = [along(40, 30), along(30, 20), along(20, 8)];
+      // Each piece alone is not enough.
+      for (final part in parts) {
+        expect(scoreTrace(wideBar, [part]).passed(), isFalse);
+      }
+      final s = scoreTrace(wideBar, parts);
+      expect(s.counted, 3);
+      expect(s.passed(), isTrue);
+    });
+
+    test('tracing: a little outside is fine, far strokes are ignored', () {
+      // About 4% of the board off the line.
+      expect(scoreTrace(wideBar, [along(40, 8, y: 23.5 + 2)]).passed(), isTrue);
+      // A stroke in a far corner does not count and does not block success.
+      final far = [for (var x = 0; x < 10; x++) Offset(x * cell, 2 * cell)];
+      final s = scoreTrace(wideBar, [far, along(40, 8)]);
+      expect(s.ignored, 1);
+      expect(s.passed(), isTrue);
+      // Only far strokes: nothing traced.
+      expect(scoreTrace(wideBar, [far]).coverage, 0);
+      // Half the letter is not enough yet.
+      expect(scoreTrace(wideBar, [along(40, 26)]).passed(), isFalse);
+    });
+
+    test('tracing: strict mode checks the start point and the direction', () {
+      // Right way, right start.
+      final good = scoreTrace(wideBar, [along(40, 8)]);
+      expect(good.startOk && good.directionOk, isTrue);
+      // Right direction but started in the middle.
+      final middle = scoreTrace(wideBar, [along(24, 8), along(40, 24)]);
+      expect(middle.passed(), isTrue);
+      expect(middle.startOk, isFalse);
+      expect(middle.passed(strict: true), isFalse);
+      // Wrong direction.
+      expect(scoreTrace(wideBar, [along(8, 40)]).passed(strict: true), isFalse);
+    });
+
+    testWidgets('tracing: letters with dots pass without the dots (ب ت ث ج ح خ)', (t) async {
+      for (final (ch, dots) in const [
+        ('ب', true),
+        ('ت', true),
+        ('ث', true),
+        ('ج', true),
+        ('ح', false),
+        ('خ', true),
+      ]) {
+        final mask = (await t.runAsync(() => letterMask(ch, box)))!;
+        final g = TraceGuide(mask, box);
+        expect(g.body, isNotEmpty, reason: ch);
+        expect(g.marks.isNotEmpty, dots, reason: '$ch dots');
+        // A child tracing only the body, column by column the usual way.
+        final cols = <int, List<int>>{};
+        for (final c in g.body) {
+          cols.putIfAbsent(c % grid, () => []).add(c);
+        }
+        final stroke = <Offset>[];
+        for (final x in cols.keys.toList()..sort((a, b) => b - a)) {
+          final ys = cols[x]!.map((c) => c ~/ grid).toList()..sort();
+          // Down one column, up the next, through every cell of the body.
+          final down = stroke.length.isEven;
+          for (final y in down ? ys : ys.reversed) {
+            stroke.add(g.center(y * grid + x));
+          }
+        }
+        final s = scoreTrace(g, [stroke]);
+        expect(s.passed(), isTrue, reason: '$ch: ${s.coverage}');
+        // Adding the dots as an extra stroke is fine too.
+        if (dots) {
+          final dotStroke = [for (final c in g.marks) g.center(c)];
+          final withDots = scoreTrace(g, [stroke, dotStroke]);
+          expect(withDots.passed(), isTrue, reason: ch);
+          expect(withDots.markTouched, isTrue, reason: ch);
+        }
+        // Dots alone are not the letter.
+        if (dots) {
+          expect(
+            scoreTrace(g, [
+              [for (final c in g.marks) g.center(c)],
+            ]).passed(),
+            isFalse,
+            reason: ch,
+          );
+        }
+      }
     });
 
     testWidgets('লিখে দেখুন shows the board and the letter name', (t) async {
@@ -399,9 +501,32 @@ void main() {
       expect(find.text('লিখে দেখুন'), findsOneWidget);
       expect(find.byKey(const ValueKey('trace-board')), findsOneWidget);
       expect(find.text('বা'), findsOneWidget);
+      expect(find.text('দেখান'), findsOneWidget);
+      expect(find.text('আবার লিখুন'), findsOneWidget);
+      expect(find.byKey(const ValueKey('trace-progress')), findsOneWidget);
       await t.tap(find.text('হয়ে গেছে'));
       await t.pump();
       expect(find.text('আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানুন।'), findsOneWidget);
+      // Strict mode is off by default and can be turned on.
+      expect(ArabicProgress.instance.traceStrict, isFalse);
+      await t.ensureVisible(find.byKey(const ValueKey('trace-strict')));
+      await t.pump();
+      await t.tap(find.byKey(const ValueKey('trace-strict')));
+      await t.pump();
+      expect(ArabicProgress.instance.traceStrict, isTrue);
+      await ArabicProgress.instance.setTraceStrict(false);
+    });
+
+    testWidgets('লিখে দেখুন: drawing up and down draws, it does not scroll the page', (t) async {
+      await t.pumpWidget(game(TraceGame(items: items(['L01']), onDone: (_) {})));
+      final board = find.byKey(const ValueKey('trace-board'));
+      final before = t.getTopLeft(board);
+      await t.drag(board, const Offset(0, 120));
+      await t.pump();
+      expect(t.getTopLeft(board), before);
+      // The stroke can be cleared.
+      await t.tap(find.text('আবার লিখুন'));
+      await t.pump();
     });
   });
 

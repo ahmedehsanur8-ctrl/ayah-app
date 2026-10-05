@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../models/content.dart' show toBanglaDigits;
@@ -1171,61 +1172,241 @@ Future<List<bool>> letterMask(String ch, double box, {int grid = 48}) async {
   return [for (var i = 0; i < grid * grid; i++) data.getUint8(i * 4 + 3) > 60];
 }
 
-/// Scores strokes against a letter: the share of stroke points on the
-/// letter, and the share of the letter touched by the strokes.
-({double accuracy, double coverage}) scoreTrace(
-  List<bool> mask,
-  List<List<Offset>> strokes,
-  double box, {
-  int grid = 48,
-}) {
-  final cell = box / grid;
-  // Points every few pixels along each stroke.
-  final pts = <Offset>[];
-  for (final s in strokes) {
+/// A letter's shape on the trace board: its main body (which must be traced)
+/// and its small marks such as dots (optional), plus the usual writing
+/// direction for the hint.
+class TraceGuide {
+  TraceGuide(this.mask, this.box, {this.grid = 48}) {
+    // Connected parts of the shape (4-neighbour, so a dot close to the body
+    // stays separate).
+    final seen = <int>{};
+    final parts = <List<int>>[];
+    for (var i = 0; i < mask.length; i++) {
+      if (!mask[i] || seen.contains(i)) continue;
+      final part = <int>[];
+      final todo = [i];
+      seen.add(i);
+      while (todo.isNotEmpty) {
+        final c = todo.removeLast();
+        part.add(c);
+        final x = c % grid, y = c ~/ grid;
+        for (final (dx, dy) in const [(1, 0), (-1, 0), (0, 1), (0, -1)]) {
+          final nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= grid || ny >= grid) continue;
+          final n = ny * grid + nx;
+          if (mask[n] && seen.add(n)) todo.add(n);
+        }
+      }
+      parts.add(part);
+    }
+    parts.sort((a, b) => b.length.compareTo(a.length));
+    final biggest = parts.isEmpty ? 0 : parts.first.length;
+    for (final part in parts) {
+      // Parts much smaller than the biggest one are dots and small marks.
+      (part.length * 4 >= biggest ? body : marks).addAll(part);
+    }
+    // Cells close enough to the letter that a stroke there is "on" it.
+    final r = (far / cell).ceil();
+    for (final c in [...body, ...marks]) {
+      final x = c % grid, y = c ~/ grid;
+      for (var dy = -r; dy <= r; dy++) {
+        for (var dx = -r; dx <= r; dx++) {
+          final nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= grid || ny >= grid) continue;
+          if ((dx * dx + dy * dy) * cell * cell <= far * far) near.add(ny * grid + nx);
+        }
+      }
+    }
+  }
+
+  final List<bool> mask;
+  final double box;
+  final int grid;
+
+  /// The cells that must be traced.
+  final Set<int> body = {};
+
+  /// Dots and small marks: tracing them is welcome but never required.
+  final Set<int> marks = {};
+
+  /// Cells within [far] of the letter.
+  final Set<int> near = {};
+
+  /// Share of the body to trace.
+  static const goal = 0.7;
+
+  double get cell => box / grid;
+
+  /// How close to the line a stroke counts (wide, for children's fingers;
+  /// it grows with the board, so it suits every screen).
+  double get tolerance => box * 0.075;
+
+  /// A stroke mostly farther than this from the letter is ignored.
+  double get far => box * 0.16;
+
+  Offset center(int c) => Offset((c % grid + 0.5) * cell, (c ~/ grid + 0.5) * cell);
+
+  Rect get _bodyRect {
+    if (body.isEmpty) return Rect.zero;
+    var r = Rect.fromCenter(center: center(body.first), width: 0, height: 0);
+    for (final c in body) {
+      r = r.expandToInclude(Rect.fromCenter(center: center(c), width: 0, height: 0));
+    }
+    return r;
+  }
+
+  /// Usual direction: right to left for a wide letter, top to bottom for a
+  /// tall one (like alif).
+  bool get wide => _bodyRect.width >= _bodyRect.height;
+
+  /// Where writing usually starts: the top right of the body.
+  Offset get start {
+    if (body.isEmpty) return Offset(box / 2, box / 2);
+    int best = body.first;
+    double score(int c) {
+      final o = center(c);
+      return wide ? o.dx - o.dy * 0.5 : -o.dy + o.dx * 0.1;
+    }
+
+    for (final c in body) {
+      if (score(c) > score(best)) best = c;
+    }
+    return center(best);
+  }
+
+  /// A path through the body in the usual direction, for "দেখান".
+  List<Offset> get demoPath {
+    final lines = <int, List<int>>{};
+    for (final c in body) {
+      lines.putIfAbsent(wide ? c % grid : c ~/ grid, () => []).add(c);
+    }
+    final keys = lines.keys.toList()..sort();
+    final ordered = wide ? keys.reversed : keys;
+    return [
+      for (final k in ordered)
+        Offset(
+          wide ? (k + 0.5) * cell : _mean(lines[k]!, (c) => center(c).dx),
+          wide ? _mean(lines[k]!, (c) => center(c).dy) : (k + 0.5) * cell,
+        ),
+    ];
+  }
+
+  static double _mean(List<int> cells, double Function(int) f) =>
+      cells.fold(0.0, (a, c) => a + f(c)) / cells.length;
+}
+
+/// How a trace went.
+class TraceScore {
+  const TraceScore({
+    required this.coverage,
+    required this.counted,
+    required this.ignored,
+    required this.points,
+    required this.markTouched,
+    required this.startOk,
+    required this.directionOk,
+  });
+
+  /// Share of the letter's body traced (0–1).
+  final double coverage;
+
+  /// Strokes that count, and strokes ignored because they were far away.
+  final int counted, ignored;
+
+  /// Points of the strokes that count (the guide turns green around them).
+  final List<Offset> points;
+
+  /// A dot or small mark was traced too (a small extra, never required).
+  final bool markTouched;
+
+  /// For strict mode: began near the start dot, went the usual way.
+  final bool startOk, directionOk;
+
+  bool get covered => coverage >= TraceGuide.goal;
+
+  bool passed({bool strict = false}) => covered && (!strict || (startOk && directionOk));
+}
+
+/// Scores strokes against a letter. Any starting point, any direction and
+/// any number of strokes count: only how much of the body is covered matters.
+/// Strokes mostly far from the letter are ignored; going a little outside is
+/// fine. In [TraceScore.startOk]/[TraceScore.directionOk] the first stroke is
+/// compared with the usual way, for strict mode.
+TraceScore scoreTrace(TraceGuide g, List<List<Offset>> strokes) {
+  final cell = g.cell, grid = g.grid;
+  int cellAt(Offset o) {
+    final x = (o.dx / cell).floor(), y = (o.dy / cell).floor();
+    if (x < 0 || y < 0 || x >= grid || y >= grid) return -1;
+    return y * grid + x;
+  }
+
+  List<Offset> sample(List<Offset> s) {
+    final out = <Offset>[];
     for (var k = 0; k < s.length; k++) {
       if (k == 0) {
-        pts.add(s[k]);
+        out.add(s[k]);
         continue;
       }
       final a = s[k - 1], b = s[k];
       final steps = math.max(1, ((b - a).distance / (cell / 2)).ceil());
       for (var j = 1; j <= steps; j++) {
-        pts.add(Offset.lerp(a, b, j / steps)!);
+        out.add(Offset.lerp(a, b, j / steps)!);
       }
     }
-  }
-  final glyph = <int>{
-    for (var i = 0; i < mask.length; i++)
-      if (mask[i]) i,
-  };
-  if (glyph.isEmpty) return (accuracy: 1, coverage: 1);
-  if (pts.isEmpty) return (accuracy: 0, coverage: 0);
-  bool near(int cx, int cy, int r, bool Function(int) hit) {
-    for (var dy = -r; dy <= r; dy++) {
-      for (var dx = -r; dx <= r; dx++) {
-        final x = cx + dx, y = cy + dy;
-        if (x < 0 || y < 0 || x >= grid || y >= grid) continue;
-        if (hit(y * grid + x)) return true;
-      }
-    }
-    return false;
+    return out;
   }
 
-  var onLetter = 0;
-  final painted = <int>{};
-  for (final pt in pts) {
-    final cx = (pt.dx / cell).floor(), cy = (pt.dy / cell).floor();
-    if (near(cx, cy, 2, glyph.contains)) onLetter++;
-    for (var dy = -2; dy <= 2; dy++) {
-      for (var dx = -2; dx <= 2; dx++) {
-        final x = cx + dx, y = cy + dy;
-        if (x >= 0 && y >= 0 && x < grid && y < grid) painted.add(y * grid + x);
+  final covered = <int>{};
+  final points = <Offset>[];
+  var counted = 0, ignored = 0;
+  var markTouched = false;
+  List<Offset>? first;
+  final r = (g.tolerance / cell).ceil();
+  for (final s in strokes) {
+    if (s.isEmpty) continue;
+    final pts = sample(s);
+    final onLetter = pts.where((o) => g.near.contains(cellAt(o))).length;
+    if (onLetter * 2 < pts.length) {
+      ignored++;
+      continue;
+    }
+    counted++;
+    first ??= s;
+    points.addAll(pts);
+    for (final o in pts) {
+      final cx = (o.dx / cell).floor(), cy = (o.dy / cell).floor();
+      for (var dy = -r; dy <= r; dy++) {
+        for (var dx = -r; dx <= r; dx++) {
+          final x = cx + dx, y = cy + dy;
+          if (x < 0 || y < 0 || x >= grid || y >= grid) continue;
+          final c = y * grid + x;
+          if ((g.center(c) - o).distance > g.tolerance) continue;
+          if (g.body.contains(c)) covered.add(c);
+          if (g.marks.contains(c)) markTouched = true;
+        }
       }
     }
   }
-  final covered = glyph.where(painted.contains).length;
-  return (accuracy: onLetter / pts.length, coverage: covered / glyph.length);
+  final coverage = g.body.isEmpty ? 1.0 : covered.length / g.body.length;
+  var startOk = false, directionOk = false;
+  if (first != null) {
+    startOk = (first.first - g.start).distance <= g.box * 0.15;
+    var along = 0.0;
+    for (var k = 1; k < first.length; k++) {
+      final d = first[k] - first[k - 1];
+      along += g.wide ? -d.dx : d.dy;
+    }
+    directionOk = along > 0;
+  }
+  return TraceScore(
+    coverage: coverage,
+    counted: counted,
+    ignored: ignored,
+    points: points,
+    markTouched: markTouched,
+    startOk: startOk,
+    directionOk: directionOk,
+  );
 }
 
 /// লিখে দেখুন: trace a letter with a finger over its faint shape.
@@ -1239,43 +1420,113 @@ class TraceGame extends StatefulWidget {
   State<TraceGame> createState() => _TraceGameState();
 }
 
-class _TraceGameState extends State<TraceGame> {
+class _TraceGameState extends State<TraceGame> with SingleTickerProviderStateMixin {
   final _result = GameResult();
   int _i = 0;
   final _strokes = <List<Offset>>[];
-  int _fails = 0;
+  int? _pointer;
+  int _tries = 0;
   String? _message;
   bool _passed = false;
   double _box = 280;
+  TraceGuide? _guide;
+  String? _guideKey;
+  TraceScore? _score;
+  late final _demo = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
+    ..addListener(() => setState(() {}));
 
   ArItem get _item => widget.items[_i];
+  bool get _strict => ArabicProgress.instance.traceStrict;
 
-  Future<void> _check() async {
-    if (_strokes.isEmpty) {
+  @override
+  void dispose() {
+    _demo.dispose();
+    super.dispose();
+  }
+
+  /// The letter's shape for this board size (made once per letter and size).
+  Future<void> _loadGuide() async {
+    final key = '${_item.id}@${_box.round()}';
+    if (_guideKey == key) return;
+    _guideKey = key;
+    final box = _box;
+    final mask = await letterMask(_item.ar, box);
+    if (!mounted || _guideKey != key) return;
+    setState(() {
+      _guide = TraceGuide(mask, box);
+      _rescore();
+    });
+  }
+
+  void _rescore() {
+    final g = _guide;
+    _score = g == null ? null : scoreTrace(g, _strokes);
+  }
+
+  void _down(PointerDownEvent e) {
+    if (_passed || _pointer != null) return;
+    _pointer = e.pointer;
+    _demo.reset();
+    setState(() {
+      _strokes.add([e.localPosition]);
+      _message = null;
+    });
+  }
+
+  void _move(PointerMoveEvent e) {
+    if (e.pointer != _pointer) return;
+    setState(() {
+      _strokes.last.add(e.localPosition);
+      _rescore();
+    });
+  }
+
+  void _up(PointerEvent e) {
+    if (e.pointer != _pointer) return;
+    _pointer = null;
+    setState(() {
+      _rescore();
+      final s = _score;
+      if (s != null && s.passed(strict: _strict)) _pass();
+    });
+  }
+
+  void _pass() {
+    _result.seen.add(_item.id);
+    _passed = true;
+    _message = 'চমৎকার!';
+  }
+
+  /// "হয়ে গেছে": done drawing.
+  void _check() {
+    final s = _score;
+    if (_strokes.isEmpty || s == null) {
       setState(() => _message = 'আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানুন।');
       return;
     }
-    final mask = await letterMask(_item.ar, _box);
-    final s = scoreTrace(mask, _strokes, _box);
-    if (!mounted) return;
-    _result.seen.add(_item.id);
-    if (s.accuracy >= 0.7 && s.coverage >= 0.5) {
-      setState(() {
-        _passed = true;
-        _message = 'চমৎকার!';
-      });
-    } else {
-      _result.mistakes++;
-      _result.wrong.add(_item.id);
-      setState(() {
-        _fails++;
-        _strokes.clear();
-        _message = s.coverage < 0.5
-            ? 'পুরো অক্ষরটা ঢেকে দিন, ফোঁটাসহ। আবার চেষ্টা করুন।'
-            : 'দাগের বাইরে চলে গেছে। হালকা অক্ষরের ওপর দিয়েই টানুন।';
-      });
-    }
+    setState(() {
+      if (s.passed(strict: _strict)) {
+        _pass();
+        return;
+      }
+      _result.seen.add(_item.id);
+      if (_tries == 0) {
+        _result.mistakes++;
+        _result.wrong.add(_item.id);
+      }
+      _tries++;
+      _message = !s.covered
+          ? 'আরেকবার চেষ্টা করুন। হালকা অক্ষরের বাকি অংশটুকুও টেনে দিন, যেখান থেকে খুশি।'
+          : 'প্রায় হয়ে গেছে! "আবার লিখুন" চেপে সবুজ বিন্দু থেকে তীরের দিকে লিখে দেখুন।';
+    });
   }
+
+  void _clear() => setState(() {
+    _strokes.clear();
+    _pointer = null;
+    _message = null;
+    _rescore();
+  });
 
   void _next() {
     if (_i + 1 >= widget.items.length) {
@@ -1284,9 +1535,12 @@ class _TraceGameState extends State<TraceGame> {
       setState(() {
         _i++;
         _strokes.clear();
-        _fails = 0;
+        _tries = 0;
         _passed = false;
         _message = null;
+        _guide = null;
+        _score = null;
+        _demo.reset();
       });
     }
   }
@@ -1295,9 +1549,12 @@ class _TraceGameState extends State<TraceGame> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final item = _item;
+    final progress = math.min(1.0, (_score?.coverage ?? 0) / TraceGuide.goal);
     return _GameFrame(
       type: 'trace',
-      instruction: 'হালকা অক্ষরের ওপর দিয়ে আঙুল টেনে লিখুন। লেখা ডান থেকে শুরু হয়।',
+      instruction:
+          'হালকা অক্ষরের ওপর দিয়ে আঙুল টেনে লিখুন, যেখান থেকে খুশি শুরু করুন। '
+          'আঙুল তুলে আবার টানতে পারেন। সবুজ বিন্দু আর তীর দেখায় সাধারণত কোথা থেকে কোন দিকে লেখা হয়।',
       step: _i,
       total: widget.items.length,
       child: Column(
@@ -1314,6 +1571,7 @@ class _TraceGameState extends State<TraceGame> {
           LayoutBuilder(
             builder: (context, c) {
               _box = math.min(c.maxWidth, 320);
+              _loadGuide();
               return Container(
                 width: _box,
                 height: _box,
@@ -1322,23 +1580,41 @@ class _TraceGameState extends State<TraceGame> {
                   borderRadius: BorderRadius.circular(radiusL),
                   border: Border.all(color: _passed ? p.mint.foreground : p.border, width: 1.5),
                 ),
-                child: GestureDetector(
-                  key: const ValueKey('trace-board'),
-                  onPanStart: _passed
-                      ? null
-                      : (d) => setState(() => _strokes.add([d.localPosition])),
-                  onPanUpdate: _passed
-                      ? null
-                      : (d) => setState(() => _strokes.last.add(d.localPosition)),
-                  child: CustomPaint(
-                    size: Size(_box, _box),
-                    painter: _TracePainter(
-                      letter: item.ar,
-                      strokes: _strokes,
-                      guide: p.isDark
-                          ? p.gold.withValues(alpha: 0.33)
-                          : p.primary.withValues(alpha: 0.2),
-                      ink: p.primary,
+                // The board takes the finger at once, so drawing up or down
+                // never scrolls the page instead.
+                child: RawGestureDetector(
+                  gestures: {
+                    EagerGestureRecognizer:
+                        GestureRecognizerFactoryWithHandlers<EagerGestureRecognizer>(
+                          EagerGestureRecognizer.new,
+                          (_) {},
+                        ),
+                  },
+                  child: Listener(
+                    key: const ValueKey('trace-board'),
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: _down,
+                    onPointerMove: _move,
+                    onPointerUp: _up,
+                    onPointerCancel: _up,
+                    child: CustomPaint(
+                      size: Size(_box, _box),
+                      painter: _TracePainter(
+                        letter: item.ar,
+                        strokes: _strokes,
+                        guide: p.isDark
+                            ? p.gold.withValues(alpha: 0.33)
+                            : p.primary.withValues(alpha: 0.2),
+                        ink: p.primary,
+                        done: p.mint.foreground,
+                        hint: p.goldText,
+                        covered: _score?.points ?? const [],
+                        tolerance: _guide?.tolerance ?? 0,
+                        start: _passed ? null : _guide?.start,
+                        wide: _guide?.wide ?? true,
+                        demo: _demo.isAnimating ? _guide?.demoPath : null,
+                        demoT: _demo.value,
+                      ),
                     ),
                   ),
                 ),
@@ -1346,15 +1622,39 @@ class _TraceGameState extends State<TraceGame> {
             },
           ),
           const SizedBox(height: 12),
-          if (_message != null)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 34,
+                height: 34,
+                child: CircularProgressIndicator(
+                  key: const ValueKey('trace-progress'),
+                  value: progress,
+                  strokeWidth: 4,
+                  color: p.mint.foreground,
+                  backgroundColor: p.border,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '${toBanglaDigits((progress * 100).round())}%',
+                style: TextStyle(fontWeight: FontWeight.w700, color: p.text),
+              ),
+            ],
+          ),
+          if (_message != null) ...[
+            const SizedBox(height: 10),
             Text(
               _message!,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: _passed ? p.primary : p.rose.foreground,
+                fontSize: _passed ? 18 : 14,
+                color: _passed ? p.primary : p.goldText,
               ),
             ),
+          ],
           const SizedBox(height: 12),
           if (_passed)
             FilledButton(
@@ -1368,21 +1668,35 @@ class _TraceGameState extends State<TraceGame> {
               alignment: WrapAlignment.center,
               children: [
                 OutlinedButton.icon(
-                  onPressed: () => setState(() {
-                    _strokes.clear();
-                    _message = null;
-                  }),
+                  onPressed: _guide == null ? null : () => _demo.forward(from: 0),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('দেখান'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _clear,
                   icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('মুছে ফেলুন'),
+                  label: const Text('আবার লিখুন'),
                 ),
                 FilledButton.icon(
                   onPressed: _check,
                   icon: const Icon(Icons.check_rounded),
                   label: const Text('হয়ে গেছে'),
                 ),
-                if (_fails >= 2) TextButton(onPressed: _next, child: const Text('পরের অক্ষরে যাই')),
+                if (_tries >= 2) TextButton(onPressed: _next, child: const Text('পরের অক্ষরে যাই')),
               ],
             ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            key: const ValueKey('trace-strict'),
+            contentPadding: EdgeInsets.zero,
+            title: const Text('সঠিক দিক অনুসরণ করুন'),
+            subtitle: const Text('চালু করলে শুরুর বিন্দু আর লেখার দিকও দেখা হবে'),
+            value: _strict,
+            onChanged: (v) async {
+              await ArabicProgress.instance.setTraceStrict(v);
+              if (mounted) setState(() {});
+            },
+          ),
         ],
       ),
     );
@@ -1395,27 +1709,71 @@ class _TracePainter extends CustomPainter {
     required this.strokes,
     required this.guide,
     required this.ink,
+    required this.done,
+    required this.hint,
+    required this.covered,
+    required this.tolerance,
+    required this.start,
+    required this.wide,
+    required this.demo,
+    required this.demoT,
   });
 
   final String letter;
   final List<List<Offset>> strokes;
-  final Color guide;
-  final Color ink;
+  final Color guide, ink, done, hint;
+  final List<Offset> covered;
+  final double tolerance;
+  final Offset? start;
+  final bool wide;
+  final List<Offset>? demo;
+  final double demoT;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final tp = _glyph(letter, size.width, guide);
-    tp.paint(canvas, _glyphOffset(tp, size.width));
+    final box = size.width;
+    final tp = _glyph(letter, box, guide);
+    final at = _glyphOffset(tp, box);
+    tp.paint(canvas, at);
+    // The traced part of the letter turns green.
+    if (covered.isNotEmpty && tolerance > 0) {
+      final area = Path();
+      for (final o in covered) {
+        area.addOval(Rect.fromCircle(center: o, radius: tolerance));
+      }
+      canvas.save();
+      canvas.clipPath(area);
+      _glyph(letter, box, done.withValues(alpha: 0.55)).paint(canvas, at);
+      canvas.restore();
+    }
+    // Hint: where writing usually starts, and which way it goes.
+    if (start != null) {
+      final s = start!;
+      final dot = Paint()..color = hint;
+      canvas.drawCircle(s, box * 0.022, dot);
+      final dir = wide ? const Offset(-1, 0) : const Offset(0, 1);
+      final from = s + dir * (box * 0.05);
+      final to = s + dir * (box * 0.15);
+      final line = Paint()
+        ..color = hint
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(from, to, line);
+      final side = Offset(-dir.dy, dir.dx) * (box * 0.025);
+      final back = to - dir * (box * 0.035);
+      canvas.drawLine(to, back + side, line);
+      canvas.drawLine(to, back - side, line);
+    }
     final paint = Paint()
       ..color = ink.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.055
+      ..strokeWidth = box * 0.05
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     for (final s in strokes) {
       if (s.length == 1) {
-        canvas.drawCircle(s.first, paint.strokeWidth / 2, paint..style = PaintingStyle.fill);
-        paint.style = PaintingStyle.stroke;
+        canvas.drawCircle(s.first, paint.strokeWidth / 2, Paint()..color = paint.color);
         continue;
       }
       final path = Path()..moveTo(s.first.dx, s.first.dy);
@@ -1423,6 +1781,25 @@ class _TracePainter extends CustomPainter {
         path.lineTo(pt.dx, pt.dy);
       }
       canvas.drawPath(path, paint);
+    }
+    // "দেখান": a pen moving along the letter the usual way.
+    final d = demo;
+    if (d != null && d.length > 1) {
+      final n = (d.length * demoT).clamp(1, d.length).toInt();
+      final path = Path()..moveTo(d.first.dx, d.first.dy);
+      for (final o in d.take(n).skip(1)) {
+        path.lineTo(o.dx, o.dy);
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = done.withValues(alpha: 0.8)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = box * 0.04
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round,
+      );
+      canvas.drawCircle(d[n - 1], box * 0.03, Paint()..color = done);
     }
   }
 
