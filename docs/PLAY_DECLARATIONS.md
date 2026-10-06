@@ -1,7 +1,7 @@
 # Google Play Console: what to write
 
 Copy these texts into Play Console → **App content** (Policy → App content).
-The app has **no ads**. Reminders can be turned off in আরও → সেটিংস → "রিমাইন্ডার চালু", and the azan
+The app has **no ads**. Reminders can be turned off in সেটিংস → "রিমাইন্ডার চালু", and the azan
 in নামাজের সময় → "আজান ও নামাজের নোটিফিকেশন" (or per prayer: আজান / শুধু নোটিফিকেশন / বন্ধ).
 
 ---

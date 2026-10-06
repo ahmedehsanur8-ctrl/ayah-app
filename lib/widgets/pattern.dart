@@ -76,9 +76,11 @@ class PatternLayer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: IgnorePointer(
-        child: RepaintBoundary(
-          child: CustomPaint(
-            painter: IslamicPatternPainter(color: color, opacity: opacity, cell: cell),
+        child: ClipRect(
+          child: RepaintBoundary(
+            child: CustomPaint(
+              painter: IslamicPatternPainter(color: color, opacity: opacity, cell: cell),
+            ),
           ),
         ),
       ),
@@ -119,7 +121,7 @@ class _LogoPainter extends CustomPainter {
           ..shader = const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1B7A55), Brand.deepEmerald],
+            colors: [Brand.greenPattern, Brand.deepEmerald],
           ).createShader(rect),
       );
     }
@@ -142,7 +144,7 @@ class _LogoPainter extends CustomPainter {
     // Soft inner star.
     canvas.drawPath(
       eightPointStar(c, s * 0.29),
-      Paint()..color = Colors.white.withValues(alpha: 0.10),
+      Paint()..color = Brand.onNight.withValues(alpha: 0.10),
     );
     // Crescent: a gold circle with an offset circle cut out.
     final moon = Path()..addOval(Rect.fromCircle(center: c, radius: s * 0.15));

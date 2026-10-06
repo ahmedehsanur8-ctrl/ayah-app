@@ -1,0 +1,218 @@
+{
+  "id": "L3-30",
+  "level": 3,
+  "ord": 30,
+  "title_bn": "আয়াতুল কুরসি (প্রথম অংশ)",
+  "objective_bn": "তিন স্তরের সব শেখা কাজে লাগাই; তৃতীয় স্তরের পরীক্ষা",
+  "minutes": 15,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 255,
+  "anchor_ayah_to": 255,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 255,
+        "word_to": 12
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          700,
+          737,
+          1101,
+          1103
+        ],
+        "word_refs": [
+          [
+            2,
+            255,
+            3
+          ],
+          [
+            2,
+            255,
+            6
+          ],
+          [
+            2,
+            255,
+            7
+          ],
+          [
+            2,
+            255,
+            12
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "আয়াতুল কুরসির শুরুর অংশ পড়ুন। এর প্রায় সব শব্দ এখন আপনি চেনেন: আল্লাহ, লা ইলাহা ইল্লা হুওয়া, আল-হাইয়ুল কাইয়ূম, লা তা’খুযুহু … ওয়ালা নাওম।",
+        "example": {
+          "surah": 2,
+          "ayah": 255,
+          "word_index": 3
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 60,
+            "distractor_ids": [
+              75,
+              2701,
+              4580
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 39,
+            "distractor_ids": [
+              16,
+              21,
+              28
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 88,
+            "distractor_ids": [
+              39,
+              93,
+              262
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 93,
+            "distractor_ids": [
+              7,
+              12,
+              17
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 94,
+            "distractor_ids": [
+              14,
+              19,
+              25
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 370,
+            "distractor_ids": [
+              11,
+              16,
+              21
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 105,
+            "distractor_ids": [
+              41,
+              143,
+              39
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 164,
+            "distractor_ids": [
+              73,
+              53,
+              737
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 143,
+            "distractor_ids": [
+              312,
+              164,
+              124
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 140,
+            "distractor_ids": [
+              76,
+              160,
+              795
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 59,
+            "distractor_ids": [
+              29,
+              3042,
+              5015
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 73,
+            "distractor_ids": [
+              1497,
+              2,
+              5
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 24,
+            "distractor_ids": [
+              5016,
+              264,
+              333
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 312,
+            "distractor_ids": [
+              535,
+              700,
+              1
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 52,
+            "distractor_ids": [
+              93,
+              262,
+              166
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          700,
+          737,
+          1101,
+          1103
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 255,
+        "word_to": 12
+      }
+    ]
+  }
+}

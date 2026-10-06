@@ -1,15 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../app_state.dart';
+import '../models/content.dart';
+import '../services/fasting.dart';
 import '../services/location.dart';
 import '../services/prayer.dart';
 import '../services/settings.dart';
 import '../theme.dart';
 import '../utils/bangla.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
-import 'settings_screen.dart' show pickOption;
+import 'azan_settings_screen.dart';
+import 'qibla_screen.dart';
+import 'sehri_screens.dart';
+import 'settings_screen.dart';
 
 /// নামাজের সময় ও আজান.
 class PrayerScreen extends StatefulWidget {
@@ -38,15 +45,26 @@ class _PrayerScreenState extends State<PrayerScreen> {
     super.dispose();
   }
 
-  Future<void> _changed() => Prayers.schedule(_s);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('নামাজের সময়')),
-      body: ListenableBuilder(
-        listenable: _s,
-        builder: (context, _) => _s.hasLocation ? _times(context) : const ChooseLocationView(),
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: ListenableBuilder(
+          listenable: _s,
+          builder: (context, _) => _s.hasLocation
+              ? _times(context)
+              : Column(
+                  children: [
+                    NightHeader(
+                      leading: Navigator.of(context).canPop() ? const NightBackButton() : null,
+                      title: 'নামাজের সময়',
+                      lip: true,
+                    ),
+                    const Expanded(child: ChooseLocationView()),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -57,200 +75,141 @@ class _PrayerScreenState extends State<PrayerScreen> {
     final list = Prayers.forDay(_s, now);
     final next = Prayers.next(_s, now);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+      padding: EdgeInsets.zero,
       children: [
-        Row(
-          children: [
-            Flexible(
-              child: InfoPill(
-                icon: Icons.location_on_outlined,
-                text: _s.placeName.isEmpty ? 'অবস্থান' : _s.placeName,
-                onTap: () => showLocationSheet(context),
-              ),
-            ),
-            const Spacer(),
-            Text(banglaDate(now), style: TextStyle(color: p.muted, fontSize: 13)),
-          ],
-        ),
-        const SizedBox(height: 14),
-        if (next != null)
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [p.greenCard, p.greenCardDark],
-              ),
-              borderRadius: BorderRadius.circular(radiusL),
-            ),
+        NightHeader(
+          leading: Navigator.of(context).canPop() ? const NightBackButton() : null,
+          title: 'নামাজের সময়',
+          lip: true,
+          padding: EdgeInsets.fromLTRB(Navigator.of(context).canPop() ? 8 : 20, 4, 12, 22),
+          child: Padding(
+            padding: EdgeInsets.only(left: Navigator.of(context).canPop() ? 12 : 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'পরের নামাজ',
-                  style: TextStyle(color: p.gold, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  next.name,
-                  style: const TextStyle(
-                    fontFamily: titleFont,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  formatClock(next.time),
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 16),
-                ),
-                const SizedBox(height: 12),
-                Row(
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Icon(Icons.hourglass_bottom_rounded, color: p.gold, size: 18),
-                    const SizedBox(width: 6),
+                    NightPill(
+                      icon: Icons.location_on_outlined,
+                      text: _s.placeName.isEmpty ? 'অবস্থান' : _s.placeName,
+                      onTap: () => showLocationSheet(context),
+                    ),
                     Text(
-                      'আর ${formatCountdown(next.time.difference(now))}',
-                      style: TextStyle(color: p.gold, fontSize: 15, fontWeight: FontWeight.w600),
+                      '${banglaDate(now)} · ${Fasting.hijriText(_s, now)}',
+                      style: TextStyle(color: p.onNightMuted, fontSize: 14),
                     ),
                   ],
                 ),
+                if (next != null) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    'পরের নামাজ',
+                    style: TextStyle(
+                      color: p.onNightMuted,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Wrap(
+                    spacing: 12,
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    children: [
+                      Text(next.name, style: nightTitleStyle(p, size: 30)),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          formatClock(next.time),
+                          style: TextStyle(
+                            color: p.onNight,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Semantics(
+                    liveRegion: false,
+                    label: 'আর ${formatCountdown(next.time.difference(now))}',
+                    excludeSemantics: true,
+                    child: Text(
+                      'আর ${formatCountdown(next.time.difference(now))}',
+                      style: titleStyle(
+                        p,
+                        size: 26,
+                      ).copyWith(color: p.gold, fontWeight: FontWeight.w700, height: 1.3),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-        const SizedBox(height: 14),
-        AppCard(
-          padding: EdgeInsets.zero,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (var i = 0; i < list.length; i++) ...[
-                if (i > 0) Divider(height: 1, color: p.border),
-                _PrayerRow(
-                  prayer: list[i],
-                  isNext:
-                      next != null && next.key == list[i].key && _sameDay(next.time, list[i].time),
-                  onBell: list[i].isSunrise
-                      ? null
-                      : () async {
-                          final key = list[i].key;
-                          final v = await pickOption<String>(
-                            context,
-                            '${list[i].name} · কীভাবে জানাবে',
-                            _s.azanMode(key),
-                            azanModeNames,
-                          );
-                          if (v != null) {
-                            await _s.setAzanMode(key, v);
-                            await _changed();
-                          }
-                        },
+              const SizedBox(height: 14),
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: Column(
+                  children: [
+                    for (var i = 0; i < list.length; i++) ...[
+                      if (i > 0) Divider(height: 1, color: p.border),
+                      _PrayerRow(
+                        prayer: list[i],
+                        isNext:
+                            next != null &&
+                            next.key == list[i].key &&
+                            _sameDay(next.time, list[i].time),
+                        onBell: list[i].isSunrise
+                            ? null
+                            : () => push(context, AzanPrayerScreen(prayer: list[i].key)),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'কোনো ওয়াক্তে চাপ দিয়ে বেছে নিন: আজানের শব্দ (মসজিদে নববী, মসজিদুল হারাম, '
+                'শুধু নোটিফিকেশন বা বন্ধ), সময় আগে-পিছে করা বা নিজের সময়, আর আগের ও ইকামতের রিমাইন্ডার। '
+                'আজান বাজার সময় "থামান" বোতাম বা ফোনের ভলিউম বোতাম চাপলে থেমে যাবে।',
+                style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
+              ),
+              const SehriIftarCard(),
+              const SizedBox(height: 14),
+              ActionRow(
+                children: [
+                  LabeledAction(
+                    icon: Icons.explore_outlined,
+                    label: 'কিবলা দেখুন',
+                    tint: p.sky,
+                    onTap: () => push(context, const QiblaScreen()),
+                  ),
+                  LabeledAction(
+                    icon: Icons.tune_rounded,
+                    label: 'আজান সেটিংস',
+                    tint: p.mint,
+                    onTap: () => push(context, const SettingsScreen(section: SettingsSection.azan)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'নামাজের সময় ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না। কোনো সেটিং বদলালে বা অ্যাপ খুললে '
+                'পরের ৩০ দিনের আজান নতুন করে ঠিক করা হয়, ফোন রিস্টার্ট হলেও থাকে। '
+                'আজান ঠিকমতো না বাজলে সেটিংস → "অনুমতি ও সেটআপ" দেখুন। স্থানীয় মসজিদের সময়ের সাথে '
+                '১–২ মিনিট পার্থক্য হতে পারে।',
+                style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'ডান পাশের চিহ্নে চাপ দিয়ে প্রতি ওয়াক্তের জন্য বেছে নিন: আজান, শুধু নোটিফিকেশন বা বন্ধ। '
-          'আজান বাজার সময় "থামান" বোতাম বা ফোনের ভলিউম বোতাম চাপলে থেমে যাবে।',
-          style: TextStyle(color: p.muted, fontSize: 12.5, height: 1.5),
-        ),
-        const SectionLabel('সেটিংস'),
-        RowGroup(
-          children: [
-            NavRow(
-              icon: Icons.notifications_active_outlined,
-              title: 'আজান ও নামাজের নোটিফিকেশন',
-              subtitle: _s.azanEnabled ? 'চালু' : 'সব বন্ধ (থামানো আছে)',
-              trailing: Switch(
-                value: _s.azanEnabled,
-                onChanged: (v) async {
-                  await _s.setAzanEnabled(v);
-                  await _changed();
-                },
-              ),
-            ),
-            NavRow(
-              icon: Icons.calculate_outlined,
-              title: 'হিসাবের পদ্ধতি',
-              subtitle: Prayers.methodById(_s.calcMethod).name,
-              onTap: () async {
-                final v = await pickOption<String>(context, 'হিসাবের পদ্ধতি', _s.calcMethod, {
-                  for (final m in Prayers.methods) m.id: m.name,
-                });
-                if (v != null) {
-                  await _s.setCalcMethod(v);
-                  await _changed();
-                }
-              },
-            ),
-            NavRow(
-              icon: Icons.wb_twilight_outlined,
-              tint: p.sand,
-              title: 'আসরের সময়',
-              subtitle: _s.asrMethod == 'hanafi' ? 'হানাফি' : 'শাফেয়ি, মালেকি, হাম্বলি',
-              onTap: () async {
-                final v = await pickOption<String>(context, 'আসরের সময়', _s.asrMethod, {
-                  'hanafi': 'হানাফি (বাংলাদেশে প্রচলিত)',
-                  'shafi': 'শাফেয়ি, মালেকি, হাম্বলি',
-                });
-                if (v != null) {
-                  await _s.setAsrMethod(v);
-                  await _changed();
-                }
-              },
-            ),
-            NavRow(
-              icon: Icons.volume_up_outlined,
-              tint: p.sky,
-              title: 'সাইলেন্ট মোডেও আজান বাজবে',
-              subtitle: 'অ্যালার্মের মতো বাজবে, ফোন সাইলেন্ট থাকলেও',
-              trailing: Switch(
-                value: _s.azanInSilent,
-                onChanged: (v) async {
-                  await _s.setAzanInSilent(v);
-                  await _changed();
-                },
-              ),
-            ),
-            NavRow(
-              icon: Icons.fullscreen_rounded,
-              tint: p.lilac,
-              title: 'পুরো স্ক্রিনে আজান',
-              subtitle: 'লক স্ক্রিনের ওপর নামাজের নাম ও বড় থামান বোতাম',
-              trailing: Switch(
-                value: _s.azanFullScreen,
-                onChanged: (v) async {
-                  await _s.setAzanFullScreen(v);
-                  await _changed();
-                },
-              ),
-            ),
-            NavRow(
-              icon: Icons.play_circle_outline_rounded,
-              tint: p.rose,
-              title: 'আজান শুনে দেখুন',
-              subtitle: 'এখনই পুরো আজান বাজবে ("থামান" বা ভলিউম বোতামে থামবে)',
-              onTap: () => Prayers.playNow(),
-            ),
-            if (Prayers.fajrBundled)
-              NavRow(
-                icon: Icons.wb_twilight_outlined,
-                tint: p.sand,
-                title: 'ফজরের আজান শুনে দেখুন',
-                subtitle: '"আস-সালাতু খাইরুম মিনান নাউম" সহ',
-                onTap: () => Prayers.playNow(fajr: true),
-              ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Text(
-          'নামাজের সময় ফোনেই হিসাব করা হয়, ইন্টারনেট লাগে না। প্রতিবার অ্যাপ খুললে '
-          'পরের ৩০ দিনের আজান নতুন করে ঠিক করা হয়, ফোন রিস্টার্ট হলেও থাকে। '
-          'আজান ঠিকমতো না বাজলে আরও → "অনুমতি ও সেটআপ" দেখুন। স্থানীয় মসজিদের সময়ের সাথে '
-          '১–২ মিনিট পার্থক্য হতে পারে।',
-          style: TextStyle(color: p.muted, fontSize: 12.5, height: 1.5),
         ),
       ],
     );
@@ -258,6 +217,123 @@ class _PrayerScreenState extends State<PrayerScreen> {
 
   static bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+/// Azan settings (on the সেটিংস page).
+class AzanSettings extends StatelessWidget {
+  const AzanSettings({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final s = AppState.instance.settings;
+    return ListenableBuilder(
+      listenable: s,
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RowGroup(
+            children: [
+              NavRow(
+                icon: Icons.notifications_active_outlined,
+                title: 'আজান ও নামাজের নোটিফিকেশন',
+                subtitle: s.azanEnabled ? 'চালু' : 'সব বন্ধ (থামানো আছে)',
+                trailing: Switch(
+                  value: s.azanEnabled,
+                  onChanged: (v) async {
+                    await s.setAzanEnabled(v);
+                    await Prayers.schedule(s);
+                  },
+                ),
+              ),
+              NavRow(
+                icon: Icons.calculate_outlined,
+                title: 'হিসাবের পদ্ধতি',
+                subtitle: Prayers.methodById(s.calcMethod).name,
+                onTap: () async {
+                  final v = await pickOption<String>(context, 'হিসাবের পদ্ধতি', s.calcMethod, {
+                    for (final m in Prayers.methods) m.id: m.name,
+                  });
+                  if (v != null) {
+                    await s.setCalcMethod(v);
+                    await Prayers.schedule(s);
+                  }
+                },
+              ),
+              NavRow(
+                icon: Icons.wb_twilight_outlined,
+                tint: p.sand,
+                title: 'আসরের সময়',
+                subtitle: s.asrMethod == 'hanafi' ? 'হানাফি' : 'শাফেয়ি, মালেকি, হাম্বলি',
+                onTap: () async {
+                  final v = await pickOption<String>(context, 'আসরের সময়', s.asrMethod, {
+                    'hanafi': 'হানাফি (বাংলাদেশে প্রচলিত)',
+                    'shafi': 'শাফেয়ি, মালেকি, হাম্বলি',
+                  });
+                  if (v != null) {
+                    await s.setAsrMethod(v);
+                    await Prayers.schedule(s);
+                  }
+                },
+              ),
+              NavRow(
+                icon: Icons.volume_up_outlined,
+                tint: p.sky,
+                title: 'সাইলেন্ট মোডেও বাজবে',
+                subtitle: 'অ্যালার্মের মতো বাজবে, ফোন সাইলেন্ট থাকলেও',
+                trailing: Switch(
+                  value: s.azanInSilent,
+                  onChanged: (v) async {
+                    await s.setAzanInSilent(v);
+                    await Prayers.schedule(s);
+                  },
+                ),
+              ),
+              const _VolumeRow(),
+              NavRow(
+                icon: Icons.vibration_rounded,
+                tint: p.mint,
+                title: 'কম্পন',
+                subtitle: 'আজান ও রিমাইন্ডারের সময় ফোন কাঁপবে',
+                trailing: Switch(
+                  value: s.azanVibrate,
+                  onChanged: (v) async {
+                    await s.setAzanVibrate(v);
+                    await Prayers.schedule(s);
+                  },
+                ),
+              ),
+              NavRow(
+                icon: Icons.fullscreen_rounded,
+                tint: p.lilac,
+                title: 'পুরো স্ক্রিনে আজান',
+                subtitle: 'লক স্ক্রিনের ওপর নামাজের নাম ও বড় থামান বোতাম',
+                trailing: Switch(
+                  value: s.azanFullScreen,
+                  onChanged: (v) async {
+                    await s.setAzanFullScreen(v);
+                    await Prayers.schedule(s);
+                  },
+                ),
+              ),
+              NavRow(
+                icon: Icons.play_circle_outline_rounded,
+                tint: p.rose,
+                title: 'আজান শুনে দেখুন',
+                subtitle: 'মসজিদে নববী ও মসজিদুল হারাম, ফজরসহ',
+                onTap: () => showListenSheet(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'প্রতি ওয়াক্তের আজানের শব্দ, সময় ও রিমাইন্ডার বেছে নিতে নামাজের সময়ের পাতায় ওয়াক্তে চাপ দিন।',
+            style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PrayerRow extends StatelessWidget {
@@ -271,8 +347,8 @@ class _PrayerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final s = AppState.instance.settings;
-    final mode = prayer.isSunrise ? 'off' : s.azanMode(prayer.key);
-    return Container(
+    final mode = prayer.isSunrise ? 'off' : s.azanSound(prayer.key);
+    final row = Container(
       color: isNext ? p.pill : null,
       constraints: const BoxConstraints(minHeight: 60),
       padding: const EdgeInsets.fromLTRB(16, 4, 6, 4),
@@ -285,13 +361,23 @@ class _PrayerRow extends StatelessWidget {
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              prayer.name,
-              style: TextStyle(
-                fontSize: 16.5,
-                fontWeight: isNext ? FontWeight.w700 : FontWeight.w500,
-                color: prayer.isSunrise ? p.muted : p.text,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  prayer.name,
+                  style: TextStyle(
+                    fontSize: 16.5,
+                    fontWeight: isNext ? FontWeight.w700 : FontWeight.w500,
+                    color: prayer.isSunrise ? p.muted : p.text,
+                  ),
+                ),
+                if (!prayer.isSunrise && Prayers.isAdjusted(s, prayer.key))
+                  Text(
+                    adjustedTimeText(s, prayer),
+                    style: TextStyle(fontSize: 13, color: p.primary, fontWeight: FontWeight.w600),
+                  ),
+              ],
             ),
           ),
           Text(
@@ -307,10 +393,10 @@ class _PrayerRow extends StatelessWidget {
             child: onBell == null
                 ? null
                 : IconButton(
-                    tooltip: azanModeNames[mode],
+                    tooltip: Prayers.azanSounds[mode],
                     onPressed: onBell,
                     icon: Icon(switch (mode) {
-                      'azan' => Icons.volume_up_outlined,
+                      'nabawi' || 'haram' => Icons.volume_up_outlined,
                       'notify' => Icons.notifications_none_rounded,
                       _ => Icons.notifications_off_outlined,
                     }, color: mode == 'off' ? p.muted : p.primary),
@@ -319,8 +405,98 @@ class _PrayerRow extends StatelessWidget {
         ],
       ),
     );
+    return onBell == null ? row : InkWell(onTap: onBell, child: row);
   }
 }
+
+/// Azan volume (for all prayers); "শুনে দেখুন" plays at the chosen volume.
+class _VolumeRow extends StatefulWidget {
+  const _VolumeRow();
+
+  @override
+  State<_VolumeRow> createState() => _VolumeRowState();
+}
+
+class _VolumeRowState extends State<_VolumeRow> {
+  double? _drag;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final s = AppState.instance.settings;
+    final v = _drag ?? s.azanVolume;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 4),
+      child: Row(
+        children: [
+          IconBubble(Icons.volume_up_outlined, tint: p.sky, size: 38),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'আজানের ভলিউম · ${toBanglaDigits((v * 100).round())}%',
+                  style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: p.text),
+                ),
+                Slider(
+                  min: 0.1,
+                  max: 1,
+                  divisions: 9,
+                  value: v,
+                  label: '${toBanglaDigits((v * 100).round())}%',
+                  onChanged: (x) => setState(() => _drag = x),
+                  onChangeEnd: (x) async {
+                    setState(() => _drag = null);
+                    await s.setAzanVolume(x);
+                    await Prayers.schedule(s);
+                  },
+                ),
+                Text(
+                  'ফোনের অ্যালার্ম ভলিউমের তুলনায়',
+                  style: TextStyle(color: p.muted, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "শুনে দেখুন": each sound, with the Fajr recording too.
+Future<void> showListenSheet(BuildContext context) => showModalBottomSheet<void>(
+  context: context,
+  builder: (sheet) => SafeArea(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+          child: Text('আজান শুনে দেখুন', style: titleStyle(sheet.palette, size: 18)),
+        ),
+        for (final (sound, fajr) in const [
+          ('nabawi', false),
+          ('nabawi', true),
+          ('haram', false),
+          ('haram', true),
+        ])
+          ListTile(
+            leading: const Icon(Icons.play_circle_outline_rounded),
+            title: Text('${Prayers.azanSounds[sound]}${fajr ? ' · ফজর' : ''}'),
+            onTap: () => Prayers.playNow(sound: sound, fajr: fajr),
+          ),
+        ListTile(
+          leading: const Icon(Icons.stop_circle_outlined),
+          title: const Text('থামান'),
+          onTap: Prayers.stop,
+        ),
+        const SizedBox(height: 8),
+      ],
+    ),
+  ),
+);
 
 /// Shown until a location is chosen.
 class ChooseLocationView extends StatelessWidget {
@@ -359,9 +535,6 @@ class ChooseLocationView extends StatelessWidget {
     );
   }
 }
-
-/// The three choices for each prayer.
-const azanModeNames = {'azan': 'আজান', 'notify': 'শুধু নোটিফিকেশন', 'off': 'বন্ধ'};
 
 /// Explains, asks for location permission and saves the location.
 /// With [explain] false the dialog is skipped (the page already explains).
@@ -522,7 +695,7 @@ class _CityPickerState extends State<_CityPicker> {
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
               child: Text(
                 'তালিকায় আপনার শহর না থাকলে সবচেয়ে কাছের শহরটি বেছে নিন।',
-                style: TextStyle(color: p.muted, fontSize: 12),
+                style: TextStyle(color: p.muted, fontSize: 14),
               ),
             ),
           ],

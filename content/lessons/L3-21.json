@@ -1,0 +1,106 @@
+{
+  "id": "L3-21",
+  "level": 3,
+  "ord": 21,
+  "title_bn": "সে করল",
+  "objective_bn": "অতীত ক্রিয়া",
+  "minutes": 12,
+  "anchor_surah": 96,
+  "anchor_ayah_from": 2,
+  "anchor_ayah_to": 2,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 96,
+        "ayah": 2
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          88,
+          143,
+          165
+        ],
+        "word_refs": [
+          [
+            2,
+            75,
+            6
+          ],
+          [
+            2,
+            22,
+            2
+          ],
+          [
+            96,
+            2,
+            1
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "আরবি ক্রিয়ার তিন রূপ: অতীত, বর্তমান/ভবিষ্যৎ, আর আদেশ। অতীতের মূল রূপ মানে ‘সে করল’: খালাকা = তিনি সৃষ্টি করলেন, কালা = সে বলল, কানা = ছিল।",
+        "example": {
+          "surah": 96,
+          "ayah": 2,
+          "word_index": 1
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 88,
+            "distractor_ids": [
+              4990,
+              38,
+              43
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 143,
+            "distractor_ids": [
+              58,
+              198,
+              34
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 165,
+            "distractor_ids": [
+              4,
+              9,
+              14
+            ]
+          },
+          {
+            "kind": "order",
+            "surah": 96,
+            "ayah": 2
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          88,
+          143,
+          165
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 96,
+        "ayah": 2
+      }
+    ]
+  }
+}

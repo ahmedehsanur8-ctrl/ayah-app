@@ -4,8 +4,11 @@ import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../app_state.dart';
 import '../models/content.dart';
 import 'duas.dart';
+import 'fasting.dart';
+import 'planner.dart';
 import 'reminders.dart';
 import 'settings.dart';
 
@@ -121,54 +124,162 @@ class Prayers {
   static const _oldFirstId = 3000;
 
   /// How many days of prayer times are handed to the Android alarm.
-  static const daysAhead = 30;
+  static const daysAhead = Planner.planDays;
 
   static const _channel = MethodChannel('ayah_reminder/azan');
 
-  /// True when a licensed azan recording is bundled (res/raw/azan.mp3).
+  /// The azan sounds the user can pick, by id.
+  static const azanSounds = {
+    'nabawi': 'মসজিদে নববী',
+    'haram': 'মসজিদুল হারাম',
+    'notify': 'শুধু নোটিফিকেশন',
+    'off': 'বন্ধ',
+  };
+
+  /// True when the azan recordings are bundled (res/raw/azan_*.mp3).
   static bool azanBundled = false;
 
-  /// True when a separate Fajr azan is bundled (res/raw/azan_fajr.mp3).
-  static bool fajrBundled = false;
-
-  /// Licence details of the bundled azan (for the credits page); the Fajr
-  /// recording, if any, is under the "fajr" key.
+  /// Details of the bundled recordings (assets/azan_license.json).
   static Map<String, dynamic> azanLicense = const {};
 
   static Future<void> loadAzanInfo() async {
     try {
       final j = jsonDecode(await rootBundle.loadString('assets/azan_license.json'));
       azanLicense = (j as Map<String, dynamic>);
-      azanBundled = (azanLicense['title'] ?? '').toString().isNotEmpty;
-      fajrBundled = ((azanLicense['fajr'] as Map?)?['title'] ?? '').toString().isNotEmpty;
+      // New format lists the files; the older one (Wikimedia recording) has a title.
+      azanBundled =
+          ((azanLicense['files'] as Map?)?.isNotEmpty ?? false) ||
+          (azanLicense['title'] ?? '').toString().isNotEmpty;
     } catch (_) {
       azanBundled = false;
     }
   }
 
-  /// The prayer times the Android side should act on, as JSON.
+  /// When the azan is given for [p]: the user's fixed time, or the calculated
+  /// time moved by the user's adjustment.
+  static DateTime azanTime(AppSettings s, PrayerTime p) {
+    final fixed = s.azanFixedMinutes(p.key);
+    if (fixed != null) {
+      return DateTime(p.time.year, p.time.month, p.time.day, fixed ~/ 60, fixed % 60);
+    }
+    return p.time.add(Duration(minutes: s.azanOffset(p.key)));
+  }
+
+  /// True when the azan for [key] is not at the calculated time.
+  static bool isAdjusted(AppSettings s, String key) =>
+      s.azanFixedMinutes(key) != null || s.azanOffset(key) != 0;
+
+  /// The prayer times the Android side should act on, as JSON: the azan (or
+  /// notification), the reminder before it and the iqamah reminder after it.
   static String eventsJson(AppSettings s, DateTime now) {
+    // The master azan switch pauses azan and prayer reminders, not sehri/iftar.
+    final prayersOn = s.azanEnabled;
     final events = <Map<String, Object>>[];
-    for (var d = 0; d < daysAhead; d++) {
+    void add(DateTime t, PrayerTime p, String mode, {String sound = '', int mins = 0}) {
+      if (!t.isAfter(now)) return;
+      events.add({
+        't': t.millisecondsSinceEpoch,
+        'key': p.key,
+        'name': p.name,
+        'mode': mode,
+        'sound': sound,
+        'fajr': p.key == 'fajr',
+        'mins': mins,
+        // The azan time (for the text of reminders before and after it).
+        'azan': azanTime(s, p).millisecondsSinceEpoch,
+      });
+    }
+
+    // Today plus [daysAhead] full days, so the last planned alarm is always at
+    // least [daysAhead] days away.
+    for (var d = 0; d <= daysAhead; d++) {
       final day = DateTime(now.year, now.month, now.day + d);
       for (final p in forDay(s, day)) {
-        final mode = s.azanMode(p.key);
-        if (p.isSunrise || mode == 'off' || !p.time.isAfter(now)) continue;
-        events.add({
-          't': p.time.millisecondsSinceEpoch,
-          'key': p.key,
-          'name': p.name,
-          'mode': mode == 'azan' && azanBundled ? 'azan' : 'notify',
-          'fajr': p.key == 'fajr',
-        });
+        if (p.isSunrise || !prayersOn) continue;
+        final at = azanTime(s, p);
+        final sound = s.azanSound(p.key);
+        if (sound == 'nabawi' || sound == 'haram') {
+          add(at, p, azanBundled ? 'azan' : 'notify', sound: sound);
+        } else if (sound == 'notify') {
+          add(at, p, 'notify');
+        }
+        final before = s.azanBefore(p.key);
+        if (before > 0) add(at.subtract(Duration(minutes: before)), p, 'before', mins: before);
+        final iqamah = s.iqamahAfter(p.key);
+        if (iqamah > 0) add(at.add(Duration(minutes: iqamah)), p, 'iqamah', mins: iqamah);
       }
+      _fastingEvents(s, day, now, events);
+    }
+    events.sort((a, b) => (a['t'] as int).compareTo(b['t'] as int));
+    // Android rings one event at a time and then sets the next one *after* it,
+    // so two events at the same moment would lose one: keep every time unique.
+    for (var i = 1; i < events.length; i++) {
+      final prev = events[i - 1]['t'] as int;
+      if ((events[i]['t'] as int) <= prev) events[i]['t'] = prev + 1000;
     }
     return jsonEncode(events);
+  }
+
+  /// Sehri wake-up alarm, iftar reminder and the iftar notification with the
+  /// dua, on fasting days (Ramadan or a day marked "রোজা রাখছি").
+  static void _fastingEvents(
+    AppSettings s,
+    DateTime day,
+    DateTime now,
+    List<Map<String, Object>> events,
+  ) {
+    if (!Fasting.isFastingDay(s, day)) return;
+    final f = Fasting.forDay(s, day);
+    if (f == null) return;
+    void add(DateTime t, String key, String name, String mode, DateTime at, {int mins = 0}) {
+      if (!t.isAfter(now)) return;
+      final dua = mode == 'iftar' ? Duas.byId(Fasting.iftarDuaId) : null;
+      events.add({
+        't': t.millisecondsSinceEpoch,
+        'key': key,
+        'name': name,
+        'mode': mode,
+        'sound': '',
+        'fajr': false,
+        'mins': mins,
+        'azan': at.millisecondsSinceEpoch,
+        if (dua != null) 'duaAr': dua.arabic,
+        if (dua != null) 'duaBn': dua.bangla,
+        if (dua != null) 'duaUc': dua.uccharon,
+        if (dua != null) 'duaRef': dua.source,
+      });
+    }
+
+    if (s.sehriAlarm > 0) {
+      add(
+        f.sehriEnd.subtract(Duration(minutes: s.sehriAlarm)),
+        'sehri',
+        'সেহরি',
+        'sehri',
+        f.sehriEnd,
+        mins: s.sehriAlarm,
+      );
+    }
+    if (s.iftarBefore > 0) {
+      add(
+        f.iftar.subtract(Duration(minutes: s.iftarBefore)),
+        'iftar',
+        'ইফতার',
+        'iftar_before',
+        f.iftar,
+        mins: s.iftarBefore,
+      );
+    }
+    if (s.iftarNotify) add(f.iftar, 'iftar', 'ইফতার', 'iftar', f.iftar);
   }
 
   /// Hands the next [daysAhead] days of prayer times to Android, which sets an
   /// alarm for the next one (and the one after that when it rings).
   static Future<void> schedule(AppSettings s) async {
+    // The iftar notification shows the dua from assets/duas.json.
+    try {
+      await Duas.load();
+    } catch (_) {}
     // Remove notifications planned by older versions of the app.
     for (var i = 0; i < 80; i++) {
       try {
@@ -177,9 +288,11 @@ class Prayers {
     }
     try {
       await _channel.invokeMethod('schedule', {
-        'events': s.hasLocation && s.azanEnabled ? eventsJson(s, DateTime.now()) : '[]',
+        'events': s.hasLocation ? eventsJson(s, DateTime.now()) : '[]',
         'inSilent': s.azanInSilent,
         'fullScreen': s.azanFullScreen,
+        'volume': s.azanVolume,
+        'vibrate': s.azanVibrate,
       });
     } on MissingPluginException {
       // Tests / non-Android.
@@ -190,10 +303,16 @@ class Prayers {
     await AdhkarReminders.schedule(s);
   }
 
-  /// Plays the full azan now (the same way it plays at prayer time).
-  static Future<void> playNow({bool fajr = false}) async {
+  /// Plays the azan [sound] now, the same way it plays at prayer time
+  /// ("শুনে দেখুন"). Fajr uses its own recording.
+  static Future<void> playNow({String sound = 'nabawi', bool fajr = false, double? volume}) async {
     try {
-      await _channel.invokeMethod('playNow', {'name': fajr ? 'ফজর' : 'আজান', 'fajr': fajr});
+      await _channel.invokeMethod('playNow', {
+        'name': fajr ? 'ফজর' : 'আজান',
+        'fajr': fajr,
+        'sound': sound,
+        'volume': volume ?? AppState.instance.settings.azanVolume,
+      });
     } on MissingPluginException {
       // Tests / non-Android.
     }

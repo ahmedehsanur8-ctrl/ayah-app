@@ -1,0 +1,128 @@
+{
+  "id": "L1-05",
+  "level": 1,
+  "ord": 5,
+  "title_bn": "সরল পথ দেখান",
+  "objective_bn": "বিশেষণ বসে বিশেষ্যের পরে",
+  "minutes": 10,
+  "anchor_surah": 1,
+  "anchor_ayah_from": 6,
+  "anchor_ayah_to": 6,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 1,
+        "ayah": 6
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          18,
+          19,
+          20,
+          21
+        ],
+        "word_refs": [
+          [
+            1,
+            6,
+            1
+          ],
+          [
+            1,
+            6,
+            1
+          ],
+          [
+            1,
+            6,
+            2
+          ],
+          [
+            1,
+            6,
+            3
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "বিশেষণ বসে বিশেষ্যের পরে, আর দুটোতেই ‘আল’ থাকে: আস-সিরাতাল মুসতাকীম = সরল পথ। শব্দের শেষে ‘না’ মানে ‘আমাদের/আমাদেরকে’: ইহদিনা = আমাদেরকে পথ দেখান।",
+        "example": {
+          "surah": 1,
+          "ayah": 6,
+          "word_index": 3
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 18,
+            "distractor_ids": [
+              7,
+              12,
+              17
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 19,
+            "distractor_ids": [
+              14,
+              20,
+              4
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 20,
+            "distractor_ids": [
+              2,
+              5,
+              11
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 21,
+            "distractor_ids": [
+              8,
+              13,
+              18
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 1,
+            "ayah": 6,
+            "word_index": 1
+          },
+          {
+            "kind": "order",
+            "surah": 1,
+            "ayah": 6
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          18,
+          19,
+          20,
+          21
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 1,
+        "ayah": 6
+      }
+    ]
+  }
+}

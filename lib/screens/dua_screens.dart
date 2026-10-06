@@ -10,10 +10,14 @@ import '../services/quran.dart';
 import '../services/quran_player.dart';
 import '../services/settings.dart';
 import '../theme.dart';
-import '../widgets/pattern.dart';
 import '../widgets/share_card.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
+import 'favorites_screen.dart';
+import 'home_shell.dart';
 import 'quran_reader_screen.dart';
+import 'settings_screen.dart';
+import 'tasbih_screen.dart';
 
 /// Line icons for the 15 sections of dua-list.md.
 IconData duaSectionIcon(int n) => switch (n) {
@@ -40,7 +44,10 @@ Tint _tint(Palette p, int n) => [p.mint, p.sky, p.sand, p.rose, p.lilac][n % 5];
 
 /// দোয়া ও জিকির: search, today's adhkar and the 15 sections.
 class DuaHomeScreen extends StatefulWidget {
-  const DuaHomeScreen({super.key});
+  const DuaHomeScreen({super.key, this.inTab = false});
+
+  /// Shown as the দোয়া tab (no back arrow).
+  final bool inTab;
 
   @override
   State<DuaHomeScreen> createState() => _DuaHomeScreenState();
@@ -68,124 +75,155 @@ class _DuaHomeScreenState extends State<DuaHomeScreen> {
   Widget build(BuildContext context) {
     final p = context.palette;
     final results = Duas.search(_q);
+    final back = !widget.inTab && Navigator.of(context).canPop();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('দোয়া ও জিকির'),
-        actions: [
-          IconButton(
-            tooltip: 'প্রিয় দোয়া',
-            icon: const Icon(Icons.favorite_border_rounded),
-            onPressed: () => push(context, const DuaFavoritesScreen()),
-          ),
-          IconButton(
-            tooltip: 'দোয়ার সেটিংস',
-            icon: const Icon(Icons.tune_rounded),
-            onPressed: () => showDuaSettingsSheet(context),
-          ),
-        ],
-      ),
-      body: !Duas.loaded
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-              children: [
-                TextField(
-                  controller: _query,
-                  onChanged: (v) => setState(() => _q = v),
-                  textInputAction: TextInputAction.search,
-                  decoration: InputDecoration(
-                    hintText: 'দোয়া খুঁজুন: ভয়, ঋণ, সফর, অসুস্থ…',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: _q.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: 'মুছুন',
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => setState(() {
-                              _query.clear();
-                              _q = '';
-                            }),
-                          ),
-                    filled: true,
-                    fillColor: p.surface,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(radiusM),
-                      borderSide: BorderSide(color: p.border),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(radiusM),
-                      borderSide: BorderSide(color: p.border),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                if (_q.trim().length >= 2) ...[
-                  SectionLabel(
-                    results.isEmpty
-                        ? 'কিছু পাওয়া যায়নি'
-                        : '${toBanglaDigits(results.length)}টি দোয়া',
-                  ),
-                  for (var i = 0; i < results.length; i++)
-                    _DuaRow(
-                      dua: results[i],
-                      onTap: () => push(context, DuaPagerScreen(duas: results, index: i)),
-                    ),
-                ] else ...[
-                  const AdhkarCard(),
-                  const SectionLabel('বিষয় অনুযায়ী'),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 10,
-                      crossAxisSpacing: 10,
-                      childAspectRatio: 0.9,
-                    ),
-                    itemCount: Duas.sections.length,
-                    itemBuilder: (context, i) {
-                      final s = Duas.sections[i];
-                      final t = _tint(p, s.n);
-                      return Material(
-                        color: t.background,
-                        borderRadius: BorderRadius.circular(radiusM),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(radiusM),
-                          onTap: () => push(context, DuaSectionScreen(section: s)),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(duaSectionIcon(s.n), color: t.foreground, size: 28),
-                                const SizedBox(height: 6),
-                                Text(
-                                  s.title,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: t.foreground,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 13,
-                                    height: 1.3,
-                                  ),
-                                ),
-                                Text(
-                                  '${toBanglaDigits(s.count)}টি',
-                                  style: TextStyle(color: t.foreground, fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ],
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            NightHeader(
+              leading: back ? const NightBackButton() : null,
+              title: 'দোয়া ও জিকির',
+              lip: true,
+              padding: EdgeInsets.fromLTRB(back ? 8 : 20, 8, 12, 20),
+              child: Padding(
+                padding: EdgeInsets.only(left: back ? 12 : 0),
+                child: Duas.loaded ? const AdhkarCard(inHeader: true) : const SizedBox(),
+              ),
             ),
+            if (!Duas.loaded)
+              const Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _query,
+                      onChanged: (v) => setState(() => _q = v),
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: 'দোয়া খুঁজুন: ভয়, ঋণ, সফর, অসুস্থ…',
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        suffixIcon: _q.isEmpty
+                            ? null
+                            : IconButton(
+                                tooltip: 'মুছুন',
+                                icon: const Icon(Icons.close_rounded),
+                                onPressed: () => setState(() {
+                                  _query.clear();
+                                  _q = '';
+                                }),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    if (_q.trim().length >= 2) ...[
+                      SectionLabel(
+                        results.isEmpty
+                            ? 'কিছু পাওয়া যায়নি'
+                            : '${toBanglaDigits(results.length)}টি দোয়া',
+                      ),
+                      for (var i = 0; i < results.length; i++)
+                        DuaRow(
+                          dua: results[i],
+                          onTap: () => push(context, DuaPagerScreen(duas: results, index: i)),
+                        ),
+                    ] else ...[
+                      const SectionLabel('কখন পড়বেন'),
+                      const _WhenChips(),
+                      const SizedBox(height: 16),
+                      const TasbihCard(),
+                      const SizedBox(height: 12),
+                      ActionRow(
+                        children: [
+                          LabeledAction(
+                            icon: Icons.favorite_border_rounded,
+                            label: 'প্রিয় দোয়া',
+                            tint: p.iconTint,
+                            onTap: () => push(context, const FavoritesScreen(initialTab: 1)),
+                          ),
+                          LabeledAction(
+                            icon: Icons.tune_rounded,
+                            label: 'দোয়ার সেটিং',
+                            tint: p.iconTint,
+                            onTap: () =>
+                                push(context, const SettingsScreen(section: SettingsSection.duas)),
+                          ),
+                        ],
+                      ),
+                      const SectionLabel('বিষয় অনুযায়ী'),
+                      ListSection(
+                        children: [
+                          for (final sec in Duas.sections)
+                            ListRow(
+                              icon: duaSectionIcon(sec.n),
+                              title: sec.title,
+                              subtitle: '${toBanglaDigits(sec.count)}টি দোয়া',
+                              onTap: () => push(context, DuaSectionScreen(section: sec)),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "কখন পড়বেন": shortcuts by time of day and situation.
+class _WhenChips extends StatelessWidget {
+  const _WhenChips();
+
+  @override
+  Widget build(BuildContext context) {
+    DuaSection? section(int n) {
+      for (final s in Duas.sections) {
+        if (s.n == n) return s;
+      }
+      return null;
+    }
+
+    final chips = <(IconData, String, VoidCallback)>[
+      (
+        Icons.wb_sunny_outlined,
+        'সকালে',
+        () => push(context, DuaCounterScreen.adhkar(evening: false)),
+      ),
+      (
+        Icons.nights_stay_outlined,
+        'সন্ধ্যায়',
+        () => push(context, DuaCounterScreen.adhkar(evening: true)),
+      ),
+      for (final (n, icon, label) in const [
+        (2, Icons.bedtime_outlined, 'ঘুমের আগে-পরে'),
+        (3, Icons.mosque_outlined, 'নামাজে'),
+        (5, Icons.directions_car_outlined, 'সফরে'),
+        (7, Icons.shield_outlined, 'বিপদে'),
+      ])
+        if (section(n) != null)
+          (icon, label, () => push(context, DuaSectionScreen(section: section(n)!))),
+    ];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final (icon, label, onTap) in chips)
+          ActionChip(
+            avatar: Icon(icon, size: 18, color: context.palette.primary),
+            label: Text(label),
+            onPressed: onTap,
+          ),
+      ],
     );
   }
 }
@@ -193,10 +231,13 @@ class _DuaHomeScreenState extends State<DuaHomeScreen> {
 /// "আজকের জিকির": the morning or evening set (by the time of day), with a
 /// start button. Also on the Today screen.
 class AdhkarCard extends StatelessWidget {
-  const AdhkarCard({super.key, this.showAllButton = false});
+  const AdhkarCard({super.key, this.showAllButton = false, this.inHeader = false});
 
   /// On the Today screen: a second button that opens the whole Dua section.
   final bool showAllButton;
+
+  /// Inside a night header: a soft panel instead of its own night card.
+  final bool inHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -205,18 +246,12 @@ class AdhkarCard extends StatelessWidget {
     final set = Duas.loaded ? Duas.adhkar(evening: evening) : const <Dua>[];
     final title = evening ? 'সন্ধ্যার জিকির' : 'সকালের জিকির';
     return ClipRRect(
-      borderRadius: BorderRadius.circular(radiusL),
+      borderRadius: BorderRadius.circular(inHeader ? radiusM : radiusL),
       child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [p.greenCard, p.greenCardDark],
-          ),
-        ),
+        color: inHeader ? p.nightLine : p.night,
         child: Stack(
           children: [
-            const PatternLayer(color: Brand.gold, opacity: 0.07, cell: 44),
+            if (!inHeader) const GirihLayer(cell: 44, opacity: 0.16),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               child: Column(
@@ -226,30 +261,25 @@ class AdhkarCard extends StatelessWidget {
                     children: [
                       Icon(
                         evening ? Icons.nights_stay_outlined : Icons.wb_sunny_outlined,
-                        color: Brand.gold,
+                        color: p.gold,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         showAllButton ? 'দোয়া ও জিকির' : 'আজকের জিকির',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
+                        style: TextStyle(color: p.onNightMuted, fontSize: 14),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '$title · ${toBanglaDigits(set.length)}টি জিকির',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: headingFont,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
+                    style: nightTitleStyle(p, size: 19),
                   ),
                   Text(
                     evening
                         ? 'আসর থেকে রাত পর্যন্ত পড়ার জিকির, গুনে গুনে'
                         : 'ফজর থেকে সকাল পর্যন্ত পড়ার জিকির, গুনে গুনে',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
+                    style: TextStyle(color: p.onNightMuted, fontSize: 14),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -257,22 +287,18 @@ class AdhkarCard extends StatelessWidget {
                     runSpacing: 4,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      FilledButton.icon(
+                      GoldButton(
                         onPressed: set.isEmpty
                             ? null
                             : () => push(context, DuaCounterScreen.adhkar(evening: evening)),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Brand.gold,
-                          foregroundColor: Brand.greenDark,
-                        ),
-                        icon: const Icon(Icons.touch_app_outlined),
-                        label: const Text('জিকির শুরু করুন'),
+                        icon: Icons.touch_app_outlined,
+                        label: 'জিকির শুরু করুন',
                       ),
                       TextButton(
                         onPressed: showAllButton
-                            ? () => push(context, const DuaHomeScreen())
+                            ? () => HomeShell.tab.value = HomeShell.duas
                             : () => push(context, DuaCounterScreen.adhkar(evening: !evening)),
-                        style: TextButton.styleFrom(foregroundColor: Colors.white),
+                        style: TextButton.styleFrom(foregroundColor: p.onNight),
                         child: Text(
                           showAllButton
                               ? 'সব দোয়া'
@@ -289,54 +315,6 @@ class AdhkarCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Settings: উচ্চারণ on/off and the adhkar notifications.
-Future<void> showDuaSettingsSheet(BuildContext context) {
-  final s = AppState.instance.settings;
-  return showModalBottomSheet(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => ListenableBuilder(
-      listenable: s,
-      builder: (context, _) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SwitchListTile(
-              value: s.showUccharon,
-              onChanged: s.setShowUccharon,
-              title: const Text('বাংলা উচ্চারণ দেখান'),
-              subtitle: const Text('আরবির নিচে বাংলা উচ্চারণ'),
-            ),
-            SwitchListTile(
-              value: s.adhkarMorning,
-              onChanged: (v) async {
-                await s.setAdhkarMorning(v);
-                await AdhkarReminders.schedule(s);
-              },
-              title: const Text('সকালের জিকিরের রিমাইন্ডার'),
-              subtitle: const Text('ফজরের ২০ মিনিট পর নোটিফিকেশন'),
-            ),
-            SwitchListTile(
-              value: s.adhkarEvening,
-              onChanged: (v) async {
-                await s.setAdhkarEvening(v);
-                await AdhkarReminders.schedule(s);
-              },
-              title: const Text('সন্ধ্যার জিকিরের রিমাইন্ডার'),
-              subtitle: Text(
-                s.hasLocation
-                    ? 'আসরের ২০ মিনিট পর নোটিফিকেশন'
-                    : 'আসরের ২০ মিনিট পর (অবস্থান না থাকলে বিকাল ৪:৩০-এ)',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    ),
-  );
 }
 
 // --------------------------------------------------------------- section
@@ -368,7 +346,7 @@ class DuaSectionScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
           for (var i = 0; i < duas.length; i++)
-            _DuaRow(
+            DuaRow(
               dua: duas[i],
               number: i + 1,
               onTap: () => push(context, DuaPagerScreen(duas: duas, index: i)),
@@ -379,8 +357,8 @@ class DuaSectionScreen extends StatelessWidget {
   }
 }
 
-class _DuaRow extends StatelessWidget {
-  const _DuaRow({required this.dua, required this.onTap, this.number});
+class DuaRow extends StatelessWidget {
+  const DuaRow({super.key, required this.dua, required this.onTap, this.number});
 
   final Dua dua;
   final VoidCallback onTap;
@@ -413,7 +391,7 @@ class _DuaRow extends StatelessWidget {
                       'কখন: ${dua.when}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 12.5, color: p.muted, height: 1.4),
+                      style: TextStyle(fontSize: 14, color: p.muted, height: 1.4),
                     ),
                 ],
               ),
@@ -429,7 +407,7 @@ class _DuaRow extends StatelessWidget {
                     child: Text(
                       '${toBanglaDigits(dua.total)} বার',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: p.goldText,
                         fontWeight: FontWeight.w700,
                       ),
@@ -469,7 +447,7 @@ class GradeChip extends StatelessWidget {
       decoration: BoxDecoration(color: t.background, borderRadius: BorderRadius.circular(20)),
       child: Text(
         label,
-        style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: t.foreground),
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: t.foreground),
       ),
     );
   }
@@ -694,7 +672,7 @@ class _DuaViewState extends State<DuaView> {
               const SizedBox(height: 4),
               Text(
                 Duas.uccharonNote,
-                style: TextStyle(fontSize: 12, color: p.muted, fontStyle: FontStyle.italic),
+                style: TextStyle(fontSize: 14, color: p.muted, fontStyle: FontStyle.italic),
               ),
             ],
             if (text.bangla.isNotEmpty) ...[
@@ -705,7 +683,7 @@ class _DuaViewState extends State<DuaView> {
                 style: TextStyle(fontSize: 16 * s.textScale, height: 1.7, color: p.text),
               ),
               if (d.translator.isNotEmpty)
-                Text('— ${d.translator}', style: TextStyle(fontSize: 12, color: p.muted)),
+                Text('— ${d.translator}', style: TextStyle(fontSize: 14, color: p.muted)),
             ],
             if (d.when.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -735,7 +713,7 @@ class _DuaViewState extends State<DuaView> {
               ),
             ),
             if (d.note.isNotEmpty)
-              Text(d.note, style: TextStyle(fontSize: 12.5, color: p.muted, height: 1.5)),
+              Text(d.note, style: TextStyle(fontSize: 14, color: p.muted, height: 1.5)),
             const SizedBox(height: 18),
             Wrap(
               spacing: 10,
@@ -745,7 +723,7 @@ class _DuaViewState extends State<DuaView> {
                   onPressed: () => s.toggleDuaFavorite(d.id),
                   icon: Icon(
                     s.isDuaFavorite(d.id) ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: s.isDuaFavorite(d.id) ? const Color(0xFFD6455F) : null,
+                    color: s.isDuaFavorite(d.id) ? p.heart : null,
                   ),
                   label: const Text('প্রিয়'),
                 ),
@@ -812,11 +790,7 @@ class _Label extends StatelessWidget {
     padding: const EdgeInsets.only(bottom: 4),
     child: Text(
       text,
-      style: TextStyle(
-        color: context.palette.goldText,
-        fontWeight: FontWeight.w700,
-        fontSize: 13.5,
-      ),
+      style: TextStyle(color: context.palette.goldText, fontWeight: FontWeight.w700, fontSize: 14),
     ),
   );
 }
@@ -833,7 +807,7 @@ class _Pill extends StatelessWidget {
     decoration: BoxDecoration(color: tint.background, borderRadius: BorderRadius.circular(20)),
     child: Text(
       text,
-      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: tint.foreground),
+      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: tint.foreground),
     ),
   );
 }
@@ -1040,7 +1014,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
               if (widget.duas.length > 1)
                 Text(
                   '${toBanglaDigits(_index + 1)} / ${toBanglaDigits(widget.duas.length)}',
-                  style: TextStyle(color: p.muted, fontSize: 13),
+                  style: TextStyle(color: p.muted, fontSize: 14),
                 ),
               Text(d.title, style: titleStyle(p, size: 18)),
               const SizedBox(height: 10),
@@ -1066,7 +1040,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
                 Text(
                   Duas.uccharonNote,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 11.5, color: p.muted, fontStyle: FontStyle.italic),
+                  style: TextStyle(fontSize: 14, color: p.muted, fontStyle: FontStyle.italic),
                 ),
               ],
               if (d.steps.isNotEmpty)
@@ -1086,7 +1060,7 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
               Text(
                 '${d.source} · ${d.gradeBn}',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: p.muted),
+                style: TextStyle(fontSize: 14, color: p.muted),
               ),
             ],
           ),
@@ -1130,18 +1104,18 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
                                 value: d.total == 0 ? 0.0 : _count / d.total,
                                 strokeWidth: 5,
                                 color: p.gold,
-                                backgroundColor: Colors.white12,
+                                backgroundColor: Brand.onNight.withValues(alpha: 0.12),
                               ),
                             ),
                             Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (complete)
-                                  const Icon(Icons.check_rounded, color: Colors.white, size: 30),
+                                  const Icon(Icons.check_rounded, color: Brand.onNight, size: 30),
                                 Text(
                                   circleText,
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: Brand.onNight,
                                     fontSize: 30,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1150,8 +1124,8 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
                                   Text(
                                     'চাপ দিন',
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.75),
-                                      fontSize: 12,
+                                      color: Brand.onNight.withValues(alpha: 0.75),
+                                      fontSize: 14,
                                     ),
                                   ),
                               ],
@@ -1187,41 +1161,6 @@ class _DuaCounterScreenState extends State<DuaCounterScreen> {
 
 // ------------------------------------------------------------ favourites
 
-/// Duas saved with প্রিয় (also listed on the প্রিয় page).
-class DuaFavoritesScreen extends StatelessWidget {
-  const DuaFavoritesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    return Scaffold(
-      appBar: AppBar(title: const Text('প্রিয় দোয়া')),
-      body: ListenableBuilder(
-        listenable: AppState.instance.settings,
-        builder: (context, _) {
-          final duas = favoriteDuas();
-          if (duas.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(
-                  'দোয়ার পাতায় ‘প্রিয়’ বোতামে চাপ দিলে দোয়াটি এখানে জমা থাকবে।',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: p.muted, height: 1.6),
-                ),
-              ),
-            );
-          }
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-            children: [const DuaFavoriteList()],
-          );
-        },
-      ),
-    );
-  }
-}
-
 List<Dua> favoriteDuas() =>
     AppState.instance.settings.duaFavorites.map(Duas.byId).nonNulls.toList();
 
@@ -1234,7 +1173,7 @@ class DuaFavoriteList extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < duas.length; i++)
-          _DuaRow(
+          DuaRow(
             dua: duas[i],
             onTap: () => push(context, DuaPagerScreen(duas: duas, index: i)),
           ),

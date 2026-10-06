@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../app_state.dart';
@@ -8,6 +9,7 @@ import '../services/audio.dart';
 import '../theme.dart';
 import '../widgets/audio_button.dart';
 import '../widgets/item_view.dart';
+import '../widgets/night.dart';
 import '../widgets/ui.dart';
 
 String _mmss(Duration d) {
@@ -26,7 +28,8 @@ class StoriesScreen extends StatelessWidget {
     final stories = AppState.instance.stories;
     final settings = AppState.instance.settings;
     return Scaffold(
-      body: SafeArea(
+      body: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: SystemUiOverlayStyle.light,
         child: ListenableBuilder(
           listenable: settings,
           builder: (context, _) {
@@ -41,22 +44,27 @@ class StoriesScreen extends StatelessWidget {
                 len > Duration.zero &&
                 pos < len - const Duration(seconds: 5);
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+              padding: EdgeInsets.zero,
               children: [
-                const PageTitle(
-                  'সাহাবিদের জীবনী',
+                NightHeader(
+                  title: 'সাহাবিদের জীবনী',
                   subtitle:
                       'রাসূলুল্লাহ (সাঃ)-এর সাহাবিদের জীবনের ঘটনা, সহজ ভাষায়। '
                       'লেখাগুলো এখনো খসড়া; একজন আলেম যাচাই করে দেখবেন।',
+                  lip: true,
+                  child: showContinue
+                      ? _ContinueCard(story: last, position: pos, length: len)
+                      : null,
                 ),
-                if (showContinue) ...[
-                  _ContinueCard(story: last, position: pos, length: len),
-                  const SizedBox(height: 14),
-                ],
-                for (var i = 0; i < stories.length; i++) ...[
-                  _StoryCard(story: stories[i], number: i + 1),
-                  const SizedBox(height: 10),
-                ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+                  child: ListSection(
+                    children: [
+                      for (var i = 0; i < stories.length; i++)
+                        _StoryCard(story: stories[i], number: i + 1),
+                    ],
+                  ),
+                ),
               ],
             );
           },
@@ -76,9 +84,9 @@ class _ContinueCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final dim = Colors.white.withValues(alpha: 0.78);
+    final dim = p.onNightMuted;
     return Material(
-      color: p.greenCard,
+      color: p.nightLine,
       borderRadius: BorderRadius.circular(radiusM),
       child: InkWell(
         borderRadius: BorderRadius.circular(radiusM),
@@ -94,7 +102,7 @@ class _ContinueCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(color: p.gold, shape: BoxShape.circle),
-                child: const Icon(Icons.play_arrow_rounded, color: Brand.greenDark, size: 30),
+                child: Icon(Icons.play_arrow_rounded, color: p.night, size: 30),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -103,15 +111,11 @@ class _ContinueCard extends StatelessWidget {
                   children: [
                     Text(
                       'শুনছিলেন',
-                      style: TextStyle(color: p.gold, fontSize: 12.5, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: p.gold, fontSize: 14, fontWeight: FontWeight.w600),
                     ),
                     Text(
                       story.companion,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: TextStyle(color: p.onNight, fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 6),
                     ClipRRect(
@@ -120,13 +124,13 @@ class _ContinueCard extends StatelessWidget {
                         value: position.inMilliseconds / length.inMilliseconds,
                         minHeight: 4,
                         color: p.gold,
-                        backgroundColor: Colors.white24,
+                        backgroundColor: p.nightLine,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '${_mmss(position)} / ${_mmss(length)}',
-                      style: TextStyle(color: dim, fontSize: 12),
+                      style: TextStyle(color: dim, fontSize: 14),
                     ),
                   ],
                 ),
@@ -148,70 +152,23 @@ class _StoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final tint = story.hasAudio ? p.mint : p.sand;
-    return AppCard(
-      onTap: () => push(context, StoryScreen(story: story)),
-      padding: const EdgeInsets.all(14),
-      child: Row(
+    return ListRow(
+      leading: StarBadge(toBanglaDigits(number), size: 44),
+      title: story.companion,
+      subtitle: '${story.title}, ${story.hasAudio ? 'অডিও আছে' : 'শীঘ্রই অডিও'}',
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: p.greenCard, borderRadius: BorderRadius.circular(14)),
-            child: Text(
-              toBanglaDigits(number),
-              style: TextStyle(
-                fontFamily: titleFont,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-                color: p.gold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  story.companion,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
-                ),
-                Text(story.title, style: TextStyle(color: p.muted, fontSize: 13.5)),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: tint.background,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        story.hasAudio ? Icons.headphones_outlined : Icons.schedule_outlined,
-                        size: 14,
-                        color: tint.foreground,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        story.hasAudio ? 'অডিও আছে' : 'শীঘ্রই অডিও',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: tint.foreground,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          Icon(
+            story.hasAudio ? Icons.headphones_outlined : Icons.schedule_outlined,
+            size: 20,
+            color: story.hasAudio ? p.primary : p.muted,
+            semanticLabel: story.hasAudio ? 'অডিও আছে' : 'শীঘ্রই অডিও',
           ),
           Icon(Icons.chevron_right_rounded, color: p.muted),
         ],
       ),
+      onTap: () => push(context, StoryScreen(story: story)),
     );
   }
 }
@@ -272,7 +229,7 @@ class _StoryScreenState extends State<StoryScreen> {
                     final max = dur.inMilliseconds.toDouble();
                     return Row(
                       children: [
-                        Text(_mmss(pos), style: TextStyle(fontSize: 12, color: p.muted)),
+                        Text(_mmss(pos), style: TextStyle(fontSize: 14, color: p.muted)),
                         Expanded(
                           child: Slider(
                             value: max <= 0 ? 0 : pos.inMilliseconds.clamp(0, max).toDouble(),
@@ -282,7 +239,7 @@ class _StoryScreenState extends State<StoryScreen> {
                                 : (v) => audio.seek(Duration(milliseconds: v.round())),
                           ),
                         ),
-                        Text(_mmss(dur), style: TextStyle(fontSize: 12, color: p.muted)),
+                        Text(_mmss(dur), style: TextStyle(fontSize: 14, color: p.muted)),
                       ],
                     );
                   },
@@ -294,7 +251,7 @@ class _StoryScreenState extends State<StoryScreen> {
             s.hasAudio
                 ? 'কণ্ঠ: ElevenLabs · যেখানে থেমেছিলেন সেখান থেকে চলবে'
                 : 'এই জীবনীটি এখন ফোনের বাংলা কণ্ঠে শোনা যাবে।',
-            style: TextStyle(color: p.muted, fontSize: 12),
+            style: TextStyle(color: p.muted, fontSize: 14),
           ),
           const SizedBox(height: 18),
           BanglaText(s.body, size: 17),
@@ -337,7 +294,7 @@ class _StoryScreenState extends State<StoryScreen> {
               ),
               child: Text(
                 'খসড়া — একজন আলেমের যাচাই প্রয়োজন (draft - needs scholar review)',
-                style: TextStyle(fontSize: 12.5, color: p.rose.foreground),
+                style: TextStyle(fontSize: 14, color: p.rose.foreground),
               ),
             ),
           ],

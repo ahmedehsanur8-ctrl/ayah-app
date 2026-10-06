@@ -149,7 +149,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                         ),
                         Text(
                           '${toBanglaDigits(_index + 1)} / ${toBanglaDigits(n)}',
-                          style: TextStyle(fontSize: 12.5, color: p.muted),
+                          style: TextStyle(fontSize: 14, color: p.muted),
                         ),
                       ],
                     ),
@@ -241,9 +241,13 @@ class _ReaderPage extends StatelessWidget {
         ),
         if (item.gradeCheck) ...[const SizedBox(height: 10), const GradeCheckBadge()],
         if (item.placeholder)
-          const Padding(
-            padding: EdgeInsets.only(top: 10),
-            child: BanglaText('কিছু লেখা ডাউনলোড করা যায়নি।', size: 13, color: Colors.red),
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: BanglaText(
+              'কিছু লেখা ডাউনলোড করা যায়নি।',
+              size: 14,
+              color: context.palette.heart,
+            ),
           ),
         const SizedBox(height: 18),
         Wrap(
@@ -265,7 +269,7 @@ class _ReaderPage extends StatelessWidget {
                   icon: Icon(
                     fav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                     size: 20,
-                    color: fav ? const Color(0xFFD6455F) : null,
+                    color: fav ? p.heart : null,
                   ),
                   label: const Text('প্রিয়'),
                 );
@@ -303,7 +307,7 @@ class GradeCheckBadge extends StatelessWidget {
             Flexible(
               child: Text(
                 'গ্রেড: আলেমের যাচাই প্রয়োজন (grade needs scholar check)',
-                style: TextStyle(fontSize: 12.5, color: t.foreground, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 14, color: t.foreground, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -332,7 +336,7 @@ Future<void> showNoteSheet(BuildContext context, ContentItem item) {
             style: titleStyle(p, size: 18),
           ),
           const SizedBox(height: 4),
-          Text(item.title, style: TextStyle(color: p.muted, fontSize: 13)),
+          Text(item.title, style: TextStyle(color: p.muted, fontSize: 14)),
           const SizedBox(height: 14),
           BanglaText(item.note.trim(), size: 16),
         ],
@@ -430,8 +434,8 @@ class _Player extends StatelessWidget {
     final speaking = status == AudioStatus.speaking;
     final who = item.isAyah ? Reciter.byId(settings.reciterId).name : 'ফোনের বাংলা কণ্ঠ';
     final then = item.isAyah && settings.readBanglaAfterArabic ? 'তারপর বাংলা অর্থ' : null;
-    const onGreen = Colors.white;
-    final dim = Colors.white.withValues(alpha: 0.72);
+    const onGreen = Brand.onNight;
+    final dim = Brand.onNight.withValues(alpha: 0.72);
 
     return Container(
       decoration: BoxDecoration(
@@ -471,7 +475,7 @@ class _Player extends StatelessWidget {
                             fontSize: 14.5,
                           ),
                         ),
-                        if (then != null) Text(then, style: TextStyle(color: dim, fontSize: 12)),
+                        if (then != null) Text(then, style: TextStyle(color: dim, fontSize: 14)),
                       ],
                     ),
                   ),
@@ -483,7 +487,7 @@ class _Player extends StatelessWidget {
                         autoNext ? Icons.playlist_play_rounded : Icons.playlist_remove_rounded,
                         size: 20,
                       ),
-                      label: Text(autoNext ? 'পরপর' : 'একটি', style: const TextStyle(fontSize: 13)),
+                      label: Text(autoNext ? 'পরপর' : 'একটি', style: const TextStyle(fontSize: 14)),
                     ),
                 ],
               ),
@@ -496,10 +500,10 @@ class _Player extends StatelessWidget {
                       LinearProgressIndicator(
                         minHeight: 3,
                         color: p.gold,
-                        backgroundColor: Colors.white24,
+                        backgroundColor: Brand.onNight.withValues(alpha: 0.24),
                       ),
                       const SizedBox(height: 6),
-                      Text('বাংলা অর্থ পড়া হচ্ছে…', style: TextStyle(color: dim, fontSize: 12)),
+                      Text('বাংলা অর্থ পড়া হচ্ছে…', style: TextStyle(color: dim, fontSize: 14)),
                     ],
                   ),
                 )
@@ -519,7 +523,7 @@ class _Player extends StatelessWidget {
                           data: SliderTheme.of(context).copyWith(
                             trackHeight: 3,
                             activeTrackColor: p.gold,
-                            inactiveTrackColor: Colors.white24,
+                            inactiveTrackColor: Brand.onNight.withValues(alpha: 0.24),
                             thumbColor: p.gold,
                             overlayShape: SliderComponentShape.noOverlay,
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
@@ -535,9 +539,9 @@ class _Player extends StatelessWidget {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Text('${_mmss(pos)}$verse', style: TextStyle(color: dim, fontSize: 12)),
+                            Text('${_mmss(pos)}$verse', style: TextStyle(color: dim, fontSize: 14)),
                             const Spacer(),
-                            Text(_mmss(dur), style: TextStyle(color: dim, fontSize: 12)),
+                            Text(_mmss(dur), style: TextStyle(color: dim, fontSize: 14)),
                           ],
                         ),
                       ],
@@ -562,7 +566,7 @@ class _Player extends StatelessWidget {
                     icon: Icon(
                       Icons.skip_previous_rounded,
                       size: 30,
-                      color: hasPrev ? onGreen : Colors.white30,
+                      color: hasPrev ? onGreen : Brand.onNight.withValues(alpha: 0.3),
                     ),
                   ),
                   SizedBox.square(
@@ -596,7 +600,7 @@ class _Player extends StatelessWidget {
                     icon: Icon(
                       Icons.skip_next_rounded,
                       size: 30,
-                      color: hasNext ? onGreen : Colors.white30,
+                      color: hasNext ? onGreen : Brand.onNight.withValues(alpha: 0.3),
                     ),
                   ),
                   ListenableBuilder(

@@ -94,6 +94,24 @@ class CreditsScreen extends StatelessWidget {
             details: 'Encyclopedia of Translated Prophetic Hadiths. https://hadeethenc.com',
           ),
           const _Source(
+            icon: Icons.account_tree_outlined,
+            name: 'Quranic Arabic Corpus',
+            what: 'কুরআন বুঝি: প্রতিটি শব্দের মূল অক্ষর, ধরন ও গঠন',
+            details:
+                'Quranic Arabic Corpus, morphology version 0.4 — (c) 2011 Kais Dukes, '
+                'GNU General Public License. http://corpus.quran.com\n'
+                'মূল ফাইল অপরিবর্তিত রেখে তা থেকে শব্দের তালিকা বানানো হয়েছে। '
+                'পূর্ণ লাইসেন্স: কুরআন বুঝি → উৎস ও কৃতজ্ঞতা।',
+          ),
+          const _Source(
+            icon: Icons.replay_rounded,
+            name: 'FSRS (package:fsrs)',
+            what: 'কুরআন বুঝি: কোন শব্দ কবে আবার রিভিউ করবেন, তার হিসাব',
+            details:
+                'MIT License — Copyright (c) 2022 Open Spaced Repetition. '
+                'https://github.com/open-spaced-repetition/dart-fsrs',
+          ),
+          const _Source(
             icon: Icons.headphones_rounded,
             name: 'EveryAyah.com',
             what: 'আরবি তিলাওয়াতের অডিও (আয়াত অনুযায়ী MP3; কুরআন অংশে ডাউনলোড করে রাখা যায়)',
@@ -117,7 +135,7 @@ class CreditsScreen extends StatelessWidget {
                 : 'আজানের অডিও এখনো যোগ করা হয়নি; শুধু নোটিফিকেশন আসে',
             details: [
               if (Prayers.azanBundled) _licenseText('সব ওয়াক্ত', Prayers.azanLicense),
-              if (Prayers.fajrBundled)
+              if (Prayers.azanLicense['fajr'] is Map)
                 _licenseText('ফজর', (Prayers.azanLicense['fajr'] as Map).cast<String, dynamic>()),
             ].join('\n\n'),
           ),

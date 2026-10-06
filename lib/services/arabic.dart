@@ -204,6 +204,16 @@ class ArabicProgress extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// "সঠিক দিক অনুসরণ করুন" in লিখে দেখুন: also check the start point and
+  /// the writing direction (off by default).
+  bool get traceStrict => _p?.getBool('ar.traceStrict') ?? false;
+
+  Future<void> setTraceStrict(bool v) async {
+    await load();
+    await _p!.setBool('ar.traceStrict', v);
+    notifyListeners();
+  }
+
   static int dayNumber(DateTime t) =>
       DateTime.utc(t.year, t.month, t.day).millisecondsSinceEpoch ~/ Duration.millisecondsPerDay;
 

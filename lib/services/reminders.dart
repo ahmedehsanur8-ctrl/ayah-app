@@ -8,6 +8,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../models/content.dart';
 import 'rotation.dart';
+import 'planner.dart';
 import 'settings.dart';
 
 /// What a reminder notification carries, so the app knows what to open.
@@ -45,9 +46,9 @@ class Reminders {
 
   static final plugin = FlutterLocalNotificationsPlugin();
 
-  /// How many days ahead reminders are scheduled. They are re-planned every
-  /// time the app opens, so this only matters if the app is never opened.
-  static const daysAhead = 30;
+  /// How many days ahead reminders are scheduled. They are re-planned when the
+  /// app opens and, without opening it, in the background (see Planner).
+  static const daysAhead = Planner.planDays;
 
   static late tz.Location dhaka;
 
@@ -64,9 +65,7 @@ class Reminders {
     void Function()? onAzan,
     void Function(bool evening)? onAdhkar,
   }) async {
-    tzdata.initializeTimeZones();
-    dhaka = tz.getLocation('Asia/Dhaka');
-    tz.setLocalLocation(dhaka);
+    await initTimeZone();
     await plugin.initialize(
       settings: const InitializationSettings(
         android: AndroidInitializationSettings('ic_notification'),
@@ -85,6 +84,27 @@ class Reminders {
       },
       onDidReceiveBackgroundNotificationResponse: notificationActionInBackground,
     );
+  }
+
+  /// Time zone data for the reminder times (Bangladesh time).
+  static Future<void> initTimeZone() async {
+    tzdata.initializeTimeZones();
+    dhaka = tz.getLocation('Asia/Dhaka');
+    tz.setLocalLocation(dhaka);
+  }
+
+  /// The notification plugin without tap handlers (background planning only
+  /// schedules; taps are handled by the app).
+  static Future<void> initPlugin() async {
+    try {
+      await plugin.initialize(
+        settings: const InitializationSettings(
+          android: AndroidInitializationSettings('ic_notification'),
+        ),
+      );
+    } catch (e) {
+      debugPrint('notifications init: $e');
+    }
   }
 
   /// The azan notification opened the app.
@@ -135,18 +155,18 @@ class Reminders {
   };
 
   /// The reminders of the next [daysAhead] days, as the Android alarm needs them.
-  static List<Map<String, Object>> events(AppSettings settings, ContentData data) {
+  static List<Map<String, Object>> events(AppSettings settings, ContentData data, {DateTime? now}) {
     if (!settings.remindersOn) return const [];
     final rotation = Rotation(data);
-    final now = nowDhaka();
+    final from = now == null ? nowDhaka() : tz.TZDateTime.from(now, dhaka);
     final out = <Map<String, Object>>[];
     for (var i = 0; i <= daysAhead; i++) {
-      final day = DateTime(now.year, now.month, now.day + i);
+      final day = DateTime(from.year, from.month, from.day + i);
       final dayNo = Rotation.dayNumber(day);
       void add(TimeOfDay t, String slot, ContentItem? item) {
         if (item == null) return;
         final when = tz.TZDateTime(dhaka, day.year, day.month, day.day, t.hour, t.minute);
-        if (!when.isAfter(now)) return;
+        if (!when.isAfter(from)) return;
         out.add(_event(when, slot, day, item));
       }
 

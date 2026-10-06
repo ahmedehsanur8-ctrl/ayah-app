@@ -5,8 +5,7 @@ import 'package:flutter/material.dart';
 import '../app_state.dart';
 import '../models/content.dart';
 import '../services/permissions.dart';
-import '../services/prayer.dart';
-import '../services/reminders.dart';
+import '../services/planner.dart';
 import '../theme.dart';
 import '../widgets/pattern.dart';
 import '../widgets/permission_widgets.dart';
@@ -102,8 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with WidgetsBinding
   Future<void> _finish() async {
     final s = AppState.instance;
     await s.settings.setSetupDone();
-    await Reminders.reschedule(s.settings, s.data);
-    await Prayers.schedule(s.settings);
+    await Planner.planAll(s.settings, s.data);
     if (!mounted) return;
     Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
   }
@@ -252,7 +250,7 @@ class _WelcomePage extends StatelessWidget {
                     fontFamily: headingFont,
                     fontWeight: FontWeight.w700,
                     fontSize: 24,
-                    color: Colors.white,
+                    color: Brand.onNight,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -260,7 +258,7 @@ class _WelcomePage extends StatelessWidget {
                   'প্রতিদিন কুরআনের একটি আয়াত ও একটি হাদিস, ঠিক সময়ে অ্যালার্মের মতো মনে করিয়ে দেবে।',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: Brand.onNight.withValues(alpha: 0.85),
                     fontSize: 15.5,
                     height: 1.6,
                   ),
@@ -431,7 +429,7 @@ class _SummaryPage extends StatelessWidget {
                 ListTile(
                   leading: Icon(items[i].icon, color: p.primary),
                   title: Text(items[i].title),
-                  trailing: StatusChip(status.isGranted(items[i].key)),
+                  trailing: StatusChip(status.isGranted(items[i].key), optional: items[i].optional),
                   onTap: status.isGranted(items[i].key) ? null : () => onOpen(i),
                 ),
               ],
@@ -454,9 +452,9 @@ class _SummaryPage extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'পরে যেকোনো সময় আরও → "অনুমতি ও সেটআপ" থেকে এগুলো দেখতে পারবেন।',
+          'পরে যেকোনো সময় সেটিংস → "অনুমতি ও সেটআপ" থেকে এগুলো দেখতে পারবেন।',
           textAlign: TextAlign.center,
-          style: TextStyle(color: p.muted, fontSize: 13),
+          style: TextStyle(color: p.muted, fontSize: 14),
         ),
       ],
     );
