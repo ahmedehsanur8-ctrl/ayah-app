@@ -1172,11 +1172,37 @@ Future<List<bool>> letterMask(String ch, double box, {int grid = 48}) async {
   return [for (var i = 0; i < grid * grid; i++) data.getUint8(i * 4 + 3) > 60];
 }
 
-/// A letter's shape on the trace board: its main body (which must be traced)
-/// and its small marks such as dots (optional), plus the usual writing
+/// Where a letter's dots (nukta) go.
+enum DotPlace { above, inside, below }
+
+/// The dots each letter needs (isolated forms). The dots decide which letter
+/// it is, so they must be drawn: ح / ج / خ, ب / ت / ث and so on.
+const nuktaOf = <String, ({int count, DotPlace place})>{
+  'ب': (count: 1, place: DotPlace.below),
+  'ت': (count: 2, place: DotPlace.above),
+  'ث': (count: 3, place: DotPlace.above),
+  'ج': (count: 1, place: DotPlace.inside),
+  'خ': (count: 1, place: DotPlace.above),
+  'ذ': (count: 1, place: DotPlace.above),
+  'ز': (count: 1, place: DotPlace.above),
+  'ش': (count: 3, place: DotPlace.above),
+  'ض': (count: 1, place: DotPlace.above),
+  'ظ': (count: 1, place: DotPlace.above),
+  'غ': (count: 1, place: DotPlace.above),
+  'ف': (count: 1, place: DotPlace.above),
+  'ق': (count: 2, place: DotPlace.above),
+  'ن': (count: 1, place: DotPlace.above),
+  'ي': (count: 2, place: DotPlace.below),
+  'ة': (count: 2, place: DotPlace.above),
+};
+
+/// A letter's shape on the trace board: its main body (which must be traced),
+/// its dots (which must be drawn, see [nuktaOf]) and the usual writing
 /// direction for the hint.
 class TraceGuide {
-  TraceGuide(this.mask, this.box, {this.grid = 48}) {
+  TraceGuide(this.mask, this.box, {this.grid = 48, String? letter})
+    : dotCount = nuktaOf[letter]?.count ?? 0,
+      dotPlace = nuktaOf[letter]?.place {
     // Connected parts of the shape (4-neighbour, so a dot close to the body
     // stays separate).
     final seen = <int>{};
@@ -1202,38 +1228,79 @@ class TraceGuide {
     parts.sort((a, b) => b.length.compareTo(a.length));
     final biggest = parts.isEmpty ? 0 : parts.first.length;
     for (final part in parts) {
-      // Parts much smaller than the biggest one are dots and small marks.
-      (part.length * 4 >= biggest ? body : marks).addAll(part);
+      if (part == parts.first) {
+        body.addAll(part);
+      } else if (part.length <= 3) {
+        // Specks from the edge smoothing: neither required nor a dot.
+        specks.addAll(part);
+      } else if (dotCount > 0) {
+        // A dotted letter's body is one stroke; everything else is its dots
+        // (three dots can be as big as a quarter of the body).
+        dotCells.addAll(part);
+      } else {
+        (part.length * 4 >= biggest ? body : marks).addAll(part);
+      }
     }
-    // Cells close enough to the letter that a stroke there is "on" it.
-    final r = (far / cell).ceil();
-    for (final c in [...body, ...marks]) {
-      final x = c % grid, y = c ~/ grid;
-      for (var dy = -r; dy <= r; dy++) {
-        for (var dx = -r; dx <= r; dx++) {
-          final nx = x + dx, ny = y + dy;
-          if (nx < 0 || ny < 0 || nx >= grid || ny >= grid) continue;
-          if ((dx * dx + dy * dy) * cell * cell <= far * far) near.add(ny * grid + nx);
+    dots = _dotTargets();
+    // Cells close enough to the letter that a stroke there is "on" it, and
+    // cells on the body (within the tolerance).
+    void grow(Iterable<int> cells, double radius, Set<int> into) {
+      final r = (radius / cell).ceil();
+      for (final c in cells) {
+        final x = c % grid, y = c ~/ grid;
+        for (var dy = -r; dy <= r; dy++) {
+          for (var dx = -r; dx <= r; dx++) {
+            final nx = x + dx, ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= grid || ny >= grid) continue;
+            if ((dx * dx + dy * dy) * cell * cell <= radius * radius) into.add(ny * grid + nx);
+          }
         }
       }
     }
+
+    grow([...body, ...marks, ...dotCells, ...specks], far, near);
+    grow(body, tolerance, onBody);
+    grow([...body, ...dotCells], box * 0.25, dotZone);
   }
 
   final List<bool> mask;
   final double box;
   final int grid;
 
+  /// How many dots the letter needs, and where.
+  final int dotCount;
+  final DotPlace? dotPlace;
+
   /// The cells that must be traced.
   final Set<int> body = {};
 
-  /// Dots and small marks: tracing them is welcome but never required.
+  /// The letter's dots as drawn (for finding where each dot goes).
+  final Set<int> dotCells = {};
+
+  /// Small marks of letters without dots (like the one inside ك): optional.
   final Set<int> marks = {};
+
+  /// Tiny bits from the edge smoothing.
+  final Set<int> specks = {};
+
+  /// Where each dot goes.
+  late final List<Offset> dots;
 
   /// Cells within [far] of the letter.
   final Set<int> near = {};
 
+  /// Cells within [tolerance] of the body.
+  final Set<int> onBody = {};
+
+  /// Where a dot drawn belongs to this letter (a dot here in the wrong place
+  /// is wrong, not ignored).
+  final Set<int> dotZone = {};
+
   /// Share of the body to trace.
   static const goal = 0.7;
+
+  /// Share of the progress for the dots (the body is the rest).
+  static const dotShare = 0.2;
 
   double get cell => box / grid;
 
@@ -1241,10 +1308,73 @@ class TraceGuide {
   /// it grows with the board, so it suits every screen).
   double get tolerance => box * 0.075;
 
+  /// How close to its place a dot counts.
+  double get dotTolerance => box * 0.09;
+
+  /// A tap or a stroke no bigger than this is a dot.
+  double get dotSize => box * 0.12;
+
   /// A stroke mostly farther than this from the letter is ignored.
   double get far => box * 0.16;
 
   Offset center(int c) => Offset((c % grid + 0.5) * cell, (c ~/ grid + 0.5) * cell);
+
+  Offset _mean(Iterable<Offset> pts) {
+    var sum = Offset.zero;
+    var n = 0;
+    for (final o in pts) {
+      sum += o;
+      n++;
+    }
+    return n == 0 ? Offset(box / 2, box / 2) : sum / n.toDouble();
+  }
+
+  /// The dots' centres: the drawn dots split into [dotCount] groups (two or
+  /// three dots can touch at this size).
+  List<Offset> _dotTargets() {
+    if (dotCount == 0) return const [];
+    final pts = [for (final c in dotCells) center(c)];
+    if (pts.isEmpty) {
+      // Not drawn apart from the body: put them by the rule.
+      final r = _bodyRect;
+      final at = switch (dotPlace) {
+        DotPlace.below => Offset(r.center.dx, r.bottom + box * 0.08),
+        DotPlace.inside => r.center,
+        _ => Offset(r.center.dx, r.top - box * 0.08),
+      };
+      return [
+        for (var i = 0; i < dotCount; i++) at + Offset((i - (dotCount - 1) / 2) * box * 0.07, 0),
+      ];
+    }
+    // k-means, started from points far apart.
+    final centers = <Offset>[pts.first];
+    while (centers.length < dotCount) {
+      Offset best = pts.first;
+      var bestD = -1.0;
+      for (final o in pts) {
+        final d = centers.map((c) => (c - o).distance).reduce(math.min);
+        if (d > bestD) {
+          bestD = d;
+          best = o;
+        }
+      }
+      centers.add(best);
+    }
+    for (var round = 0; round < 12; round++) {
+      final groups = List.generate(dotCount, (_) => <Offset>[]);
+      for (final o in pts) {
+        var k = 0;
+        for (var j = 1; j < dotCount; j++) {
+          if ((centers[j] - o).distance < (centers[k] - o).distance) k = j;
+        }
+        groups[k].add(o);
+      }
+      for (var j = 0; j < dotCount; j++) {
+        if (groups[j].isNotEmpty) centers[j] = _mean(groups[j]);
+      }
+    }
+    return centers;
+  }
 
   Rect get _bodyRect {
     if (body.isEmpty) return Rect.zero;
@@ -1254,6 +1384,9 @@ class TraceGuide {
     }
     return r;
   }
+
+  /// The middle of the body, for telling above from below.
+  Offset get bodyCenter => _mean(body.map(center));
 
   /// Usual direction: right to left for a wide letter, top to bottom for a
   /// tall one (like alif).
@@ -1285,14 +1418,14 @@ class TraceGuide {
     return [
       for (final k in ordered)
         Offset(
-          wide ? (k + 0.5) * cell : _mean(lines[k]!, (c) => center(c).dx),
-          wide ? _mean(lines[k]!, (c) => center(c).dy) : (k + 0.5) * cell,
+          wide ? (k + 0.5) * cell : _avg(lines[k]!, true),
+          wide ? _avg(lines[k]!, false) : (k + 0.5) * cell,
         ),
     ];
   }
 
-  static double _mean(List<int> cells, double Function(int) f) =>
-      cells.fold(0.0, (a, c) => a + f(c)) / cells.length;
+  double _avg(List<int> cells, bool x) =>
+      cells.fold(0.0, (a, c) => a + (x ? center(c).dx : center(c).dy)) / cells.length;
 }
 
 /// How a trace went.
@@ -1302,7 +1435,9 @@ class TraceScore {
     required this.counted,
     required this.ignored,
     required this.points,
-    required this.markTouched,
+    required this.dotsNeeded,
+    required this.dotsDone,
+    required this.wrongDots,
     required this.startOk,
     required this.directionOk,
   });
@@ -1316,22 +1451,36 @@ class TraceScore {
   /// Points of the strokes that count (the guide turns green around them).
   final List<Offset> points;
 
-  /// A dot or small mark was traced too (a small extra, never required).
-  final bool markTouched;
+  /// Dots the letter needs, dots drawn in their place, and dots drawn where
+  /// the letter has none (wrong place or too many).
+  final int dotsNeeded, dotsDone, wrongDots;
 
   /// For strict mode: began near the start dot, went the usual way.
   final bool startOk, directionOk;
 
   bool get covered => coverage >= TraceGuide.goal;
 
-  bool passed({bool strict = false}) => covered && (!strict || (startOk && directionOk));
+  bool get dotsOk => dotsDone == dotsNeeded && wrongDots == 0;
+
+  bool passed({bool strict = false}) => covered && dotsOk && (!strict || (startOk && directionOk));
+
+  /// 0–1 for the ring: the body is 80% and the dots 20% (shared among them);
+  /// it reaches 100% only when both are done.
+  double get progress {
+    final body = math.min(1.0, coverage / TraceGuide.goal);
+    final p = dotsNeeded == 0
+        ? body
+        : body * (1 - TraceGuide.dotShare) + TraceGuide.dotShare * dotsDone / dotsNeeded;
+    return dotsOk ? p : math.min(p, 0.99);
+  }
 }
 
-/// Scores strokes against a letter. Any starting point, any direction and
-/// any number of strokes count: only how much of the body is covered matters.
+/// Scores strokes against a letter. Any starting point, any direction, any
+/// order (body or dots first) and any number of strokes: the body must be
+/// covered and every dot drawn in its place. A tap or small stroke is a dot.
 /// Strokes mostly far from the letter are ignored; going a little outside is
-/// fine. In [TraceScore.startOk]/[TraceScore.directionOk] the first stroke is
-/// compared with the usual way, for strict mode.
+/// fine. [TraceScore.startOk]/[TraceScore.directionOk] compare the first
+/// body stroke with the usual way, for strict mode.
 TraceScore scoreTrace(TraceGuide g, List<List<Offset>> strokes) {
   final cell = g.cell, grid = g.grid;
   int cellAt(Offset o) {
@@ -1358,20 +1507,12 @@ TraceScore scoreTrace(TraceGuide g, List<List<Offset>> strokes) {
 
   final covered = <int>{};
   final points = <Offset>[];
-  var counted = 0, ignored = 0;
-  var markTouched = false;
+  var counted = 0, ignored = 0, wrongDots = 0;
+  final done = List.filled(g.dots.length, false);
   List<Offset>? first;
   final r = (g.tolerance / cell).ceil();
-  for (final s in strokes) {
-    if (s.isEmpty) continue;
-    final pts = sample(s);
-    final onLetter = pts.where((o) => g.near.contains(cellAt(o))).length;
-    if (onLetter * 2 < pts.length) {
-      ignored++;
-      continue;
-    }
-    counted++;
-    first ??= s;
+
+  void cover(List<Offset> pts) {
     points.addAll(pts);
     for (final o in pts) {
       final cx = (o.dx / cell).floor(), cy = (o.dy / cell).floor();
@@ -1380,12 +1521,59 @@ TraceScore scoreTrace(TraceGuide g, List<List<Offset>> strokes) {
           final x = cx + dx, y = cy + dy;
           if (x < 0 || y < 0 || x >= grid || y >= grid) continue;
           final c = y * grid + x;
-          if ((g.center(c) - o).distance > g.tolerance) continue;
-          if (g.body.contains(c)) covered.add(c);
-          if (g.marks.contains(c)) markTouched = true;
+          if (g.body.contains(c) && (g.center(c) - o).distance <= g.tolerance) covered.add(c);
         }
       }
     }
+  }
+
+  for (final s in strokes) {
+    if (s.isEmpty) continue;
+    final pts = sample(s);
+    final size = Rect.fromPoints(
+      Offset(s.map((o) => o.dx).reduce(math.min), s.map((o) => o.dy).reduce(math.min)),
+      Offset(s.map((o) => o.dx).reduce(math.max), s.map((o) => o.dy).reduce(math.max)),
+    );
+    if (size.longestSide <= g.dotSize) {
+      // A tap or a small stroke: a dot, or a bit of the body.
+      final at = size.center;
+      var k = -1;
+      for (var j = 0; j < g.dots.length; j++) {
+        if (done[j] || (g.dots[j] - at).distance > g.dotTolerance) continue;
+        if (k < 0 || (g.dots[j] - at).distance < (g.dots[k] - at).distance) k = j;
+      }
+      final nearDot = g.dots.any((d) => (d - at).distance <= g.dotTolerance);
+      if (k >= 0) {
+        done[k] = true;
+        counted++;
+        points.addAll(pts);
+      } else if (nearDot) {
+        // This dot is already drawn: one too many.
+        wrongDots++;
+      } else if (g.onBody.contains(cellAt(at))) {
+        counted++;
+        cover(pts);
+      } else if (g.marks.isNotEmpty &&
+          g.marks.any((c) => (g.center(c) - at).distance <= g.dotTolerance)) {
+        // The small mark of a letter without dots (like in ك): fine.
+        counted++;
+        points.addAll(pts);
+      } else if (g.dotZone.contains(cellAt(at))) {
+        // A dot where the letter has none.
+        wrongDots++;
+      } else {
+        ignored++;
+      }
+      continue;
+    }
+    final onLetter = pts.where((o) => g.near.contains(cellAt(o))).length;
+    if (onLetter * 2 < pts.length) {
+      ignored++;
+      continue;
+    }
+    counted++;
+    first ??= s;
+    cover(pts);
   }
   final coverage = g.body.isEmpty ? 1.0 : covered.length / g.body.length;
   var startOk = false, directionOk = false;
@@ -1403,10 +1591,27 @@ TraceScore scoreTrace(TraceGuide g, List<List<Offset>> strokes) {
     counted: counted,
     ignored: ignored,
     points: points,
-    markTouched: markTouched,
+    dotsNeeded: g.dotCount,
+    dotsDone: done.where((d) => d).length,
+    wrongDots: wrongDots,
     startOk: startOk,
     directionOk: directionOk,
   );
+}
+
+/// What to tell the user about the dots, or null when they are right.
+String? dotHint(TraceGuide g, TraceScore s) {
+  final n = toBanglaDigits(g.dotCount);
+  final where = switch (g.dotPlace) {
+    DotPlace.below => 'নিচে',
+    DotPlace.inside => 'পেটের ভেতরে',
+    _ => 'ওপরে',
+  };
+  if (g.dotCount == 0) return s.wrongDots > 0 ? 'এই অক্ষরে কোনো নুকতা নেই।' : null;
+  if (s.wrongDots > 0 && s.dotsDone < s.dotsNeeded) return 'নুকতা $where দিন।';
+  if (s.wrongDots > 0) return 'এখানে $nটি নুকতা লাগবে, বেশি হয়ে গেছে।';
+  if (s.dotsDone < s.dotsNeeded) return 'এখানে $nটি নুকতা লাগবে, $where।';
+  return null;
 }
 
 /// লিখে দেখুন: trace a letter with a finger over its faint shape.
@@ -1453,7 +1658,7 @@ class _TraceGameState extends State<TraceGame> with SingleTickerProviderStateMix
     final mask = await letterMask(_item.ar, box);
     if (!mounted || _guideKey != key) return;
     setState(() {
-      _guide = TraceGuide(mask, box);
+      _guide = TraceGuide(mask, box, letter: _item.ar);
       _rescore();
     });
   }
@@ -1486,8 +1691,14 @@ class _TraceGameState extends State<TraceGame> with SingleTickerProviderStateMix
     _pointer = null;
     setState(() {
       _rescore();
-      final s = _score;
-      if (s != null && s.passed(strict: _strict)) _pass();
+      final s = _score, g = _guide;
+      if (s == null || g == null) return;
+      if (s.passed(strict: _strict)) {
+        _pass();
+      } else if (s.wrongDots > 0) {
+        // A dot in the wrong place or one too many: say so at once.
+        _message = dotHint(g, s);
+      }
     });
   }
 
@@ -1515,11 +1726,20 @@ class _TraceGameState extends State<TraceGame> with SingleTickerProviderStateMix
         _result.wrong.add(_item.id);
       }
       _tries++;
+      final dots = _guide == null ? null : dotHint(_guide!, s);
       _message = !s.covered
           ? 'আরেকবার চেষ্টা করুন। হালকা অক্ষরের বাকি অংশটুকুও টেনে দিন, যেখান থেকে খুশি।'
-          : 'প্রায় হয়ে গেছে! "আবার লিখুন" চেপে সবুজ বিন্দু থেকে তীরের দিকে লিখে দেখুন।';
+          : dots ?? 'প্রায় হয়ে গেছে! "আবার লিখুন" চেপে সবুজ বিন্দু থেকে তীরের দিকে লিখে দেখুন।';
     });
   }
+
+  /// Removes the last stroke or dot (e.g. a dot in the wrong place).
+  void _undo() => setState(() {
+    if (_strokes.isNotEmpty) _strokes.removeLast();
+    _pointer = null;
+    _message = null;
+    _rescore();
+  });
 
   void _clear() => setState(() {
     _strokes.clear();
@@ -1549,12 +1769,14 @@ class _TraceGameState extends State<TraceGame> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     final p = context.palette;
     final item = _item;
-    final progress = math.min(1.0, (_score?.coverage ?? 0) / TraceGuide.goal);
+    final score = _score;
+    final progress = _passed ? 1.0 : (score?.progress ?? 0);
+    final dotCount = _guide?.dotCount ?? nuktaOf[item.ar]?.count ?? 0;
     return _GameFrame(
       type: 'trace',
       instruction:
           'হালকা অক্ষরের ওপর দিয়ে আঙুল টেনে লিখুন, যেখান থেকে খুশি শুরু করুন। '
-          'আঙুল তুলে আবার টানতে পারেন। সবুজ বিন্দু আর তীর দেখায় সাধারণত কোথা থেকে কোন দিকে লেখা হয়।',
+          'আঙুল তুলে আবার টানতে পারেন। নুকতা থাকলে তার জায়গায় ছুঁয়ে দিন, আগে বা পরে। সবুজ বিন্দু আর তীর দেখায় সাধারণত কোথা থেকে কোন দিকে লেখা হয়।',
       step: _i,
       total: widget.items.length,
       child: Column(
@@ -1622,25 +1844,45 @@ class _TraceGameState extends State<TraceGame> with SingleTickerProviderStateMix
             },
           ),
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 14,
+            runSpacing: 6,
             children: [
-              SizedBox(
-                width: 34,
-                height: 34,
-                child: CircularProgressIndicator(
-                  key: const ValueKey('trace-progress'),
-                  value: progress,
-                  strokeWidth: 4,
-                  color: p.mint.foreground,
-                  backgroundColor: p.border,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CustomPaint(
+                    key: const ValueKey('trace-progress'),
+                    size: const Size(34, 34),
+                    painter: TraceRingPainter(
+                      value: progress,
+                      color: p.mint.foreground,
+                      track: p.border,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${toBanglaDigits((progress * 100).floor())}%',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: p.text),
+                  ),
+                ],
+              ),
+              // What is done and what is missing.
+              _Check(
+                key: const ValueKey('trace-check-body'),
+                label: 'অক্ষর',
+                done: _passed || (score?.covered ?? false),
+              ),
+              if (dotCount > 0)
+                _Check(
+                  key: const ValueKey('trace-check-dots'),
+                  label:
+                      'নুকতা ${toBanglaDigits(_passed ? dotCount : score?.dotsDone ?? 0)}/'
+                      '${toBanglaDigits(dotCount)}',
+                  done: _passed || (score?.dotsOk ?? false),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                '${toBanglaDigits((progress * 100).round())}%',
-                style: TextStyle(fontWeight: FontWeight.w700, color: p.text),
-              ),
             ],
           ),
           if (_message != null) ...[
@@ -1671,6 +1913,11 @@ class _TraceGameState extends State<TraceGame> with SingleTickerProviderStateMix
                   onPressed: _guide == null ? null : () => _demo.forward(from: 0),
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: const Text('দেখান'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _strokes.isEmpty ? null : _undo,
+                  icon: const Icon(Icons.undo_rounded),
+                  label: const Text('শেষ দাগ মুছুন'),
                 ),
                 OutlinedButton.icon(
                   onPressed: _clear,
@@ -1805,4 +2052,62 @@ class _TracePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_TracePainter old) => true;
+}
+
+/// One line of the checklist under the board: "অক্ষর ✓", "নুকতা ১/১".
+class _Check extends StatelessWidget {
+  const _Check({super.key, required this.label, required this.done});
+
+  final String label;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+          size: 20,
+          color: done ? p.mint.foreground : p.muted,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(fontWeight: FontWeight.w600, color: done ? p.text : p.muted),
+        ),
+      ],
+    );
+  }
+}
+
+/// The progress ring: fills clockwise from the top with [value] (0–1).
+class TraceRingPainter extends CustomPainter {
+  TraceRingPainter({required this.value, required this.color, required this.track});
+
+  final double value;
+  final Color color, track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const width = 4.0;
+    final rect = (Offset.zero & size).deflate(width / 2);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, 0, 2 * math.pi, false, paint..color = track);
+    final v = value.clamp(0.0, 1.0);
+    if (v <= 0) return;
+    if (v >= 1) {
+      canvas.drawArc(rect, 0, 2 * math.pi, false, paint..color = color);
+    } else {
+      canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * v, false, paint..color = color);
+    }
+  }
+
+  @override
+  bool shouldRepaint(TraceRingPainter old) =>
+      old.value != value || old.color != color || old.track != track;
 }

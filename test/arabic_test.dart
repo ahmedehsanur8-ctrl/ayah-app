@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'learn_test_helpers.dart';
 
@@ -447,53 +448,147 @@ void main() {
       expect(scoreTrace(wideBar, [along(8, 40)]).passed(strict: true), isFalse);
     });
 
-    testWidgets('tracing: letters with dots pass without the dots (ب ت ث ج ح خ)', (t) async {
-      for (final (ch, dots) in const [
-        ('ب', true),
-        ('ت', true),
-        ('ث', true),
-        ('ج', true),
-        ('ح', false),
-        ('خ', true),
-      ]) {
-        final mask = (await t.runAsync(() => letterMask(ch, box)))!;
-        final g = TraceGuide(mask, box);
-        expect(g.body, isNotEmpty, reason: ch);
-        expect(g.marks.isNotEmpty, dots, reason: '$ch dots');
-        // A child tracing only the body, column by column the usual way.
-        final cols = <int, List<int>>{};
-        for (final c in g.body) {
-          cols.putIfAbsent(c % grid, () => []).add(c);
+    // Real letters, drawn with the app's font.
+    Future<TraceGuide> guideFor(WidgetTester t, String ch) async =>
+        TraceGuide((await t.runAsync(() => letterMask(ch, box)))!, box, letter: ch);
+    // A child tracing only the body, column by column the usual way.
+    List<Offset> bodyStroke(TraceGuide g) {
+      final cols = <int, List<int>>{};
+      for (final c in g.body) {
+        cols.putIfAbsent(c % grid, () => []).add(c);
+      }
+      final stroke = <Offset>[];
+      var down = true;
+      for (final x in cols.keys.toList()..sort((a, b) => b - a)) {
+        final ys = cols[x]!.map((c) => c ~/ grid).toList()..sort();
+        for (final y in down ? ys : ys.reversed) {
+          stroke.add(g.center(y * grid + x));
         }
-        final stroke = <Offset>[];
-        for (final x in cols.keys.toList()..sort((a, b) => b - a)) {
-          final ys = cols[x]!.map((c) => c ~/ grid).toList()..sort();
-          // Down one column, up the next, through every cell of the body.
-          final down = stroke.length.isEven;
-          for (final y in down ? ys : ys.reversed) {
-            stroke.add(g.center(y * grid + x));
+        down = !down;
+      }
+      return stroke;
+    }
+
+    List<Offset> tap(Offset o) => [o];
+
+    testWidgets('tracing: every dotted letter has its dots in the right place', (t) async {
+      for (final e in nuktaOf.entries.where((e) => e.key != 'ة')) {
+        final g = await guideFor(t, e.key);
+        expect(g.dotCells, isNotEmpty, reason: e.key);
+        expect(g.dots.length, e.value.count, reason: e.key);
+        for (final d in g.dots) {
+          switch (e.value.place) {
+            case DotPlace.above:
+              expect(d.dy, lessThan(g.bodyCenter.dy), reason: '${e.key} above');
+            case DotPlace.below:
+              expect(d.dy, greaterThan(g.bodyCenter.dy), reason: '${e.key} below');
+            case DotPlace.inside:
+              expect((d - g.bodyCenter).distance, lessThan(box * 0.15), reason: e.key);
           }
         }
-        final s = scoreTrace(g, [stroke]);
-        expect(s.passed(), isTrue, reason: '$ch: ${s.coverage}');
-        // Adding the dots as an extra stroke is fine too.
-        if (dots) {
-          final dotStroke = [for (final c in g.marks) g.center(c)];
-          final withDots = scoreTrace(g, [stroke, dotStroke]);
-          expect(withDots.passed(), isTrue, reason: ch);
-          expect(withDots.markTouched, isTrue, reason: ch);
-        }
-        // Dots alone are not the letter.
-        if (dots) {
-          expect(
-            scoreTrace(g, [
-              [for (final c in g.marks) g.center(c)],
-            ]).passed(),
-            isFalse,
-            reason: ch,
-          );
-        }
+        // Body alone is not enough; body and every dot pass.
+        final body = bodyStroke(g);
+        expect(scoreTrace(g, [body]).passed(), isFalse, reason: e.key);
+        expect(scoreTrace(g, [body, ...g.dots.map(tap)]).passed(), isTrue, reason: e.key);
       }
+    });
+
+    testWidgets('tracing: ج needs its dot', (t) async {
+      final g = await guideFor(t, 'ج');
+      final body = bodyStroke(g);
+      final without = scoreTrace(g, [body]);
+      expect(without.covered, isTrue);
+      expect(without.passed(), isFalse);
+      expect(without.progress, closeTo(0.8, 0.001));
+      expect(dotHint(g, without), 'এখানে ১টি নুকতা লাগবে, পেটের ভেতরে।');
+      final withDot = scoreTrace(g, [body, tap(g.dots.single)]);
+      expect(withDot.passed(), isTrue);
+      expect(withDot.progress, 1.0);
+      // A small stroke on the dot counts too.
+      final d = g.dots.single;
+      expect(
+        scoreTrace(g, [
+          body,
+          [d - const Offset(5, 3), d + const Offset(5, 3)],
+        ]).passed(),
+        isTrue,
+      );
+    });
+
+    testWidgets('tracing: ب with its dot above fails and says where it goes', (t) async {
+      final g = await guideFor(t, 'ب');
+      final d = g.dots.single;
+      final above = Offset(d.dx, 2 * g.bodyCenter.dy - d.dy - box * 0.05);
+      final s = scoreTrace(g, [bodyStroke(g), tap(above)]);
+      expect(s.dotsDone, 0);
+      expect(s.wrongDots, 1);
+      expect(s.passed(), isFalse);
+      expect(dotHint(g, s), 'নুকতা নিচে দিন।');
+      // Moved to the right place, it passes.
+      expect(scoreTrace(g, [bodyStroke(g), tap(d)]).passed(), isTrue);
+    });
+
+    testWidgets('tracing: ت with one dot fails, ث with three passes', (t) async {
+      final ta = await guideFor(t, 'ت');
+      final one = scoreTrace(ta, [bodyStroke(ta), tap(ta.dots.first)]);
+      expect(one.dotsDone, 1);
+      expect(one.passed(), isFalse);
+      expect(one.progress, closeTo(0.9, 0.001));
+      expect(dotHint(ta, one), 'এখানে ২টি নুকতা লাগবে, ওপরে।');
+      // Three dots on ت: one too many.
+      final three = scoreTrace(ta, [bodyStroke(ta), ...ta.dots.map(tap), tap(ta.dots.first)]);
+      expect(three.passed(), isFalse);
+      expect(dotHint(ta, three), 'এখানে ২টি নুকতা লাগবে, বেশি হয়ে গেছে।');
+      final tha = await guideFor(t, 'ث');
+      expect(tha.dots.length, 3);
+      expect(scoreTrace(tha, [bodyStroke(tha), ...tha.dots.map(tap)]).passed(), isTrue);
+      expect(scoreTrace(tha, [bodyStroke(tha), ...tha.dots.take(2).map(tap)]).passed(), isFalse);
+    });
+
+    testWidgets('tracing: dots first, then the body, also passes', (t) async {
+      final g = await guideFor(t, 'خ');
+      final s = scoreTrace(g, [tap(g.dots.single), bodyStroke(g)]);
+      expect(s.passed(), isTrue);
+      // The body drawn in reverse after the dot still passes.
+      expect(scoreTrace(g, [tap(g.dots.single), bodyStroke(g).reversed.toList()]).passed(), isTrue);
+    });
+
+    testWidgets('tracing: letters without dots work as before', (t) async {
+      for (final ch in 'احدرسصطعلموه'.split('')) {
+        final g = await guideFor(t, ch);
+        expect(g.dotCount, 0, reason: ch);
+        final s = scoreTrace(g, [bodyStroke(g)]);
+        expect(s.passed(), isTrue, reason: '$ch ${s.coverage}');
+        expect(s.progress, 1.0, reason: ch);
+      }
+      // A dot on ح would make it ج or خ.
+      final g = await guideFor(t, 'ح');
+      // Where خ has its dot.
+      final top = (await guideFor(t, 'خ')).dots.single;
+      final s = scoreTrace(g, [bodyStroke(g), tap(top)]);
+      expect(s.passed(), isFalse);
+      expect(dotHint(g, s), 'এই অক্ষরে কোনো নুকতা নেই।');
+    });
+
+    testWidgets('tracing: the progress ring is full at 100%', (t) async {
+      Future<Color> pixelAt(double value, Offset at) async {
+        final rec = ui.PictureRecorder();
+        TraceRingPainter(
+          value: value,
+          color: const Color(0xFF00AA00),
+          track: const Color(0xFFDDDDDD),
+        ).paint(Canvas(rec), const Size(34, 34));
+        final img = await t.runAsync(() => rec.endRecording().toImage(34, 34));
+        final data = await t.runAsync(() => img!.toByteData());
+        final i = (at.dy.toInt() * 34 + at.dx.toInt()) * 4;
+        return Color.fromARGB(255, data!.getUint8(i), data.getUint8(i + 1), data.getUint8(i + 2));
+      }
+
+      // The left side of the ring (the last quarter to fill).
+      const left = Offset(2, 17);
+      expect(await pixelAt(1.0, left), const Color(0xFF00AA00));
+      expect(await pixelAt(0.5, left), const Color(0xFFDDDDDD));
+      expect(await pixelAt(0.8, left), const Color(0xFF00AA00));
     });
 
     testWidgets('লিখে দেখুন shows the board and the letter name', (t) async {
@@ -504,6 +599,9 @@ void main() {
       expect(find.text('দেখান'), findsOneWidget);
       expect(find.text('আবার লিখুন'), findsOneWidget);
       expect(find.byKey(const ValueKey('trace-progress')), findsOneWidget);
+      // The checklist: the letter, and ب's one dot.
+      expect(find.text('অক্ষর'), findsOneWidget);
+      expect(find.text('নুকতা ০/১'), findsOneWidget);
       await t.tap(find.text('হয়ে গেছে'));
       await t.pump();
       expect(find.text('আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানুন।'), findsOneWidget);
