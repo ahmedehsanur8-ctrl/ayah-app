@@ -1,0 +1,145 @@
+{
+  "id": "L3-24",
+  "level": 3,
+  "ord": 24,
+  "title_bn": "আদেশ",
+  "objective_bn": "আদেশ রূপ চিনি",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 21,
+  "anchor_ayah_to": 21,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 21
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          167,
+          187,
+          164,
+          163,
+          93
+        ],
+        "word_refs": [
+          [
+            2,
+            21,
+            11
+          ],
+          [
+            2,
+            23,
+            13
+          ],
+          [
+            2,
+            21,
+            1
+          ],
+          [
+            2,
+            21,
+            1
+          ],
+          [
+            2,
+            21,
+            3
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "আদেশ রূপ ‘করো’ বোঝায়: উ‘বুদূ = তোমরা ইবাদত করো। ডাকার শব্দ ‘ইয়া আইয়ুহা’ = হে …! ইয়া আইয়ুহান নাস = হে মানুষ!",
+        "example": {
+          "surah": 2,
+          "ayah": 21,
+          "word_index": 3
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 167,
+            "distractor_ids": [
+              4,
+              9,
+              14
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 187,
+            "distractor_ids": [
+              65,
+              409,
+              199
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 164,
+            "distractor_ids": [
+              685,
+              47,
+              24
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 163,
+            "distractor_ids": [
+              408,
+              266,
+              42
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 93,
+            "distractor_ids": [
+              16,
+              21,
+              28
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 2,
+            "ayah": 21,
+            "word_index": 3
+          },
+          {
+            "kind": "split",
+            "surah": 2,
+            "ayah": 21,
+            "word_index": 1
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          167,
+          187,
+          164,
+          163,
+          93
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 21
+      }
+    ]
+  }
+}

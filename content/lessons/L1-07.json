@@ -1,0 +1,130 @@
+{
+  "id": "L1-07",
+  "level": 1,
+  "ord": 7,
+  "title_bn": "পুরো ফাতিহা বুঝি",
+  "objective_bn": "অনুবাদ ছাড়া সূরা ফাতিহা বুঝি",
+  "minutes": 10,
+  "anchor_surah": 1,
+  "anchor_ayah_from": 1,
+  "anchor_ayah_to": 7,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 1,
+        "ayah": 1,
+        "ayah_to": 7
+      },
+      {
+        "type": "explain",
+        "text_bn": "এখন পুরো সূরা ফাতিহার প্রায় সব শব্দ আপনি চেনেন। অনুবাদ না দেখে প্রতিটি আয়াত পড়ুন; যে শব্দ মনে পড়ছে না, শুধু সেটিতে চাপ দিন।",
+        "example": {
+          "surah": 1,
+          "ayah": 2,
+          "word_index": 3
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 5,
+            "distractor_ids": [
+              10,
+              15,
+              20
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 16,
+            "distractor_ids": [
+              6,
+              10,
+              15
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 3,
+            "distractor_ids": [
+              23,
+              30,
+              5
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 2,
+            "distractor_ids": [
+              16,
+              21,
+              28
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 8,
+            "distractor_ids": [
+              3,
+              9,
+              14
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 19,
+            "distractor_ids": [
+              29,
+              4,
+              9
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 25,
+            "distractor_ids": [
+              14,
+              19,
+              27
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 22,
+            "distractor_ids": [
+              20,
+              28,
+              3
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          5,
+          16,
+          3,
+          2,
+          8,
+          19,
+          25,
+          22,
+          29,
+          9
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 1,
+        "ayah": 1,
+        "ayah_to": 7
+      }
+    ]
+  }
+}

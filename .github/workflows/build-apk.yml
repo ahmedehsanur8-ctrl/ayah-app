@@ -157,7 +157,7 @@ jobs:
           mkdir -p dist-test
           cp "$APK" "dist-test/T1-full-$V.apk"
           # T2: remove the azan sound (its file name in the APK is shortened by the build).
-          AZAN="$("${BT}aapt2" dump resources "$APK" | grep -A2 'raw/azan' | grep -o 'res/[^ ]*\.mp3' | head -1)"
+          AZAN="$("${BT}aapt2" dump resources "$APK" | grep -A2 'raw/azan' | grep -oE 'res/[^ ]*\.(mp3|webm|ogg)' | head -1)"
           echo "azan file in APK: $AZAN"
           [ -n "$AZAN" ]
           cp "$APK" "$RUNNER_TEMP/t2.apk"
@@ -231,6 +231,16 @@ jobs:
           path: |
             dist/*.apk
             dist/*.aab
+
+      # The APK alone, for installing on a phone: one file, stored without
+      # extra compression (an APK is already compressed), so phone unzip apps
+      # open it easily and there is no App Bundle to unpack as well.
+      - name: Upload APK only (for phones)
+        uses: actions/upload-artifact@v4
+        with:
+          name: AyahReminder-${{ env.VERSION_NAME }}-APK-only
+          path: dist/*.apk
+          compression-level: 0
 
       - name: Check the release tag is new
         id: tag

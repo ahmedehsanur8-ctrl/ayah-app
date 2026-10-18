@@ -1,0 +1,110 @@
+{
+  "id": "L3-27",
+  "level": 3,
+  "ord": 27,
+  "title_bn": "মূল অক্ষর চিনি",
+  "objective_bn": "তিন অক্ষরের মূল",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 183,
+  "anchor_ayah_to": 14,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 183,
+        "ayah_to": 14
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          505,
+          824,
+          166
+        ],
+        "word_refs": [
+          [
+            2,
+            183,
+            4
+          ],
+          [
+            2,
+            183,
+            6
+          ],
+          [
+            2,
+            183,
+            13
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "প্রায় সব আরবি শব্দের পেছনে তিনটি মূল অক্ষর থাকে। কাফ-তা-বা থেকে: কাতাবা (লিখল), কিতাব (বই), কুতিবা (লেখা হয়েছে, নির্ধারণ করা হয়েছে)।",
+        "example": {
+          "surah": 2,
+          "ayah": 183,
+          "word_index": 4
+        },
+        "more_examples": [
+          {
+            "surah": 2,
+            "ayah": 2,
+            "word_index": 2
+          }
+        ]
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 505,
+            "distractor_ids": [
+              54,
+              35,
+              206
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 824,
+            "distractor_ids": [
+              162,
+              576,
+              88
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 166,
+            "distractor_ids": [
+              3,
+              8,
+              13
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          505,
+          824,
+          166
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 183,
+        "ayah_to": 14
+      }
+    ]
+  }
+}

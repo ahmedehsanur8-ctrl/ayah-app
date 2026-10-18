@@ -28,7 +28,7 @@ class AboutScreen extends StatelessWidget {
             builder: (context, snap) => Text(
               snap.hasData ? 'সংস্করণ ${toBanglaDigits(snap.data!.version)}' : ' ',
               textAlign: TextAlign.center,
-              style: TextStyle(color: p.muted, fontSize: 13.5),
+              style: TextStyle(color: p.muted, fontSize: 14),
             ),
           ),
           const SizedBox(height: 10),
@@ -54,7 +54,7 @@ class AboutScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('তৈরি করেছেন', style: TextStyle(color: p.muted, fontSize: 12.5)),
+                          Text('তৈরি করেছেন', style: TextStyle(color: p.muted, fontSize: 14)),
                           Text(
                             'Ahmed Ehsanur Rahman',
                             style: TextStyle(
@@ -63,7 +63,7 @@ class AboutScreen extends StatelessWidget {
                               color: p.text,
                             ),
                           ),
-                          Text('সিলেট, বাংলাদেশ', style: TextStyle(color: p.muted, fontSize: 13.5)),
+                          Text('সিলেট, বাংলাদেশ', style: TextStyle(color: p.muted, fontSize: 14)),
                         ],
                       ),
                     ),

@@ -8,8 +8,10 @@
 tools/azan_choice.txt has one line per sound:  azan=File:...  and optionally  fajr=File:...
 
 Only public-domain / CC0 / CC BY / CC BY-SA files are accepted. The chosen file
-is converted to mono MP3 and saved as android/app/src/main/res/raw/azan.mp3,
-with its licence details in assets/azan_license.json (shown in the credits).
+is bundled at its original quality: an audio file byte for byte, and for a video
+only its audio stream, copied without re-encoding (no mono, no trimming, no
+loudness change). It is saved as android/app/src/main/res/raw/azan.<ext> (Fajr:
+azan_fajr.<ext>), with its licence details in assets/azan_license.json.
 """
 import json
 import re
@@ -75,7 +77,13 @@ def cmd_list():
 
 def cmd_search():
     queries = ["fajr adhan", "fajr azan", "adhan fajr", "azan fajr", "fajr call to prayer",
-               "morning adhan", "الصلاة خير من النوم", "أذان الفجر", "Assalatu khairum minan naum"]
+               "morning adhan", "الصلاة خير من النوم", "أذان الفجر", "Assalatu khairum minan naum",
+               # Masjid an-Nabawi (Madinah) and Masjid al-Haram (Makkah)
+               "Masjid an-Nabawi adhan", "Masjid al-Nabawi azan", "Prophet's Mosque adhan",
+               "Medina adhan", "Madinah azan", "المسجد النبوي أذان", "أذان المدينة",
+               "Masjid al-Haram adhan", "Masjid al-Haram azan", "Grand Mosque Mecca adhan",
+               "Mecca adhan", "Makkah azan", "Kaaba adhan", "المسجد الحرام أذان", "أذان مكة",
+               "adhan Medina", "azan Mecca", "call to prayer Mecca", "call to prayer Medina"]
     titles = []
     for q in queries:
         res = api(action="query", list="search", srsearch=q, srnamespace="6", srlimit="50")
@@ -101,26 +109,35 @@ def fetch_one(title, out):
     print(json.dumps(r, ensure_ascii=False, indent=1))
     if not ALLOWED.match(r["license"] or ""):
         raise SystemExit(f"Licence '{r['license']}' is not free enough; not using {title}.")
-    src = ROOT / "azan_src"
     with urllib.request.urlopen(urllib.request.Request(r["url"], headers={"User-Agent": UA}),
                                 timeout=300) as resp:
-        src.write_bytes(resp.read())
+        data = resp.read()
     out.parent.mkdir(parents=True, exist_ok=True)
-    # Audio only, mono, 64 kbps, silence cut from both ends, even loudness.
-    trim = ("silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.3,areverse,"
-            "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.3,areverse,"
-            "loudnorm=I=-16:TP=-1.5")
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vn", "-ac", "1",
-                    "-ar", "44100", "-af", trim, "-b:a", "64k", str(out)], check=True)
-    dur = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                          "-of", "default=nw=1:nk=1", str(out)], capture_output=True, text=True).stdout
-    print(f"Length after trimming: {dur.strip()} s")
-    src.unlink()
-    print(f"Saved {out} ({out.stat().st_size} bytes)")
+    for old in out.parent.glob(out.name + ".*"):
+        old.unlink()
+    ext = Path(urllib.parse.urlparse(r["url"]).path).suffix.lower()
+    if r["mime"] and r["mime"].startswith("audio/") or ext in (".mp3", ".ogg", ".oga", ".opus"):
+        # An audio file: bundled exactly as published.
+        target = out.with_name(out.name + (".ogg" if ext == ".oga" else ext))
+        target.write_bytes(data)
+    else:
+        # A video: keep only its audio stream, copied as it is (no re-encoding).
+        src = ROOT / f"azan_src{ext}"
+        src.write_bytes(data)
+        target = out.with_name(out.name + ".webm")
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-vn", "-sn",
+                        "-map", "0:a:0", "-c:a", "copy", str(target)], check=True)
+        src.unlink()
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                            "format=duration,bit_rate:stream=codec_name,channels,sample_rate",
+                            "-of", "json", str(target)], capture_output=True, text=True).stdout
+    print(probe)
+    print(f"Saved {target} ({target.stat().st_size} bytes)")
     return {"title": r["title"],
             "source": f"https://commons.wikimedia.org/wiki/{urllib.parse.quote(r['title'].replace(' ', '_'))}",
             "license": r["license"], "licenseUrl": r["licenseUrl"], "author": r["artist"],
-            "credit": r["credit"], "duration": r["duration"]}
+            "credit": r["credit"], "duration": r["duration"], "file": target.name,
+            "audio": json.loads(probe or "{}")}
 
 
 def cmd_fetch():
@@ -137,13 +154,13 @@ def cmd_fetch():
     old = json.loads(LICENSE_OUT.read_text(encoding="utf-8")) if LICENSE_OUT.exists() else {}
     out = {}
     if "azan" in choices:
-        main = old if old.get("title") == choices["azan"] and (RAW / "azan.mp3").exists() \
-            else fetch_one(choices["azan"], RAW / "azan.mp3")
+        main = old if old.get("title") == choices["azan"] and old.get("file") \
+            and (RAW / old["file"]).exists() else fetch_one(choices["azan"], RAW / "azan")
         out.update({k: v for k, v in main.items() if k != "fajr"})
     if "fajr" in choices:
         f = old.get("fajr") or {}
-        out["fajr"] = f if f.get("title") == choices["fajr"] and (RAW / "azan_fajr.mp3").exists() \
-            else fetch_one(choices["fajr"], RAW / "azan_fajr.mp3")
+        out["fajr"] = f if f.get("title") == choices["fajr"] and f.get("file") \
+            and (RAW / f["file"]).exists() else fetch_one(choices["fajr"], RAW / "azan_fajr")
     LICENSE_OUT.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
 

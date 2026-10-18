@@ -10,7 +10,7 @@ import '../services/quran.dart';
 import '../services/quran_player.dart';
 import '../theme.dart';
 import '../widgets/audio_button.dart';
-import '../widgets/pattern.dart';
+import '../widgets/night.dart';
 import '../widgets/quran_widgets.dart';
 
 /// One surah: header with the basmala, every ayah with its translations, and
@@ -131,27 +131,36 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     final p = context.palette;
     final s = _surah;
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('সূরা ${s.nameBn}', style: const TextStyle(fontWeight: FontWeight.w700)),
-            Text(
-              '${s.meaningBn} · ${s.typeBn} · ${toBanglaDigits(s.ayahCount)} আয়াত',
-              style: TextStyle(fontSize: 12.5, color: p.muted),
-            ),
-          ],
-        ),
+      appBar: NightAppBar(
+        title: 'সূরা ${s.nameBn}',
+        subtitle: '${s.meaningBn}, ${toBanglaDigits(s.ayahCount)} আয়াত',
         actions: [
-          IconButton(
-            tooltip: 'পড়ার সেটিংস',
-            icon: const Icon(Icons.text_fields_rounded),
-            onPressed: () async {
-              await showQuranSettingsSheet(context);
-              if (mounted) setState(() {});
-            },
+          NightIconButton(
+            icon: Icons.info_outline_rounded,
+            tooltip: 'সূরার তথ্য',
+            onPressed: () => _showInfo(context, s),
           ),
+          Tooltip(
+            message: 'পড়ার সেটিংস',
+            excludeFromSemantics: true,
+            child: Semantics(
+              button: true,
+              label: 'পড়ার সেটিংস',
+              excludeSemantics: true,
+              child: TextButton(
+                onPressed: () async {
+                  await showQuranSettingsSheet(context);
+                  if (mounted) setState(() {});
+                },
+                style: TextButton.styleFrom(foregroundColor: p.gold),
+                child: const Text(
+                  'অ আ',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: !_ready
@@ -164,7 +173,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                 initialScrollIndex: widget.ayah > 1 ? widget.ayah.clamp(1, s.ayahCount) : 0,
                 initialAlignment: 0.02,
                 itemCount: s.ayahCount + 2,
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.only(bottom: 16),
                 itemBuilder: (context, i) {
                   if (i == 0) return _SurahHeader(surah: s);
                   if (i == s.ayahCount + 1) {
@@ -186,7 +195,57 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   }
 }
 
-/// Green card: Arabic name, Bangla name and meaning, and the basmala.
+/// Name, meaning, Makki/Madani and ayah count of a surah.
+Future<void> _showInfo(BuildContext context, Surah s) => showModalBottomSheet<void>(
+  context: context,
+  builder: (sheet) {
+    final p = sheet.palette;
+    Widget row(String k, String v) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(k, style: TextStyle(color: p.muted, fontSize: 15)),
+          ),
+          Text(
+            v,
+            style: TextStyle(color: p.text, fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                StarBadge(toBanglaDigits(s.n), size: 44),
+                const SizedBox(width: 12),
+                Expanded(child: Text('সূরা ${s.nameBn}', style: titleStyle(p, size: 20))),
+                Text(
+                  s.nameAr,
+                  textDirection: TextDirection.rtl,
+                  style: TextStyle(fontFamily: arabicFont, fontSize: 24, color: p.primary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            row('অর্থ', s.meaningBn),
+            row('নাযিল', s.typeBn),
+            row('আয়াত', toBanglaDigits(s.ayahCount)),
+            row('ক্রম', '${toBanglaDigits(s.n)} / ১১৪'),
+          ],
+        ),
+      ),
+    );
+  },
+);
+
+/// Night card: Arabic name, Bangla name and meaning, and the basmala.
 class _SurahHeader extends StatelessWidget {
   const _SurahHeader({required this.surah});
 
@@ -200,16 +259,12 @@ class _SurahHeader extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radiusL),
         child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [p.greenCard, p.greenCardDark],
-            ),
-          ),
+          width: double.infinity,
+          color: p.night,
           child: Stack(
+            alignment: Alignment.topCenter,
             children: [
-              const PatternLayer(color: Brand.gold, opacity: 0.08, cell: 44),
+              const GirihLayer(cell: 44, opacity: 0.16),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
                 child: Column(
@@ -217,40 +272,28 @@ class _SurahHeader extends StatelessWidget {
                     Text(
                       surah.nameAr,
                       textDirection: TextDirection.rtl,
-                      style: const TextStyle(
-                        fontFamily: arabicFont,
-                        fontSize: 30,
-                        color: Brand.gold,
-                      ),
+                      style: TextStyle(fontFamily: arabicFont, fontSize: 30, color: p.gold),
                     ),
-                    Text(
-                      'সূরা ${surah.nameBn}',
-                      style: const TextStyle(
-                        fontFamily: headingFont,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text('সূরা ${surah.nameBn}', style: nightTitleStyle(p, size: 20)),
                     const SizedBox(height: 2),
                     Text(
-                      '${surah.meaningBn} · ${surah.typeBn} · ${toBanglaDigits(surah.ayahCount)} আয়াত',
+                      '${surah.meaningBn}, ${surah.typeBn}, ${toBanglaDigits(surah.ayahCount)} আয়াত',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13.5),
+                      style: TextStyle(color: p.onNightMuted, fontSize: 14),
                     ),
                     if (surah.hasSeparateBasmala) ...[
                       const SizedBox(height: 12),
-                      Divider(color: Brand.gold.withValues(alpha: 0.35), height: 1),
+                      Divider(color: p.gold.withValues(alpha: 0.35), height: 1),
                       const SizedBox(height: 10),
                       Text(
                         Quran.basmala,
                         textDirection: TextDirection.rtl,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: arabicFont,
                           fontSize: 26,
                           height: 1.9,
-                          color: Brand.cream,
+                          color: p.arabicOnNight,
                         ),
                       ),
                     ],
@@ -335,13 +378,15 @@ class AyahTile extends StatelessWidget {
     final i = Quran.indexOf(surah, ayah);
     final translations = shownTranslations();
     final highlight = playing || marked;
+    // Each ayah on its own card; the playing ayah is soft emerald with an
+    // emerald border and "এখন বাজছে".
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+      margin: const EdgeInsets.fromLTRB(12, 5, 12, 5),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 14),
       decoration: BoxDecoration(
-        color: highlight ? p.primary.withValues(alpha: p.isDark ? 0.18 : 0.08) : null,
+        color: highlight ? p.pill : p.surface,
         borderRadius: BorderRadius.circular(radiusM),
-        border: highlight ? Border.all(color: p.primary.withValues(alpha: 0.35)) : null,
+        border: Border.all(color: highlight ? p.primary : p.border, width: highlight ? 1.5 : 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -363,7 +408,7 @@ class AyahTile extends StatelessWidget {
                   return _Icon(
                     icon: on ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
                     tooltip: on ? 'বুকমার্ক সরান' : 'বুকমার্ক করুন',
-                    color: on ? p.goldText : null,
+                    color: on ? p.primary : null,
                     onTap: () => prefs.toggleBookmark(surah, ayah),
                   );
                 },
@@ -381,6 +426,19 @@ class AyahTile extends StatelessWidget {
                 ),
             ],
           ),
+          if (playing)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(color: p.action, borderRadius: BorderRadius.circular(20)),
+                child: Text(
+                  'এখন বাজছে',
+                  style: TextStyle(color: p.onPrimary, fontSize: 14, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
           if (prefs.showArabic) ...[
             const SizedBox(height: 6),
             Text(
@@ -409,7 +467,7 @@ class AyahTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text('— ${t.info.name}', style: TextStyle(fontSize: 11.5, color: p.muted)),
+              Text('— ${t.info.name}', style: TextStyle(fontSize: 14, color: p.muted)),
             ],
         ],
       ),
@@ -428,8 +486,7 @@ class _Icon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: tooltip,
-    visualDensity: VisualDensity.compact,
     onPressed: onTap,
-    icon: Icon(icon, size: 21, color: color ?? context.palette.muted),
+    icon: Icon(icon, size: 22, color: color ?? context.palette.muted),
   );
 }

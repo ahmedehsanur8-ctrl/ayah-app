@@ -39,7 +39,7 @@ class ShareCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF12684A), Brand.deepEmerald, Brand.night],
+          colors: [Brand.greenShare, Brand.deepEmerald, Brand.night],
         ),
       ),
       child: Stack(
@@ -70,7 +70,7 @@ class ShareCard extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: headingFont,
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.75),
+                        color: Brand.onNight.withValues(alpha: 0.75),
                       ),
                     ),
                   ],
@@ -79,7 +79,7 @@ class ShareCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: Brand.onNight.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Brand.lightGold.withValues(alpha: 0.35)),
                   ),
@@ -114,7 +114,7 @@ class ShareCard extends StatelessWidget {
                           fontFamily: banglaFont,
                           fontSize: 14.5,
                           height: 1.7,
-                          color: Colors.white,
+                          color: Brand.onNight,
                         ),
                       ),
                     ],
@@ -139,7 +139,7 @@ class ShareCard extends StatelessWidget {
                     fontFamily: headingFont,
                     fontSize: 11.5,
                     letterSpacing: 0.3,
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: Brand.onNight.withValues(alpha: 0.6),
                   ),
                 ),
               ],

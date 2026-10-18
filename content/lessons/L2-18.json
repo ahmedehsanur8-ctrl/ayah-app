@@ -1,0 +1,133 @@
+{
+  "id": "L2-18",
+  "level": 2,
+  "ord": 18,
+  "title_bn": "নিশ্চয়ই আল্লাহ সক্ষম",
+  "objective_bn": "জোর দেওয়ার শব্দ",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 20,
+  "anchor_ayah_to": 20,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 20
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          200,
+          408,
+          160,
+          161,
+          162
+        ],
+        "word_refs": [
+          [
+            2,
+            25,
+            6
+          ],
+          [
+            2,
+            144,
+            1
+          ],
+          [
+            2,
+            20,
+            23
+          ],
+          [
+            2,
+            20,
+            24
+          ],
+          [
+            2,
+            20,
+            25
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "‘ইন্না’ ও ‘আন্না’ কথাকে জোর দেয়। ‘কাদ’ অতীত ক্রিয়ার আগে মানে ‘অবশ্যই/ইতিমধ্যে’। ইন্নাল্লাহা ‘আলা কুল্লি শাইয়িন কাদীর = নিশ্চয়ই আল্লাহ সব কিছুর উপর ক্ষমতাবান।",
+        "example": {
+          "surah": 2,
+          "ayah": 20,
+          "word_index": 20
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 200,
+            "distractor_ids": [
+              265,
+              26,
+              31
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 408,
+            "distractor_ids": [
+              2,
+              5,
+              11
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 160,
+            "distractor_ids": [
+              950,
+              75,
+              2701
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 161,
+            "distractor_ids": [
+              570,
+              4990,
+              38
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 162,
+            "distractor_ids": [
+              409,
+              199,
+              50
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          200,
+          408,
+          160,
+          161,
+          162
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 20
+      }
+    ]
+  }
+}

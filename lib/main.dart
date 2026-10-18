@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 
@@ -10,6 +12,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/splash_screen.dart';
 import 'services/duas.dart';
 import 'services/location.dart';
+import 'services/planner.dart';
 import 'services/prayer.dart';
 import 'services/quran.dart';
 import 'services/reminders.dart';
@@ -46,18 +49,29 @@ Future<void> main() async {
   if (fromAdhkar != null) {
     WidgetsBinding.instance.addPostFrameCallback((_) => _openAdhkar(fromAdhkar == 'evening'));
   }
-  if (state.settings.setupDone) {
-    // Plan the next days of reminders every time the app starts.
-    Reminders.reschedule(state.settings, state.data);
-  }
-  // Prayer times: update the location if the phone moved, then plan the azan
-  // for the next days (so times are recalculated at least every app start).
-  _refreshPrayerTimes(state);
+  // Update the location if the phone moved, then plan every alarm (reminders,
+  // azan, sehri/iftar, adhkar) for the next weeks.
+  _planAll(state);
 }
 
-Future<void> _refreshPrayerTimes(AppState state) async {
+Future<void> _planAll(AppState state) async {
   await LocationService.refreshIfMoved(state.settings);
-  await Prayers.schedule(state.settings);
+  await Planner.planAll(state.settings, state.data);
+}
+
+/// Run by Android without opening the app (an alarm rang, the phone restarted,
+/// or the daily check) to top up the alarms: see Planner.kt.
+@pragma('vm:entry-point')
+Future<void> backgroundTopUp() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  DartPluginRegistrant.ensureInitialized();
+  try {
+    await Planner.topUp();
+  } catch (e) {
+    debugPrint('background planning failed: $e');
+  } finally {
+    await Planner.done();
+  }
 }
 
 /// The morning / evening adhkar notification was tapped.

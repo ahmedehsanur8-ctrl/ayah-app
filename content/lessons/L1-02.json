@@ -1,0 +1,150 @@
+{
+  "id": "L1-02",
+  "level": 1,
+  "ord": 2,
+  "title_bn": "সব প্রশংসা আল্লাহর",
+  "objective_bn": "আয়াত ১:২ নিজে পড়ে বুঝি",
+  "minutes": 8,
+  "anchor_surah": 1,
+  "anchor_ayah_from": 2,
+  "anchor_ayah_to": 2,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 1,
+        "ayah": 2
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          5,
+          7,
+          8,
+          9,
+          10
+        ],
+        "word_refs": [
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            1,
+            2,
+            1
+          ],
+          [
+            1,
+            2,
+            2
+          ],
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            1,
+            2,
+            4
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "অনেক আরবি শব্দের শুরুতে ‘আল’ থাকে। এটি শব্দটিকে নির্দিষ্ট করে, যেমন বাংলায় ‘টি/টা’: হামদ = প্রশংসা, আল-হামদ = সেই প্রশংসা। শুরুতে ‘লি’ মানে ‘-এর জন্য’: লিল্লাহ = আল্লাহর জন্য।",
+        "example": {
+          "surah": 1,
+          "ayah": 2,
+          "word_index": 1
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 5,
+            "distractor_ids": [
+              10,
+              6,
+              2
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 7,
+            "distractor_ids": [
+              6,
+              2,
+              5
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 8,
+            "distractor_ids": [
+              3,
+              9,
+              4
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 9,
+            "distractor_ids": [
+              2,
+              5,
+              1
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 10,
+            "distractor_ids": [
+              8,
+              4,
+              9
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 1,
+            "ayah": 2,
+            "word_index": 2
+          },
+          {
+            "kind": "split",
+            "surah": 1,
+            "ayah": 2,
+            "word_index": 1
+          },
+          {
+            "kind": "order",
+            "surah": 1,
+            "ayah": 2
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          5,
+          7,
+          8,
+          9,
+          10
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 1,
+        "ayah": 2
+      }
+    ]
+  }
+}

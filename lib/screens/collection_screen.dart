@@ -55,7 +55,7 @@ class CollectionScreen extends StatelessWidget {
                   children: [
                     Text(title, style: titleStyle(p, size: 23)),
                     if (subtitle != null)
-                      Text(subtitle!, style: TextStyle(color: p.muted, fontSize: 13.5)),
+                      Text(subtitle!, style: TextStyle(color: p.muted, fontSize: 14)),
                   ],
                 ),
               ),
@@ -91,7 +91,7 @@ class CollectionScreen extends StatelessWidget {
                             const Text(
                               'সব শুনুন',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Brand.onNight,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -99,8 +99,8 @@ class CollectionScreen extends StatelessWidget {
                             Text(
                               counts,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.78),
-                                fontSize: 13,
+                                color: Brand.onNight.withValues(alpha: 0.78),
+                                fontSize: 14,
                               ),
                             ),
                           ],
@@ -191,7 +191,7 @@ class _ItemList extends StatelessWidget {
                             Text(
                               items[i].title,
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w700,
                                 color: p.primary,
                               ),

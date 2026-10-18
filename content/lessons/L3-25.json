@@ -1,0 +1,119 @@
+{
+  "id": "L3-25",
+  "level": 3,
+  "ord": 25,
+  "title_bn": "ঈমান ও আমল",
+  "objective_bn": "জোড়ায় শব্দ শিখি",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 25,
+  "anchor_ayah_to": 34,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 25,
+        "ayah_to": 34
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          59,
+          201,
+          124,
+          437
+        ],
+        "word_refs": [
+          [
+            2,
+            102,
+            9
+          ],
+          [
+            2,
+            25,
+            8
+          ],
+          [
+            2,
+            24,
+            7
+          ],
+          [
+            2,
+            62,
+            16
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "কিছু শব্দ জোড়ায় শিখলে সহজ: আমানা (ঈমান আনা) — কাফারা (অস্বীকার করা); জান্নাত — নার (আগুন)।",
+        "example": {
+          "surah": 2,
+          "ayah": 25,
+          "word_index": 8
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 59,
+            "distractor_ids": [
+              161,
+              685,
+              47
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 201,
+            "distractor_ids": [
+              795,
+              45,
+              60
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 124,
+            "distractor_ids": [
+              24,
+              187,
+              201
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 437,
+            "distractor_ids": [
+              576,
+              88,
+              312
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          59,
+          201,
+          124,
+          437
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 25,
+        "ayah_to": 34
+      }
+    ]
+  }
+}

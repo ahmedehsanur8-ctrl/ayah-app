@@ -62,7 +62,7 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
       body: st == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
               children: [
                 _Summary(missing: st.missingForReminders),
                 const SizedBox(height: 14),
@@ -76,6 +76,8 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
                     onOpen: item.key == PermKey.brand ? null : () => _open(item.key),
                     child: item.key == PermKey.brand && st.brand != null
                         ? BrandStepsList(brand: st.brand!, onChanged: _refresh)
+                        : item.key == PermKey.overlay && !st.isGranted(item.key)
+                        ? const RestrictedSettingsHelp()
                         : null,
                   ),
                   const SizedBox(height: 10),
@@ -92,7 +94,7 @@ class _SetupScreenState extends State<SetupScreen> with WidgetsBindingObserver {
                   'পরীক্ষা বোতাম চাপার পর ফোন লক করে রাখুন। এক মিনিট পর শব্দসহ পুরো স্ক্রিনে '
                   'আয়াতটি খুললে সব ঠিক আছে।',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: p.muted, fontSize: 13, height: 1.5),
+                  style: TextStyle(color: p.muted, fontSize: 14, height: 1.5),
                 ),
               ],
             ),
@@ -157,14 +159,14 @@ class _PermissionCard extends StatelessWidget {
               IconBubble(item.icon, tint: granted ? p.mint : p.sand, size: 40),
               const SizedBox(width: 12),
               Expanded(child: Text(item.title, style: Theme.of(context).textTheme.titleMedium)),
-              StatusChip(granted),
+              StatusChip(granted, optional: item.optional),
             ],
           ),
           const SizedBox(height: 8),
-          Text(item.why, style: TextStyle(color: p.muted, height: 1.55, fontSize: 13.5)),
+          Text(item.why, style: TextStyle(color: p.muted, height: 1.55, fontSize: 14)),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
-            Text(subtitle!, style: TextStyle(color: p.text, fontSize: 13.5)),
+            Text(subtitle!, style: TextStyle(color: p.text, fontSize: 14)),
           ],
           if (child != null) ...[const SizedBox(height: 12), child!],
           if (onOpen != null) ...[
@@ -173,6 +175,8 @@ class _PermissionCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: granted
                   ? TextButton(onPressed: onOpen, child: const Text('সেটিংস দেখুন'))
+                  : item.optional
+                  ? OutlinedButton(onPressed: onOpen, child: const Text('চালু করুন'))
                   : FilledButton(onPressed: onOpen, child: const Text('অনুমতি দিন')),
             ),
           ],
@@ -241,11 +245,6 @@ class _SetupBannerState extends State<SetupBanner> with WidgetsBindingObserver {
                 ),
                 FilledButton(
                   onPressed: () => push(context, const SetupScreen()),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: warnOrange,
-                    foregroundColor: Colors.white,
-                    visualDensity: VisualDensity.compact,
-                  ),
                   child: const Text('ঠিক করুন'),
                 ),
               ],

@@ -9,7 +9,7 @@ import '../models/content.dart';
 import '../services/compass.dart';
 import '../services/prayer.dart';
 import '../theme.dart';
-import '../widgets/ui.dart';
+import '../widgets/night.dart';
 import 'prayer_screen.dart';
 
 /// কিবলা: compass with the Kaaba at the arrow tip. Works offline.
@@ -77,16 +77,31 @@ class _QiblaScreenState extends State<QiblaScreen> {
   @override
   Widget build(BuildContext context) {
     final s = AppState.instance.settings;
-    return Scaffold(
-      appBar: AppBar(title: const Text('কিবলা')),
-      body: ListenableBuilder(
-        listenable: s,
-        builder: (context, _) {
-          if (!s.hasLocation) return const ChooseLocationView();
-          _listen();
-          return _compass(context);
-        },
-      ),
+    final p = context.palette;
+    return ListenableBuilder(
+      listenable: s,
+      builder: (context, _) {
+        if (!s.hasLocation) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('কিবলা')),
+            body: const ChooseLocationView(),
+          );
+        }
+        _listen();
+        // Full night screen with the girih pattern.
+        return Scaffold(
+          backgroundColor: p.night,
+          body: AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle.light,
+            child: Stack(
+              children: [
+                const GirihLayer(),
+                SafeArea(child: _compass(context)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -112,12 +127,22 @@ class _QiblaScreenState extends State<QiblaScreen> {
     }
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 28),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
       children: [
         Row(
           children: [
+            if (Navigator.of(context).canPop()) const NightBackButton(),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Semantics(
+                  header: true,
+                  child: Text('কিবলা', style: nightTitleStyle(p, size: 24)),
+                ),
+              ),
+            ),
             Flexible(
-              child: InfoPill(
+              child: NightPill(
                 icon: Icons.location_on_outlined,
                 text: s.placeName.isEmpty ? 'অবস্থান' : s.placeName,
                 onTap: () => showLocationSheet(context),
@@ -136,46 +161,57 @@ class _QiblaScreenState extends State<QiblaScreen> {
           ),
         ),
         const SizedBox(height: 18),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: facing ? p.greenCard : p.surface,
-            borderRadius: BorderRadius.circular(radiusM),
-            border: Border.all(color: facing ? p.greenCard : p.border),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                facing ? Icons.check_circle_rounded : Icons.explore_outlined,
-                color: facing ? p.gold : p.primary,
+        // Emerald pill when facing the Qibla; otherwise the turn hint.
+        Center(
+          child: Semantics(
+            liveRegion: true,
+            child: AnimatedContainer(
+              duration: reduceMotion(context) ? Duration.zero : const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              decoration: BoxDecoration(
+                color: facing ? p.action : p.nightLine,
+                borderRadius: BorderRadius.circular(40),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  hint,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: facing ? Colors.white : p.text,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    facing ? Icons.check_circle_outline_rounded : Icons.explore_outlined,
+                    color: facing ? p.onPrimary : p.gold,
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      hint,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: facing ? p.onPrimary : p.onNight,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        AppCard(
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: p.nightLine,
+            borderRadius: BorderRadius.circular(radiusM),
+          ),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('কিবলার দিক', style: TextStyle(color: p.muted, fontSize: 12.5)),
+                    Text('কিবলার দিক', style: TextStyle(color: p.onNightMuted, fontSize: 14)),
                     Text(
                       '$qDeg° · ${directionName(q)}',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.gold),
                     ),
                   ],
                 ),
@@ -184,10 +220,10 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('ফোনের দিক', style: TextStyle(color: p.muted, fontSize: 12.5)),
+                    Text('ফোনের দিক', style: TextStyle(color: p.onNightMuted, fontSize: 14)),
                     Text(
                       '${toBanglaDigits(heading.round())}° · ${directionName(heading)}',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.text),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: p.onNight),
                     ),
                   ],
                 ),
@@ -198,13 +234,13 @@ class _QiblaScreenState extends State<QiblaScreen> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: (_reading?.needsCalibration ?? false) ? p.sand.background : p.surfaceSoft,
+            color: p.nightLine,
             borderRadius: BorderRadius.circular(radiusM),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.all_inclusive_rounded, color: p.sand.foreground),
+              Icon(Icons.all_inclusive_rounded, color: p.gold),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -212,7 +248,14 @@ class _QiblaScreenState extends State<QiblaScreen> {
                       ? 'কম্পাস ঠিক করতে হবে: ফোনটি বাতাসে ইংরেজি ৮ অক্ষরের মতো করে কয়েকবার ঘোরান।'
                       : 'দিক ঠিক না মনে হলে ফোনটি বাতাসে ইংরেজি ৮ অক্ষরের মতো করে কয়েকবার ঘোরান। '
                             'ফোন সমতলে রাখুন, চুম্বক বা লোহার জিনিস থেকে দূরে থাকুন।',
-                  style: TextStyle(color: p.text, fontSize: 13.5, height: 1.55),
+                  style: TextStyle(
+                    color: p.onNight,
+                    fontSize: 14,
+                    height: 1.55,
+                    fontWeight: (_reading?.needsCalibration ?? false)
+                        ? FontWeight.w700
+                        : FontWeight.w400,
+                  ),
                 ),
               ),
             ],
@@ -244,15 +287,23 @@ class _CompassPainter extends CustomPainter {
     final c = size.center(Offset.zero);
     final r = size.shortestSide / 2 - 6;
 
-    // Dial
-    canvas.drawCircle(c, r, Paint()..color = p.surface);
+    // Dial: a gold ring on the night background (emerald when facing).
+    canvas.drawCircle(c, r, Paint()..color = p.nightDeep.withValues(alpha: 0.7));
     canvas.drawCircle(
       c,
       r,
       Paint()
-        ..color = facing ? p.greenCard : p.border
+        ..color = facing ? p.primary : p.gold
         ..style = PaintingStyle.stroke
-        ..strokeWidth = facing ? 4 : 2,
+        ..strokeWidth = facing ? 5 : 3,
+    );
+    canvas.drawCircle(
+      c,
+      r - 22,
+      Paint()
+        ..color = p.gold.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
     );
 
     canvas.save();
@@ -268,7 +319,7 @@ class _CompassPainter extends CustomPainter {
         Offset(math.sin(a) * inner, -math.cos(a) * inner),
         Offset(math.sin(a) * (r - 4), -math.cos(a) * (r - 4)),
         Paint()
-          ..color = major ? p.muted : p.border
+          ..color = major ? p.gold : p.onNight.withValues(alpha: 0.3)
           ..strokeWidth = major ? 2 : 1,
       );
     }
@@ -284,7 +335,7 @@ class _CompassPainter extends CustomPainter {
             fontFamily: banglaFont,
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: e.key == 0 ? const Color(0xFFC0392B) : p.text,
+            color: e.key == 0 ? p.northOnNight : p.onNight,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -298,8 +349,9 @@ class _CompassPainter extends CustomPainter {
 
     // Qibla arrow with the Kaaba at its tip.
     canvas.rotate(_rad(qibla));
-    final arrowColor = facing ? p.greenCard : p.primary;
-    final tipY = -(r - 62);
+    final arrowColor = facing ? p.primary : p.gold;
+    // The Kaaba sits inside the letter ring, so it never covers উ/পূ/দ/প.
+    final tipY = -(r - 96);
     final path = Path()
       ..moveTo(0, tipY)
       ..lineTo(12, tipY + 26)
@@ -314,13 +366,13 @@ class _CompassPainter extends CustomPainter {
     canvas.restore();
 
     // Centre dot and a fixed marker at the top: where the phone points.
-    canvas.drawCircle(c, 8, Paint()..color = p.goldText);
+    canvas.drawCircle(c, 8, Paint()..color = p.gold);
     final top = Path()
       ..moveTo(c.dx, c.dy - r - 4)
       ..lineTo(c.dx - 9, c.dy - r + 12)
       ..lineTo(c.dx + 9, c.dy - r + 12)
       ..close();
-    canvas.drawPath(top, Paint()..color = p.goldText);
+    canvas.drawPath(top, Paint()..color = p.onNight);
   }
 
   /// A small Kaaba: black cube with a gold band and door.
@@ -328,15 +380,25 @@ class _CompassPainter extends CustomPainter {
     final rect = Rect.fromCenter(center: centre, width: s, height: s);
     canvas.drawRRect(
       RRect.fromRectAndRadius(rect, const Radius.circular(4)),
-      Paint()..color = const Color(0xFF1B1B1B),
+      Paint()..color = Brand.kaaba,
     );
+    // Gold outline, so the black cube shows on the night dial.
+    {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(4)),
+        Paint()
+          ..color = palette.gold
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+    }
     canvas.drawRect(
       Rect.fromLTWH(rect.left, rect.top + s * 0.22, s, s * 0.13),
-      Paint()..color = const Color(0xFFE2BE62),
+      Paint()..color = Brand.kaabaBand,
     );
     canvas.drawRect(
       Rect.fromLTWH(centre.dx + s * 0.12, rect.top + s * 0.5, s * 0.2, s * 0.5),
-      Paint()..color = const Color(0xFFB8963F),
+      Paint()..color = Brand.kaabaDoor,
     );
   }
 

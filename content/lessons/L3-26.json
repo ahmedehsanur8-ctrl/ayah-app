@@ -1,0 +1,106 @@
+{
+  "id": "L3-26",
+  "level": 3,
+  "ord": 26,
+  "title_bn": "জ্ঞানের শব্দ",
+  "objective_bn": "এক মূল, অনেক শব্দ",
+  "minutes": 12,
+  "anchor_surah": 96,
+  "anchor_ayah_from": 5,
+  "anchor_ayah_to": 5,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 96,
+        "ayah": 5
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          262,
+          712,
+          255
+        ],
+        "word_refs": [
+          [
+            2,
+            255,
+            37
+          ],
+          [
+            2,
+            140,
+            15
+          ],
+          [
+            96,
+            5,
+            1
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "একই মূল অক্ষর থেকে অনেক শব্দ হয়। ‘আইন-লাম-মীম’ থেকে: ‘আলিমা (জানল), ‘ইলম (জ্ঞান), ‘আল্লামা (শেখাল), আ‘লাম (বেশি জানেন), ‘আলীম (সর্বজ্ঞ)।",
+        "example": {
+          "surah": 96,
+          "ayah": 5,
+          "word_index": 1
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 262,
+            "distractor_ids": [
+              29,
+              3042,
+              5015
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 712,
+            "distractor_ids": [
+              13,
+              18,
+              23
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 255,
+            "distractor_ids": [
+              41,
+              143,
+              105
+            ]
+          },
+          {
+            "kind": "order",
+            "surah": 96,
+            "ayah": 5
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          262,
+          712,
+          255
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 96,
+        "ayah": 5
+      }
+    ]
+  }
+}

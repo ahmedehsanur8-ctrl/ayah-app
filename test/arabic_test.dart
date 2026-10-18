@@ -1,5 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'learn_test_helpers.dart';
+
 import 'dart:math' as math;
 
 import 'package:ayah_reminder/app_state.dart';
@@ -30,6 +34,7 @@ void main() {
     await Quran.loadMeta();
     await Quran.load();
     await ArabicCourse.load();
+    await attachLearnForTests();
     Future<void> load(String family, List<String> files) async {
       final loader = FontLoader(family);
       for (final f in files) {
@@ -205,7 +210,7 @@ void main() {
 
     setUp(() => ArabicAudio.files = {});
 
-    testWidgets('শুনে বেছে নাও without recordings shows the Bangla sound', (t) async {
+    testWidgets('শুনে বেছে নিন without recordings shows the Bangla sound', (t) async {
       GameResult? done;
       final its = items(['L02', 'L03', 'L04', 'L01']);
       await t.pumpWidget(
@@ -219,7 +224,7 @@ void main() {
           ),
         ),
       );
-      expect(find.text('শুনে বেছে নাও'), findsOneWidget);
+      expect(find.text('শুনে বেছে নিন'), findsOneWidget);
       expect(find.text('অডিও শীঘ্রই'), findsOneWidget);
       for (var k = 0; k < 4; k++) {
         final prompt = t.widget<Text>(find.byKey(const ValueKey('listen-prompt'))).data!;
@@ -260,7 +265,7 @@ void main() {
       expect(done!.wrong.length, 1);
     });
 
-    testWidgets('মিলাও pairs Arabic with its meaning', (t) async {
+    testWidgets('মেলান pairs Arabic with its meaning', (t) async {
       GameResult? done;
       final its = items(['W_baab', 'W_walad', 'W_kataba']);
       await t.pumpWidget(game(MatchGame(items: its, right: 'meaning', onDone: (r) => done = r)));
@@ -278,7 +283,7 @@ void main() {
       expect(done!.wrong, {'W_baab'});
     });
 
-    testWidgets('সাজাও builds a word from its letters, right to left', (t) async {
+    testWidgets('সাজান builds a word from its letters, right to left', (t) async {
       GameResult? done;
       final w = ArabicCourse.item('W_khalaqa')!;
       final parts = ['خَ', 'لَ', 'قَ'];
@@ -288,7 +293,7 @@ void main() {
             puzzles: [
               {'item': w.id, 'parts': parts},
             ],
-            hint: 'সাজাও',
+            hint: 'সাজান',
             onDone: (r) => done = r,
             random: math.Random(2),
           ),
@@ -303,7 +308,7 @@ void main() {
       expect(done!.mistakes, 0);
     });
 
-    testWidgets('সাজাও: a wrong order is a mistake and sends tiles back', (t) async {
+    testWidgets('সাজান: a wrong order is a mistake and sends tiles back', (t) async {
       GameResult? done;
       await t.pumpWidget(
         game(
@@ -363,41 +368,263 @@ void main() {
       expect(done!.mistakes, 1);
     });
 
-    test('tracing: strokes on the letter pass, scribbles elsewhere do not', () {
-      // A vertical bar (like alif) in the middle of a 48x48 board.
-      const grid = 48;
-      final mask = List<bool>.generate(grid * grid, (i) {
-        final x = i % grid, y = i ~/ grid;
-        return x >= 22 && x <= 25 && y >= 8 && y <= 40;
-      });
-      const box = 240.0;
-      final cell = box / grid;
-      final good = [
-        [for (var y = 8; y <= 40; y++) Offset(23.5 * cell, y * cell)],
-      ];
-      final s = scoreTrace(mask, good, box);
-      expect(s.accuracy, greaterThan(0.9));
+    // A wide bar (like the base of ب) and a tall bar (like alif) on a 48x48 board.
+    const grid = 48;
+    const box = 288.0;
+    const cell = box / grid;
+    List<bool> maskOf(bool Function(int x, int y) on) =>
+        List<bool>.generate(grid * grid, (i) => on(i % grid, i ~/ grid));
+    final wideBar = TraceGuide(maskOf((x, y) => x >= 8 && x <= 40 && y >= 22 && y <= 25), box);
+    final tallBar = TraceGuide(maskOf((x, y) => x >= 22 && x <= 25 && y >= 8 && y <= 40), box);
+    List<Offset> along(double fromX, double toX, {double y = 23.5}) => [
+      for (var k = 0; k <= 40; k++) Offset((fromX + (toX - fromX) * k / 40) * cell, y * cell),
+    ];
+
+    test('tracing: the usual way passes, and the hint points right to left', () {
+      expect(wideBar.wide, isTrue);
+      expect(wideBar.start.dx, greaterThan(box * 0.75)); // starts at the right
+      final s = scoreTrace(wideBar, [along(40, 8)]);
       expect(s.coverage, greaterThan(0.9));
-      final bad = [
-        [for (var x = 0; x < 20; x++) Offset(x * cell, 5 * cell)],
-      ];
-      final b = scoreTrace(mask, bad, box);
-      expect(b.accuracy, lessThan(0.5));
-      expect(b.coverage, lessThan(0.2));
-      final half = [
-        [for (var y = 8; y <= 20; y++) Offset(23.5 * cell, y * cell)],
-      ];
-      expect(scoreTrace(mask, half, box).coverage, lessThan(0.5));
+      expect(s.passed(), isTrue);
+      expect(s.passed(strict: true), isTrue);
+      expect(tallBar.wide, isFalse);
+      expect(tallBar.start.dy, lessThan(box * 0.25)); // starts at the top
     });
 
-    testWidgets('লিখে দেখো shows the board and the letter name', (t) async {
+    test('tracing: starting from the middle passes', () {
+      // Middle to the left end, then middle to the right end.
+      final s = scoreTrace(wideBar, [along(24, 8), along(24, 40)]);
+      expect(s.counted, 2);
+      expect(s.passed(), isTrue);
+      // A single stroke from the middle that covers enough also passes.
+      expect(scoreTrace(wideBar, [along(30, 6)]).passed(), isTrue);
+    });
+
+    test('tracing: drawing in reverse passes (not in strict mode)', () {
+      final s = scoreTrace(wideBar, [along(8, 40)]);
+      expect(s.passed(), isTrue);
+      expect(s.directionOk, isFalse);
+      expect(s.passed(strict: true), isFalse);
+      final down = [for (var y = 8; y <= 40; y++) Offset(23.5 * cell, y * cell)];
+      expect(scoreTrace(tallBar, [down.reversed.toList()]).passed(), isTrue);
+      expect(scoreTrace(tallBar, [down]).passed(strict: true), isTrue);
+    });
+
+    test('tracing: several strokes add up', () {
+      final parts = [along(40, 30), along(30, 20), along(20, 8)];
+      // Each piece alone is not enough.
+      for (final part in parts) {
+        expect(scoreTrace(wideBar, [part]).passed(), isFalse);
+      }
+      final s = scoreTrace(wideBar, parts);
+      expect(s.counted, 3);
+      expect(s.passed(), isTrue);
+    });
+
+    test('tracing: a little outside is fine, far strokes are ignored', () {
+      // About 4% of the board off the line.
+      expect(scoreTrace(wideBar, [along(40, 8, y: 23.5 + 2)]).passed(), isTrue);
+      // A stroke in a far corner does not count and does not block success.
+      final far = [for (var x = 0; x < 10; x++) Offset(x * cell, 2 * cell)];
+      final s = scoreTrace(wideBar, [far, along(40, 8)]);
+      expect(s.ignored, 1);
+      expect(s.passed(), isTrue);
+      // Only far strokes: nothing traced.
+      expect(scoreTrace(wideBar, [far]).coverage, 0);
+      // Half the letter is not enough yet.
+      expect(scoreTrace(wideBar, [along(40, 26)]).passed(), isFalse);
+    });
+
+    test('tracing: strict mode checks the start point and the direction', () {
+      // Right way, right start.
+      final good = scoreTrace(wideBar, [along(40, 8)]);
+      expect(good.startOk && good.directionOk, isTrue);
+      // Right direction but started in the middle.
+      final middle = scoreTrace(wideBar, [along(24, 8), along(40, 24)]);
+      expect(middle.passed(), isTrue);
+      expect(middle.startOk, isFalse);
+      expect(middle.passed(strict: true), isFalse);
+      // Wrong direction.
+      expect(scoreTrace(wideBar, [along(8, 40)]).passed(strict: true), isFalse);
+    });
+
+    // Real letters, drawn with the app's font.
+    Future<TraceGuide> guideFor(WidgetTester t, String ch) async =>
+        TraceGuide((await t.runAsync(() => letterMask(ch, box)))!, box, letter: ch);
+    // A child tracing only the body, column by column the usual way.
+    List<Offset> bodyStroke(TraceGuide g) {
+      final cols = <int, List<int>>{};
+      for (final c in g.body) {
+        cols.putIfAbsent(c % grid, () => []).add(c);
+      }
+      final stroke = <Offset>[];
+      var down = true;
+      for (final x in cols.keys.toList()..sort((a, b) => b - a)) {
+        final ys = cols[x]!.map((c) => c ~/ grid).toList()..sort();
+        for (final y in down ? ys : ys.reversed) {
+          stroke.add(g.center(y * grid + x));
+        }
+        down = !down;
+      }
+      return stroke;
+    }
+
+    List<Offset> tap(Offset o) => [o];
+
+    testWidgets('tracing: every dotted letter has its dots in the right place', (t) async {
+      for (final e in nuktaOf.entries.where((e) => e.key != 'ة')) {
+        final g = await guideFor(t, e.key);
+        expect(g.dotCells, isNotEmpty, reason: e.key);
+        expect(g.dots.length, e.value.count, reason: e.key);
+        for (final d in g.dots) {
+          switch (e.value.place) {
+            case DotPlace.above:
+              expect(d.dy, lessThan(g.bodyCenter.dy), reason: '${e.key} above');
+            case DotPlace.below:
+              expect(d.dy, greaterThan(g.bodyCenter.dy), reason: '${e.key} below');
+            case DotPlace.inside:
+              expect((d - g.bodyCenter).distance, lessThan(box * 0.15), reason: e.key);
+          }
+        }
+        // Body alone is not enough; body and every dot pass.
+        final body = bodyStroke(g);
+        expect(scoreTrace(g, [body]).passed(), isFalse, reason: e.key);
+        expect(scoreTrace(g, [body, ...g.dots.map(tap)]).passed(), isTrue, reason: e.key);
+      }
+    });
+
+    testWidgets('tracing: ج needs its dot', (t) async {
+      final g = await guideFor(t, 'ج');
+      final body = bodyStroke(g);
+      final without = scoreTrace(g, [body]);
+      expect(without.covered, isTrue);
+      expect(without.passed(), isFalse);
+      expect(without.progress, closeTo(0.8, 0.001));
+      expect(dotHint(g, without), 'এখানে ১টি নুকতা লাগবে, পেটের ভেতরে।');
+      final withDot = scoreTrace(g, [body, tap(g.dots.single)]);
+      expect(withDot.passed(), isTrue);
+      expect(withDot.progress, 1.0);
+      // A small stroke on the dot counts too.
+      final d = g.dots.single;
+      expect(
+        scoreTrace(g, [
+          body,
+          [d - const Offset(5, 3), d + const Offset(5, 3)],
+        ]).passed(),
+        isTrue,
+      );
+    });
+
+    testWidgets('tracing: ب with its dot above fails and says where it goes', (t) async {
+      final g = await guideFor(t, 'ب');
+      final d = g.dots.single;
+      final above = Offset(d.dx, 2 * g.bodyCenter.dy - d.dy - box * 0.05);
+      final s = scoreTrace(g, [bodyStroke(g), tap(above)]);
+      expect(s.dotsDone, 0);
+      expect(s.wrongDots, 1);
+      expect(s.passed(), isFalse);
+      expect(dotHint(g, s), 'নুকতা নিচে দিন।');
+      // Moved to the right place, it passes.
+      expect(scoreTrace(g, [bodyStroke(g), tap(d)]).passed(), isTrue);
+    });
+
+    testWidgets('tracing: ت with one dot fails, ث with three passes', (t) async {
+      final ta = await guideFor(t, 'ت');
+      final one = scoreTrace(ta, [bodyStroke(ta), tap(ta.dots.first)]);
+      expect(one.dotsDone, 1);
+      expect(one.passed(), isFalse);
+      expect(one.progress, closeTo(0.9, 0.001));
+      expect(dotHint(ta, one), 'এখানে ২টি নুকতা লাগবে, ওপরে।');
+      // Three dots on ت: one too many.
+      final three = scoreTrace(ta, [bodyStroke(ta), ...ta.dots.map(tap), tap(ta.dots.first)]);
+      expect(three.passed(), isFalse);
+      expect(dotHint(ta, three), 'এখানে ২টি নুকতা লাগবে, বেশি হয়ে গেছে।');
+      final tha = await guideFor(t, 'ث');
+      expect(tha.dots.length, 3);
+      expect(scoreTrace(tha, [bodyStroke(tha), ...tha.dots.map(tap)]).passed(), isTrue);
+      expect(scoreTrace(tha, [bodyStroke(tha), ...tha.dots.take(2).map(tap)]).passed(), isFalse);
+    });
+
+    testWidgets('tracing: dots first, then the body, also passes', (t) async {
+      final g = await guideFor(t, 'خ');
+      final s = scoreTrace(g, [tap(g.dots.single), bodyStroke(g)]);
+      expect(s.passed(), isTrue);
+      // The body drawn in reverse after the dot still passes.
+      expect(scoreTrace(g, [tap(g.dots.single), bodyStroke(g).reversed.toList()]).passed(), isTrue);
+    });
+
+    testWidgets('tracing: letters without dots work as before', (t) async {
+      for (final ch in 'احدرسصطعلموه'.split('')) {
+        final g = await guideFor(t, ch);
+        expect(g.dotCount, 0, reason: ch);
+        final s = scoreTrace(g, [bodyStroke(g)]);
+        expect(s.passed(), isTrue, reason: '$ch ${s.coverage}');
+        expect(s.progress, 1.0, reason: ch);
+      }
+      // A dot on ح would make it ج or خ.
+      final g = await guideFor(t, 'ح');
+      // Where خ has its dot.
+      final top = (await guideFor(t, 'خ')).dots.single;
+      final s = scoreTrace(g, [bodyStroke(g), tap(top)]);
+      expect(s.passed(), isFalse);
+      expect(dotHint(g, s), 'এই অক্ষরে কোনো নুকতা নেই।');
+    });
+
+    testWidgets('tracing: the progress ring is full at 100%', (t) async {
+      Future<Color> pixelAt(double value, Offset at) async {
+        final rec = ui.PictureRecorder();
+        TraceRingPainter(
+          value: value,
+          color: const Color(0xFF00AA00),
+          track: const Color(0xFFDDDDDD),
+        ).paint(Canvas(rec), const Size(34, 34));
+        final img = await t.runAsync(() => rec.endRecording().toImage(34, 34));
+        final data = await t.runAsync(() => img!.toByteData());
+        final i = (at.dy.toInt() * 34 + at.dx.toInt()) * 4;
+        return Color.fromARGB(255, data!.getUint8(i), data.getUint8(i + 1), data.getUint8(i + 2));
+      }
+
+      // The left side of the ring (the last quarter to fill).
+      const left = Offset(2, 17);
+      expect(await pixelAt(1.0, left), const Color(0xFF00AA00));
+      expect(await pixelAt(0.5, left), const Color(0xFFDDDDDD));
+      expect(await pixelAt(0.8, left), const Color(0xFF00AA00));
+    });
+
+    testWidgets('লিখে দেখুন shows the board and the letter name', (t) async {
       await t.pumpWidget(game(TraceGame(items: items(['L02']), onDone: (_) {})));
-      expect(find.text('লিখে দেখো'), findsOneWidget);
+      expect(find.text('লিখে দেখুন'), findsOneWidget);
       expect(find.byKey(const ValueKey('trace-board')), findsOneWidget);
       expect(find.text('বা'), findsOneWidget);
+      expect(find.text('দেখান'), findsOneWidget);
+      expect(find.text('আবার লিখুন'), findsOneWidget);
+      expect(find.byKey(const ValueKey('trace-progress')), findsOneWidget);
+      // The checklist: the letter, and ب's one dot.
+      expect(find.text('অক্ষর'), findsOneWidget);
+      expect(find.text('নুকতা ০/১'), findsOneWidget);
       await t.tap(find.text('হয়ে গেছে'));
       await t.pump();
-      expect(find.text('আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানো।'), findsOneWidget);
+      expect(find.text('আগে আঙুল দিয়ে অক্ষরটির ওপর দিয়ে টানুন।'), findsOneWidget);
+      // Strict mode is off by default and can be turned on.
+      expect(ArabicProgress.instance.traceStrict, isFalse);
+      await t.ensureVisible(find.byKey(const ValueKey('trace-strict')));
+      await t.pump();
+      await t.tap(find.byKey(const ValueKey('trace-strict')));
+      await t.pump();
+      expect(ArabicProgress.instance.traceStrict, isTrue);
+      await ArabicProgress.instance.setTraceStrict(false);
+    });
+
+    testWidgets('লিখে দেখুন: drawing up and down draws, it does not scroll the page', (t) async {
+      await t.pumpWidget(game(TraceGame(items: items(['L01']), onDone: (_) {})));
+      final board = find.byKey(const ValueKey('trace-board'));
+      final before = t.getTopLeft(board);
+      await t.drag(board, const Offset(0, 120));
+      await t.pump();
+      expect(t.getTopLeft(board), before);
+      // The stroke can be cleared.
+      await t.tap(find.text('আবার লিখুন'));
+      await t.pump();
     });
   });
 
@@ -416,7 +643,37 @@ void main() {
         expect(find.text('সহজ আরবি'), findsOneWidget);
         expect(find.text('প্রথম পাঠ শুরু করি'), findsOneWidget);
         await t.scrollUntilVisible(find.text('৪. বুঝে পড়ি'), 200);
-        expect(find.text('শীঘ্রই আসছে'), findsNWidgets(3));
+        // Levels 2–4 open কুরআন বুঝি; nothing says "coming soon".
+        expect(find.text('শীঘ্রই আসছে'), findsNothing);
+        expect(find.text('কুরআন বুঝি'), findsOneWidget);
+        expect(find.text('২০টি পাঠ তৈরি'), findsOneWidget);
+        expect(find.text('৫টি পাঠ তৈরি'), findsOneWidget);
+        await t.tap(find.text('৩. সহজ ব্যাকরণ'));
+        await settleLearn(t);
+        expect(find.text('তৈরি: ২০টি পাঠ · শেষ: ০টি'), findsOneWidget);
+        await t.pageBack();
+        await t.pumpAndSettle();
+        await t.tap(find.text('৪. বুঝে পড়ি'));
+        await settleLearn(t);
+        expect(find.text('তৈরি: ৫টি পাঠ · শেষ: ০টি'), findsOneWidget);
+        expect(find.text('৭. পুরো ফাতিহা বুঝি'), findsOneWidget);
+        // A lesson out of order still opens, after a short tip.
+        await t.tap(find.text('৭. পুরো ফাতিহা বুঝি'));
+        await settleLearn(t);
+        await t.tap(find.text('খুলুন'));
+        await settleLearn(t, 20);
+        expect(find.text('পরের ধাপ'), findsOneWidget);
+        await t.pageBack();
+        await settleLearn(t, 20);
+        await t.tap(find.text('বের হই'));
+        await settleLearn(t, 20);
+        await t.pageBack();
+        await settleLearn(t, 20);
+        await t.scrollUntilVisible(
+          find.text('১. পড়তে শিখি'),
+          -200,
+          scrollable: find.byType(Scrollable).first,
+        );
 
         await t.tap(find.text('১. পড়তে শিখি'));
         await t.pumpAndSettle();
@@ -441,7 +698,7 @@ void main() {
         await t.scrollUntilVisible(find.text('অনুশীলন শুরু করি'), 200);
         await t.tap(find.text('অনুশীলন শুরু করি'));
         await t.pumpAndSettle();
-        expect(find.text('শুনে বেছে নাও'), findsOneWidget);
+        expect(find.text('শুনে বেছে নিন'), findsOneWidget);
         expect(t.takeException(), isNull);
       });
 
@@ -472,7 +729,7 @@ void main() {
         expect(find.text('আজকের রিভিশন'), findsOneWidget);
         await t.tap(find.text('আজকের রিভিশন'));
         await t.pumpAndSettle();
-        expect(find.text('শুনে বেছে নাও'), findsOneWidget);
+        expect(find.text('শুনে বেছে নিন'), findsOneWidget);
       });
     });
   }

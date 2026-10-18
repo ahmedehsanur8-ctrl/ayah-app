@@ -1,0 +1,128 @@
+{
+  "id": "L2-15",
+  "level": 2,
+  "ord": 15,
+  "title_bn": "ছোট বাক্য: ‘ওটা কিতাব’",
+  "objective_bn": "‘হয়’ ছাড়া বাক্য",
+  "minutes": 12,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 2,
+  "anchor_ayah_to": 2,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 2
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          32,
+          36,
+          37,
+          33
+        ],
+        "word_refs": [
+          [
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            6
+          ],
+          [
+            2,
+            2,
+            7
+          ],
+          [
+            2,
+            2,
+            4
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "আরবিতে ‘হয়/আছে’ শব্দ ছাড়াই বাক্য হয়: প্রথমে যার কথা (মুবতাদা), পরে তার সম্পর্কে খবর (খবর)। যালিকাল কিতাব = ওটা সেই কিতাব; হুদাল লিল মুত্তাকীন = মুত্তাকিদের জন্য পথনির্দেশ।",
+        "example": {
+          "surah": 2,
+          "ayah": 2,
+          "word_index": 2
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 32,
+            "distractor_ids": [
+              12,
+              17,
+              22
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 36,
+            "distractor_ids": [
+              5016,
+              264,
+              333
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 37,
+            "distractor_ids": [
+              198,
+              34,
+              265
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 33,
+            "distractor_ids": [
+              19,
+              25,
+              950
+            ]
+          },
+          {
+            "kind": "split",
+            "surah": 2,
+            "ayah": 2,
+            "word_index": 7
+          },
+          {
+            "kind": "order",
+            "surah": 2,
+            "ayah": 2
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          32,
+          36,
+          37,
+          33
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 2
+      }
+    ]
+  }
+}

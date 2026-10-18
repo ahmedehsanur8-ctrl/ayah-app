@@ -1,0 +1,149 @@
+{
+  "id": "L2-12",
+  "level": 2,
+  "ord": 12,
+  "title_bn": "সে, তারা, তুমি",
+  "objective_bn": "আলাদা সর্বনাম চিনি",
+  "minutes": 10,
+  "anchor_surah": 2,
+  "anchor_ayah_from": 5,
+  "anchor_ayah_to": 5,
+  "reviewed_by": "DRAFT",
+  "reviewed_on": "",
+  "body": {
+    "steps": [
+      {
+        "type": "ayah",
+        "surah": 2,
+        "ayah": 5
+      },
+      {
+        "type": "words",
+        "lemma_ids": [
+          460,
+          54,
+          265,
+          178,
+          756,
+          95
+        ],
+        "word_refs": [
+          [
+            2,
+            68,
+            8
+          ],
+          [
+            2,
+            5,
+            7
+          ],
+          [
+            2,
+            32,
+            10
+          ],
+          [
+            2,
+            22,
+            22
+          ],
+          [
+            2,
+            160,
+            9
+          ],
+          [
+            2,
+            11,
+            10
+          ]
+        ]
+      },
+      {
+        "type": "explain",
+        "text_bn": "আলাদা সর্বনামগুলো: হুওয়া (সে), হিয়া (সে, নারী), হুম (তারা), আনতা (তুমি), আনতুম (তোমরা), আনা (আমি), নাহনু (আমরা)। হুওয়া আপনি সূরা ইখলাসে শিখেছেন।",
+        "example": {
+          "surah": 2,
+          "ayah": 5,
+          "word_index": 7
+        }
+      },
+      {
+        "type": "quiz",
+        "items": [
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 460,
+            "distractor_ids": [
+              238,
+              5016,
+              264
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 54,
+            "distractor_ids": [
+              27,
+              261,
+              238
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 265,
+            "distractor_ids": [
+              29,
+              3042,
+              5015
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 178,
+            "distractor_ids": [
+              8,
+              13,
+              18
+            ]
+          },
+          {
+            "kind": "mcq_ar_bn",
+            "lemma_id": 756,
+            "distractor_ids": [
+              58,
+              198,
+              34
+            ]
+          },
+          {
+            "kind": "mcq_bn_ar",
+            "lemma_id": 95,
+            "distractor_ids": [
+              17,
+              22,
+              29
+            ]
+          }
+        ]
+      },
+      {
+        "type": "recall",
+        "lemma_ids": [
+          460,
+          54,
+          265,
+          178,
+          756,
+          95
+        ]
+      },
+      {
+        "type": "ayah_recap",
+        "surah": 2,
+        "ayah": 5
+      }
+    ]
+  }
+}

@@ -1,0 +1,54 @@
+# Builds the কুরআন বুঝি content DB (assets/learn/learn_content.db) with
+# tools/learn/build_learn_db.py. On GitHub the live tanzil.net text is checked
+# against the bundled copy, and the official corpus.quran.com file is tried
+# before the verbatim GitHub mirror (both must match the pinned SHA-256).
+name: Learn data
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - tools/learn/**
+      - content/**
+      - .github/workflows/learn-data.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: learn-data-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Official Quranic Arabic Corpus download page (for comparison)
+        continue-on-error: true
+        run: |
+          curl -sSL --max-time 60 -o qac-page.html -w 'HTTP %{http_code}, %{size_download} bytes\n' https://corpus.quran.com/download/ || true
+          # The page's visible text and links, to compare with the mirror.
+          sed -e 's/<[^>]*>/ /g' qac-page.html | tr -s ' \t' ' ' | grep -v '^ *$' | head -80 || true
+          grep -o 'href="[^"]*"' qac-page.html | sort -u | head -40 || true
+
+      - name: Build learn_content.db
+        run: python3 tools/learn/build_learn_db.py --check-tanzil
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/learn/learn_content.db tools/data/learn_report.txt
+          if git diff --cached --quiet; then
+            echo "Content DB unchanged."
+          else
+            git commit -m "Update কুরআন বুঝি content DB"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push
+          fi
