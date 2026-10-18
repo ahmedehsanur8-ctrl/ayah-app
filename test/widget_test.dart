@@ -197,6 +197,9 @@ void main() {
   });
 
   test('azan events: per-prayer modes, Fajr flag, no sunrise', () async {
+    // These check the azan recordings (switched off in the app for now).
+    Prayers.azanAudioOn = true;
+    addTearDown(() => Prayers.azanAudioOn = false);
     SharedPreferences.setMockInitialValues({});
     final s = await AppSettings.load();
     await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
@@ -220,7 +223,34 @@ void main() {
     expect(s.azanInSilent, isTrue);
   });
 
+  test('azan recordings off: prayer times ring as a loud notification', () async {
+    SharedPreferences.setMockInitialValues({});
+    final s = await AppSettings.load();
+    await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+    Prayers.azanBundled = true;
+    expect(Prayers.azanAudioOn, isFalse);
+    await s.setAzanSound('dhuhr', 'haram');
+    await s.setAzanSound('isha', 'off');
+    await s.setAzanBefore('fajr', 15);
+    // The choice is kept, but what rings is the notification.
+    expect(s.azanSound('dhuhr'), 'haram');
+    expect(Prayers.soundFor(s, 'dhuhr'), 'notify');
+    expect(Prayers.soundFor(s, 'fajr'), 'notify');
+    expect(Prayers.soundFor(s, 'isha'), 'off');
+    expect(Prayers.soundChoices.keys, ['notify', 'off']);
+    final now = DateTime(2026, 3, 21, 0, 1);
+    final events = (jsonDecode(Prayers.eventsJson(s, now)) as List).cast<Map<String, dynamic>>();
+    expect(events.where((e) => e['mode'] == 'azan'), isEmpty);
+    final notify = events.where((e) => e['mode'] == 'notify').map((e) => e['key']).toSet();
+    expect(notify, {'fajr', 'dhuhr', 'asr', 'maghrib'});
+    // Reminders before the prayer stay as they were.
+    expect(events.where((e) => e['key'] == 'fajr' && e['mode'] == 'before'), isNotEmpty);
+  });
+
   test('azan: sound, adjustment, fixed time, reminders before and iqamah', () async {
+    // These check the azan recordings (switched off in the app for now).
+    Prayers.azanAudioOn = true;
+    addTearDown(() => Prayers.azanAudioOn = false);
     SharedPreferences.setMockInitialValues({});
     final s = await AppSettings.load();
     await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');

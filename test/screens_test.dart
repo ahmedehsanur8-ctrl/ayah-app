@@ -333,11 +333,45 @@ void main() {
         expect(find.text('কোনো তথ্য সংগ্রহ করা হয় না'), findsOneWidget);
       });
 
+      testWidgets('azan page while the recordings are off: loud notification only', (t) async {
+        await t.binding.setSurfaceSize(const Size(360, 740));
+        final s = AppState.instance.settings;
+        await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
+        final calls = <MethodCall>[];
+        t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          const MethodChannel('ayah_reminder/azan'),
+          (c) async {
+            calls.add(c);
+            return true;
+          },
+        );
+        addTearDown(
+          () => t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            const MethodChannel('ayah_reminder/azan'),
+            null,
+          ),
+        );
+        await t.pumpWidget(app(const AzanPrayerScreen(prayer: 'asr'), b));
+        await t.pump();
+        expect(find.text('মসজিদে নববী'), findsNothing);
+        expect(find.text('মসজিদুল হারাম'), findsNothing);
+        expect(find.text('নোটিফিকেশন (জোরে শব্দসহ)'), findsOneWidget);
+        expect(find.text('বন্ধ'), findsWidgets);
+        // "শুনে দেখুন" rings the loud alert.
+        await t.tap(find.byKey(const ValueKey('listen-notify')));
+        await t.pump();
+        expect(calls.last.method, 'playNow');
+        expect(calls.last.arguments['sound'], 'alert');
+        expect(calls.last.arguments['volume'], 1.0);
+      });
+
       testWidgets('azan page: sound, listen, time, reminders; each change re-schedules', (t) async {
         await t.binding.setSurfaceSize(const Size(360, 740));
         final s = AppState.instance.settings;
         await s.setLocation(24.8949, 91.8687, 'সিলেট', 'city');
         Prayers.azanBundled = true;
+        // This checks the azan recordings (switched off in the app for now).
+        Prayers.azanAudioOn = true;
         final calls = <MethodCall>[];
         t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
           const MethodChannel('ayah_reminder/azan'),
@@ -347,6 +381,7 @@ void main() {
           },
         );
         addTearDown(() async {
+          Prayers.azanAudioOn = false;
           t.binding.defaultBinaryMessenger.setMockMethodCallHandler(
             const MethodChannel('ayah_reminder/azan'),
             null,
@@ -365,7 +400,7 @@ void main() {
 
         await t.pumpWidget(app(const AzanPrayerScreen(prayer: 'asr'), b));
         await t.pump();
-        for (final n in ['মসজিদে নববী', 'মসজিদুল হারাম', 'শুধু নোটিফিকেশন', 'বন্ধ']) {
+        for (final n in ['মসজিদে নববী', 'মসজিদুল হারাম', 'নোটিফিকেশন (জোরে শব্দসহ)', 'বন্ধ']) {
           expect(find.text(n), findsWidgets, reason: n);
         }
         // "শুনে দেখুন" for each azan sound.

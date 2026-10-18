@@ -177,6 +177,8 @@ class AzanAlarmReceiver : BroadcastReceiver() {
                     intent.getStringExtra("duaAr") ?: "", intent.getStringExtra("duaBn") ?: "",
                     intent.getStringExtra("duaUc") ?: "", intent.getStringExtra("duaRef") ?: "",
                 )
+                // Prayer time: a notification with a loud alert sound.
+                "notify" -> AzanService.start(context, name, false, time, "alert", 1f)
                 else -> AzanNotifications.showPrayerTime(context, name, time)
             }
         }
@@ -247,9 +249,12 @@ object AzanNotifications {
     fun clock(time: Long): String =
         bn(SimpleDateFormat("h:mm", Locale.US).format(Date(if (time > 0) time else System.currentTimeMillis())))
 
-    /** "শুধু নোটিফিকেশন" mode. */
-    fun showPrayerTime(context: Context, name: String, time: Long) =
-        show(context, NOTIFY_ID, "${genitive(name)} সময় হয়েছে", "$name · ${clock(time)}")
+    /** "শুধু নোটিফিকেশন" mode. [quiet]: after the loud alert has rung, without a second sound. */
+    fun showPrayerTime(context: Context, name: String, time: Long, quiet: Boolean = false) =
+        show(
+            context, NOTIFY_ID, "${genitive(name)} সময় হয়েছে", "$name · ${clock(time)}",
+            if (quiet) PLAYING_CHANNEL else null,
+        )
 
     /** Reminder [mins] minutes before the azan. */
     fun showBefore(context: Context, name: String, mins: Int, azan: Long) = show(
@@ -284,13 +289,13 @@ object AzanNotifications {
         )
     }
 
-    private fun show(context: Context, id: Int, title: String, text: String) {
+    private fun show(context: Context, id: Int, title: String, text: String, channelId: String? = null) {
         ensureChannels(context)
         val open = PendingIntent.getActivity(
             context, 7102, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val channel = if (AzanStore.vibrate(context)) NOTIFY_CHANNEL else QUIET_CHANNEL
+        val channel = channelId ?: if (AzanStore.vibrate(context)) NOTIFY_CHANNEL else QUIET_CHANNEL
         val n = builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
@@ -360,6 +365,14 @@ class AzanService : Service() {
 
     private var player: MediaPlayer? = null
     private var sehri = false
+
+    /** The loud prayer-time alert (instead of the azan, for now). */
+    private var alert = false
+    private var alertName = ""
+    private var alertTime = 0L
+
+    /** Alarm volume before the alert raised it (restored afterwards), or -1. */
+    private var savedAlarmVolume = -1
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var session: MediaSession? = null
     private var focus: AudioFocusRequest? = null
@@ -379,6 +392,9 @@ class AzanService : Service() {
         val asked = intent?.getFloatExtra("volume", -1f) ?: -1f
         val volume = if (asked > 0f) asked.coerceIn(0.1f, 1f) else AzanStore.volume(this)
         sehri = sound == "sehri"
+        alert = sound == "alert"
+        alertName = name
+        alertTime = time
         AzanNotifications.ensureChannels(this)
         val notification = buildNotification(name, time)
         if (Build.VERSION.SDK_INT >= 29) {
@@ -393,11 +409,16 @@ class AzanService : Service() {
         // The sehri alarm is a wake-up alarm: it rings in silent mode too.
         if (silent && !sehri && !AzanStore.inSilent(this)) {
             // The user chose to keep silent mode silent: just tell the time.
+            alert = false
             AzanNotifications.showPrayerTime(this, name, time)
             finish()
             return START_NOT_STICKY
         }
-        if (!play(sound, fajr, volume, am)) {
+        // The alert is meant to be heard: the alarm volume goes to the top while
+        // it rings and comes back afterwards.
+        if (alert) raiseAlarmVolume(am)
+        if (!play(sound, fajr, if (alert) 1f else volume, am)) {
+            alert = false
             if (!sehri) AzanNotifications.showPrayerTime(this, name, time)
             finish()
             return START_NOT_STICKY
@@ -405,9 +426,11 @@ class AzanService : Service() {
         isPlaying = true
         if (AzanStore.vibrate(this) && am.ringerMode != AudioManager.RINGER_MODE_SILENT) vibrate()
         startVolumeKeyStop()
-        if ((sehri || AzanStore.fullScreen(this)) && canShowFullScreen()) openFullScreenPage(name, time)
-        // The sehri alarm repeats; it stops by itself after 3 minutes.
+        if (!alert && (sehri || AzanStore.fullScreen(this)) && canShowFullScreen()) openFullScreenPage(name, time)
+        // The sehri alarm repeats; it stops by itself after 3 minutes. The
+        // prayer-time alert rings for 30 seconds (or until "থামান").
         if (sehri) handler.postDelayed({ finish() }, 3 * 60 * 1000L)
+        if (alert) handler.postDelayed({ finish() }, 30 * 1000L)
         return START_NOT_STICKY
     }
 
@@ -416,8 +439,9 @@ class AzanService : Service() {
      * recording; if a file is missing, the other masjid's recording is used.
      */
     private fun rawId(sound: String, fajr: Boolean): Int {
-        if (sound == "sehri") {
-            for (n in listOf("reminder_bell", "reminder_chime")) {
+        if (sound == "sehri" || sound == "alert") {
+            val names = if (sound == "alert") listOf("prayer_alert", "reminder_bell") else listOf("reminder_bell", "reminder_chime")
+            for (n in names) {
                 val id = resources.getIdentifier(n, "raw", packageName)
                 if (id != 0) return id
             }
@@ -468,7 +492,7 @@ class AzanService : Service() {
             p.setAudioAttributes(attrs)
             p.setDataSource(this, Uri.parse("android.resource://$packageName/$id"))
             p.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK)
-            if (sehri) p.isLooping = true else p.setOnCompletionListener { finish() }
+            if (sehri || alert) p.isLooping = true else p.setOnCompletionListener { finish() }
             p.setOnErrorListener { _, _, _ -> finish(); true }
             p.prepare()
             p.setVolume(volume, volume)
@@ -506,6 +530,9 @@ class AzanService : Service() {
         val r = object : BroadcastReceiver() {
             override fun onReceive(c: Context, i: Intent) {
                 // Ignore changes right at the start (some phones send one when playback begins).
+                // Ignore our own change of the alarm volume for the alert.
+                val stream = i.getIntExtra("android.media.EXTRA_VOLUME_STREAM_TYPE", -1)
+                if (alert && stream == AudioManager.STREAM_ALARM) return
                 if (System.currentTimeMillis() - startedAt > 1500) finish()
             }
         }
@@ -539,10 +566,19 @@ class AzanService : Service() {
         val stop = stopIntent(this)
         val b = AzanNotifications.builder(this, AzanNotifications.PLAYING_CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(if (sehri) "সেহরির সময়" else name.ifEmpty { "আজান" })
+            .setContentTitle(
+                when {
+                    sehri -> "সেহরির সময়"
+                    alert -> "${AzanNotifications.genitive(name.ifEmpty { "নামাজ" })} সময় হয়েছে"
+                    else -> name.ifEmpty { "আজান" }
+                }
+            )
             .setContentText(
-                if (sehri) "সেহরি শেষ হবে ${AzanNotifications.clock(time)}"
-                else "আজান চলছে · ${AzanNotifications.clock(time)}"
+                when {
+                    sehri -> "সেহরি শেষ হবে ${AzanNotifications.clock(time)}"
+                    alert -> "${name.ifEmpty { "নামাজ" }} · ${AzanNotifications.clock(time)}"
+                    else -> "আজান চলছে · ${AzanNotifications.clock(time)}"
+                }
             )
             .setCategory(Notification.CATEGORY_ALARM)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
@@ -555,7 +591,7 @@ class AzanService : Service() {
         if (Build.VERSION.SDK_INT < 26) b.setPriority(Notification.PRIORITY_MAX)
         // Full screen only where Android allows it (Android 14+ asks the user);
         // otherwise this stays a heads-up alarm notification.
-        if ((sehri || AzanStore.fullScreen(this)) && canShowFullScreen()) b.setFullScreenIntent(page, true)
+        if (!alert && (sehri || AzanStore.fullScreen(this)) && canShowFullScreen()) b.setFullScreenIntent(page, true)
         return b.build()
     }
 
@@ -581,13 +617,43 @@ class AzanService : Service() {
             }
         }
         volumeReceiver = null
+        restoreAlarmVolume()
         if (Build.VERSION.SDK_INT >= 26) {
             focus?.let { (getSystemService(Context.AUDIO_SERVICE) as AudioManager).abandonAudioFocusRequest(it) }
         }
         focus = null
         onStopped?.invoke()
         stopForeground(STOP_FOREGROUND_REMOVE)
+        // The prayer time stays in the notifications after the alert stops.
+        if (alert && alertName.isNotEmpty()) {
+            AzanNotifications.showPrayerTime(this, alertName, alertTime, quiet = true)
+        }
+        alert = false
         stopSelf()
+    }
+
+    private fun raiseAlarmVolume(am: AudioManager) {
+        try {
+            val max = am.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+            val now = am.getStreamVolume(AudioManager.STREAM_ALARM)
+            if (now < max) {
+                savedAlarmVolume = now
+                am.setStreamVolume(AudioManager.STREAM_ALARM, max, 0)
+            }
+        } catch (e: Exception) {
+            // Not allowed now (e.g. Do Not Disturb): ring at the current volume.
+            savedAlarmVolume = -1
+        }
+    }
+
+    private fun restoreAlarmVolume() {
+        if (savedAlarmVolume < 0) return
+        try {
+            (getSystemService(Context.AUDIO_SERVICE) as AudioManager)
+                .setStreamVolume(AudioManager.STREAM_ALARM, savedAlarmVolume, 0)
+        } catch (e: Exception) {
+        }
+        savedAlarmVolume = -1
     }
 
     override fun onDestroy() {

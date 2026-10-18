@@ -289,7 +289,9 @@ class AzanSettings extends StatelessWidget {
                   },
                 ),
               ),
-              const _VolumeRow(),
+              // The volume and full-screen page are for the azan recordings,
+              // which are off for now (the notification alert rings at full volume).
+              if (Prayers.azanAudioOn) const _VolumeRow(),
               NavRow(
                 icon: Icons.vibration_rounded,
                 tint: p.mint,
@@ -303,26 +305,37 @@ class AzanSettings extends StatelessWidget {
                   },
                 ),
               ),
-              NavRow(
-                icon: Icons.fullscreen_rounded,
-                tint: p.lilac,
-                title: 'পুরো স্ক্রিনে আজান',
-                subtitle: 'লক স্ক্রিনের ওপর নামাজের নাম ও বড় থামান বোতাম',
-                trailing: Switch(
-                  value: s.azanFullScreen,
-                  onChanged: (v) async {
-                    await s.setAzanFullScreen(v);
-                    await Prayers.schedule(s);
-                  },
+              if (Prayers.azanAudioOn)
+                NavRow(
+                  icon: Icons.fullscreen_rounded,
+                  tint: p.lilac,
+                  title: 'পুরো স্ক্রিনে আজান',
+                  subtitle: 'লক স্ক্রিনের ওপর নামাজের নাম ও বড় থামান বোতাম',
+                  trailing: Switch(
+                    value: s.azanFullScreen,
+                    onChanged: (v) async {
+                      await s.setAzanFullScreen(v);
+                      await Prayers.schedule(s);
+                    },
+                  ),
                 ),
-              ),
-              NavRow(
-                icon: Icons.play_circle_outline_rounded,
-                tint: p.rose,
-                title: 'আজান শুনে দেখুন',
-                subtitle: 'মসজিদে নববী ও মসজিদুল হারাম, ফজরসহ',
-                onTap: () => showListenSheet(context),
-              ),
+              if (Prayers.azanAudioOn)
+                NavRow(
+                  icon: Icons.play_circle_outline_rounded,
+                  tint: p.rose,
+                  title: 'আজান শুনে দেখুন',
+                  subtitle: 'মসজিদে নববী ও মসজিদুল হারাম, ফজরসহ',
+                  onTap: () => showListenSheet(context),
+                )
+              else
+                NavRow(
+                  key: const ValueKey('listen-alert'),
+                  icon: Icons.play_circle_outline_rounded,
+                  tint: p.rose,
+                  title: 'নোটিফিকেশনের শব্দ শুনে দেখুন',
+                  subtitle: 'নামাজের সময় এই শব্দ জোরে বাজবে',
+                  onTap: Prayers.playAlert,
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -347,7 +360,7 @@ class _PrayerRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final s = AppState.instance.settings;
-    final mode = prayer.isSunrise ? 'off' : s.azanSound(prayer.key);
+    final mode = prayer.isSunrise ? 'off' : Prayers.soundFor(s, prayer.key);
     final row = Container(
       color: isNext ? p.pill : null,
       constraints: const BoxConstraints(minHeight: 60),

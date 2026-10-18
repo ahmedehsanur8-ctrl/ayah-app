@@ -128,13 +128,31 @@ class Prayers {
 
   static const _channel = MethodChannel('ayah_reminder/azan');
 
-  /// The azan sounds the user can pick, by id.
+  /// The azan sounds, by id.
   static const azanSounds = {
     'nabawi': 'মসজিদে নববী',
     'haram': 'মসজিদুল হারাম',
-    'notify': 'শুধু নোটিফিকেশন',
+    'notify': 'নোটিফিকেশন (জোরে শব্দসহ)',
     'off': 'বন্ধ',
   };
+
+  /// The azan recordings are switched off for now: at prayer time a
+  /// notification rings with a loud alert sound instead. A prayer set to an
+  /// azan keeps that choice (it comes back when this is turned on again).
+  static bool azanAudioOn = false;
+
+  /// The sounds the user can pick now.
+  static Map<String, String> get soundChoices => {
+    for (final e in azanSounds.entries)
+      if (azanAudioOn || (e.key != 'nabawi' && e.key != 'haram')) e.key: e.value,
+  };
+
+  /// What rings for [prayer]: its chosen sound, or the notification while the
+  /// azan recordings are off.
+  static String soundFor(AppSettings s, String prayer) {
+    final v = s.azanSound(prayer);
+    return !azanAudioOn && (v == 'nabawi' || v == 'haram') ? 'notify' : v;
+  }
 
   /// True when the azan recordings are bundled (res/raw/azan_*.mp3).
   static bool azanBundled = false;
@@ -197,7 +215,7 @@ class Prayers {
       for (final p in forDay(s, day)) {
         if (p.isSunrise || !prayersOn) continue;
         final at = azanTime(s, p);
-        final sound = s.azanSound(p.key);
+        final sound = soundFor(s, p.key);
         if (sound == 'nabawi' || sound == 'haram') {
           add(at, p, azanBundled ? 'azan' : 'notify', sound: sound);
         } else if (sound == 'notify') {
@@ -312,6 +330,21 @@ class Prayers {
         'fajr': fajr,
         'sound': sound,
         'volume': volume ?? AppState.instance.settings.azanVolume,
+      });
+    } on MissingPluginException {
+      // Tests / non-Android.
+    }
+  }
+
+  /// Rings the loud prayer-time alert now ("শুনে দেখুন" for the notification).
+  static Future<void> playAlert() async {
+    try {
+      // No name: nothing is left in the notifications after the test.
+      await _channel.invokeMethod('playNow', {
+        'name': '',
+        'fajr': false,
+        'sound': 'alert',
+        'volume': 1.0,
       });
     } on MissingPluginException {
       // Tests / non-Android.

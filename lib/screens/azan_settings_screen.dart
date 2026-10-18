@@ -87,7 +87,7 @@ class _AzanPrayerScreenState extends State<AzanPrayerScreen> {
   Widget _body(BuildContext context, String name) {
     final p = context.palette;
     final today = _today();
-    final sound = _s.azanSound(_k);
+    final sound = Prayers.soundFor(_s, _k);
     final fixed = _s.azanFixedMinutes(_k);
     final offset = _dragOffset ?? _s.azanOffset(_k);
     final fajr = _k == 'fajr';
@@ -112,23 +112,25 @@ class _AzanPrayerScreenState extends State<AzanPrayerScreen> {
         const SectionLabel('আজানের শব্দ'),
         RowGroup(
           children: [
-            for (final e in Prayers.azanSounds.entries)
+            for (final e in Prayers.soundChoices.entries)
               _SoundRow(
                 id: e.key,
                 label: e.value,
                 selected: sound == e.key,
                 subtitle: switch (e.key) {
                   'nabawi' || 'haram' => fajr ? 'ফজরের নিজস্ব আজান' : null,
-                  'notify' => 'আজান বাজবে না, শুধু নোটিফিকেশন',
+                  'notify' => 'নামাজের সময় নোটিফিকেশন, জোরে শব্দসহ (৩০ সেকেন্ড বা থামান পর্যন্ত)',
                   _ => 'এই ওয়াক্তে কিছু জানাবে না',
                 },
                 onSelect: () async {
                   await _s.setAzanSound(_k, e.key);
                   await _changed();
                 },
-                onListen: e.key == 'nabawi' || e.key == 'haram'
-                    ? () => Prayers.playNow(sound: e.key, fajr: fajr)
-                    : null,
+                onListen: switch (e.key) {
+                  'nabawi' || 'haram' => () => Prayers.playNow(sound: e.key, fajr: fajr),
+                  'notify' => Prayers.playAlert,
+                  _ => null,
+                },
               ),
           ],
         ),
