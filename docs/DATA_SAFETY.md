@@ -1,5 +1,10 @@
 # Google Play "Data safety" notes
 
+> **Update 21 Oct 2026:** Google rejected "No data collected" (version 81): its scan
+> treats the saved location as leaving the device (Android auto-backup). Current form:
+> **Approximate location: Collected = Yes, Shared = No, not ephemeral, optional,
+> purpose App functionality.** Encrypted in transit = Yes; deletion request = No.
+
 Answers for the Data safety form in Play Console, based on what the app does.
 
 ## Data collection and sharing

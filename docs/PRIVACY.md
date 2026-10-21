@@ -8,16 +8,18 @@ twice a day, and shows prayer times, azan and the Qibla direction.
 - **No account, no personal data collected.** The app has no sign-in and does not
   collect your name, contacts, phone number or any other personal information.
 - **No ads, no analytics, no tracking.**
-- **Location stays on your phone.** The approximate location is used only to
-  calculate prayer times and the Qibla direction on the phone. It is saved only on
-  the phone and is never sent anywhere. You can refuse location access and pick a
-  city by hand instead.
+- **Location is used only for prayer times and Qibla.** If you allow it, the app
+  uses your approximate location to calculate prayer times and the Qibla direction
+  on the phone, and saves it on the phone. It is not sent to us or to any other
+  company and is not used for ads or tracking. If Android device backup is on, the
+  saved location may be included in your own encrypted Google backup with the
+  app's other settings. You can refuse location access and pick a city by hand.
 
 ## What the app uses
 
 | What | Why | Leaves the phone? |
 |---|---|---|
-| Approximate location (optional) | Prayer times and Qibla, calculated on the phone | No |
+| Approximate location (optional) | Prayer times and Qibla, calculated on the phone | Not sent to us or any third party; may be in your own Android device backup |
 | Compass sensor | Qibla direction | No |
 | Notifications | Morning/night reminders and azan, created on the phone | No |
 | Alarms, full-screen and "display over other apps" | The reminder opens like an alarm (full screen, gentle sound) at the time you chose; the azan plays at prayer times. These permissions only show the app's own reminder page; they read no data. | No |
